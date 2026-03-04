@@ -1,0 +1,12 @@
+crewai[tools]>=0.28.8
+langchain-google-genai
+fastapi
+uvicorn
+python-dotenv
+sqlalchemy
+feedparser
+duckduckgo-search
+trafilatura
+pytrends
+ffmpeg-python
+piper-tts
