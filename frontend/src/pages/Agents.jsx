@@ -8,7 +8,8 @@ const Agents = () => {
     useEffect(() => {
         const fetchAgents = async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/agents');
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                const response = await fetch(`${apiUrl}/api/agents`);
                 const data = await response.json();
                 setAgents(data);
             } catch (error) {

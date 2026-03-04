@@ -24,9 +24,10 @@ const Overview = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
                 const [overviewRes, trendsRes] = await Promise.all([
-                    fetch('http://localhost:8000/api/overview'),
-                    fetch('http://localhost:8000/api/trends')
+                    fetch(`${apiUrl}/api/overview`),
+                    fetch(`${apiUrl}/api/trends`)
                 ]);
                 const overviewData = await overviewRes.json();
                 const trendsData = await trendsRes.json();
@@ -45,7 +46,8 @@ const Overview = () => {
     const handleRunCycle = async (type) => {
         setIsRunning(true);
         try {
-            const response = await fetch('http://localhost:8000/api/run', {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const response = await fetch(`${apiUrl}/api/run`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ type })

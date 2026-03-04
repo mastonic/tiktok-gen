@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: im-system-backend
@@ -11,6 +11,8 @@ services:
     volumes:
       - ./backend:/app
       - ./.env.local:/app/.env
+      - ./backend/media:/app/media
+      - ./backend/db.sqlite3:/app/db.sqlite3
     environment:
       - PYTHONUNBUFFERED=1
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
@@ -26,5 +28,6 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
     command: npm run dev -- --host 0.0.0.0 --port 3000

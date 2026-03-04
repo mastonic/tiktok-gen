@@ -10,7 +10,8 @@ const Gallery = () => {
     useEffect(() => {
         const fetchVideos = async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/contents');
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                const response = await fetch(`${apiUrl}/api/contents`);
                 const data = await response.json();
                 // Filter for 'Posted' column
                 const postedVideos = data.filter(v => v.column === 'Posted');
@@ -54,14 +55,14 @@ const Gallery = () => {
             ) : videos.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {videos.map(video => (
-                        <div 
-                            key={video.id} 
+                        <div
+                            key={video.id}
                             className="glass-card group flex flex-col hover:border-cyan-500/50 transition-all duration-300 overflow-hidden shadow-lg hover:shadow-cyan-500/10"
                         >
                             {/* Video Preview / Placeholder */}
                             <div className="relative aspect-[9/16] bg-navy-900 border-b border-gray-800 overflow-hidden">
-                                <video 
-                                    src={`http://localhost:8000/media/production/${video.id}/final_output.mp4`}
+                                <video
+                                    src={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/media/production/${video.id}/final_output.mp4`}
                                     className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                                     muted
                                     onMouseOver={e => e.target.play()}
@@ -79,7 +80,7 @@ const Gallery = () => {
 
                             <div className="p-4 flex-1 flex flex-col gap-3">
                                 <h3 className="font-bold text-white text-lg leading-tight line-clamp-2">{video.title}</h3>
-                                
+
                                 <div className="flex gap-4">
                                     <div className="flex flex-col">
                                         <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Viral</span>
@@ -100,14 +101,14 @@ const Gallery = () => {
                                 </div>
 
                                 <div className="flex gap-2 mt-auto pt-4 border-t border-gray-800/50">
-                                    <button 
+                                    <button
                                         onClick={() => setSelectedVideo(video)}
                                         className="flex-1 flex items-center justify-center gap-2 bg-navy-800 hover:bg-navy-700 text-gray-300 text-xs font-bold py-2.5 rounded-lg border border-gray-700 transition-colors"
                                     >
                                         <Info className="h-3.5 w-3.5 text-cyan-400" /> Details
                                     </button>
-                                    <a 
-                                        href={`http://localhost:8000/media/production/${video.id}/final_output.mp4`}
+                                    <a
+                                        href={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/media/production/${video.id}/final_output.mp4`}
                                         download={`iM_System_${video.id}.mp4`}
                                         className="flex items-center justify-center bg-cyan-600 hover:bg-cyan-500 text-white p-2.5 rounded-lg transition-colors shadow-lg shadow-cyan-600/20"
                                     >
@@ -135,7 +136,7 @@ const Gallery = () => {
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in zoom-in duration-300">
                     <div className="absolute inset-0 bg-navy-950/80 backdrop-blur-xl" onClick={() => setSelectedVideo(null)}></div>
                     <div className="bg-navy-900 border border-cyan-500/30 rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl relative z-10 flex flex-col md:flex-row">
-                        <button 
+                        <button
                             onClick={() => setSelectedVideo(null)}
                             className="absolute top-6 right-6 z-20 bg-black/50 hover:bg-black/80 text-white p-2 rounded-full backdrop-blur-md transition-colors"
                         >
@@ -144,8 +145,8 @@ const Gallery = () => {
 
                         {/* Left: Video Player */}
                         <div className="md:w-1/2 bg-black flex items-center justify-center">
-                            <video 
-                                src={`http://localhost:8000/media/production/${selectedVideo.id}/final_output.mp4`}
+                            <video
+                                src={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/media/production/${selectedVideo.id}/final_output.mp4`}
                                 className="w-full h-full max-h-[80vh] md:max-h-none object-contain"
                                 controls
                                 autoPlay
@@ -196,9 +197,9 @@ const Gallery = () => {
                             </div>
 
                             <div className="mt-4 flex gap-4">
-                                <a 
-                                    href={`http://localhost:8000/media/production/${selectedVideo.id}/final_output.mp4`}
-                                    download 
+                                <a
+                                    href={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/media/production/${selectedVideo.id}/final_output.mp4`}
+                                    download
                                     className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-cyan-600/20 transition-all uppercase tracking-widest text-xs"
                                 >
                                     <Download className="h-4 w-4" /> Download Raw Video

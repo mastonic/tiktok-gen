@@ -24,6 +24,9 @@ import comfyui_client
 import fal_client
 import tts_service
 
+# Ensure environment variables are loaded
+comfyui_client.load_env_local()
+
 app = FastAPI(title="iM System API")
 
 # Explicitly allow localhost:3000 as requested for the React frontend

@@ -19,7 +19,8 @@ const Studio = () => {
 
     const fetchScripts = async () => {
         try {
-            const response = await fetch('http://localhost:8000/api/contents');
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const response = await fetch(`${apiUrl}/api/contents`);
             const data = await response.json();
             // Filter scripts that actually have image prompts
             const validScripts = data.filter(s => s.imagePrompts && s.imagePrompts.length > 0);
@@ -40,7 +41,8 @@ const Studio = () => {
         if (!selectedScript) return;
         setIsGenerating(true);
         try {
-            const response = await fetch('http://localhost:8000/api/flux/generate', {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const response = await fetch(`${apiUrl}/api/flux/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -76,7 +78,8 @@ const Studio = () => {
         if (!selectedScript) return;
         try {
             setVideoProgress({ total: 100, completed: 0, status: 'Démarrage...' });
-            const response = await fetch('http://localhost:8000/api/workflows/image-to-video', {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const response = await fetch(`${apiUrl}/api/workflows/image-to-video`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ script_id: selectedScript.id })
@@ -85,7 +88,8 @@ const Studio = () => {
 
             const interval = setInterval(async () => {
                 try {
-                    const res = await fetch(`http://localhost:8000/api/workflows/progress/${selectedScript.id}`);
+                    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                    const res = await fetch(`${apiUrl}/api/workflows/progress/${selectedScript.id}`);
                     if (!res.ok) return;
                     const progressData = await res.json();
 
@@ -116,7 +120,8 @@ const Studio = () => {
     const handleAssemblageViral = async () => {
         if (!selectedScript) return;
         try {
-            const response = await fetch('http://localhost:8000/api/workflows/assemblage-viral', {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const response = await fetch(`${apiUrl}/api/workflows/assemblage-viral`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ script_id: selectedScript.id })
@@ -125,14 +130,14 @@ const Studio = () => {
             alert(data.message);
             if (data.status === 'success') {
                 const videoClips = data.clips && data.clips.length > 0
-                    ? data.clips.map(clip => `http://localhost:8000${clip}`)
-                    : generatedImages.map(img => `http://localhost:8000${img}`);
+                    ? data.clips.map(clip => `${apiUrl}${clip}`)
+                    : generatedImages.map(img => `${apiUrl}${img}`);
 
                 setPlayerProps({
                     clips: videoClips.length > 0 ? videoClips : [
                         "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_5mb.mp4"
                     ],
-                    audioUrl: data.audioUrl ? `http://localhost:8000${data.audioUrl}` : "",
+                    audioUrl: data.audioUrl ? `${apiUrl}${data.audioUrl}` : "",
                     subtitles: data.subtitles || [
                         { text: "VOYEZ", start: 0, end: 15 },
                         { text: "LE", start: 15, end: 30 },
@@ -151,7 +156,8 @@ const Studio = () => {
         if (!selectedScript) return;
         try {
             alert("Rendu de la vidéo finale en cours via FFmpeg. Cela peut prendre quelques secondes...");
-            const response = await fetch('http://localhost:8000/api/workflows/publish', {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const response = await fetch(`${apiUrl}/api/workflows/publish`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ script_id: selectedScript.id })
@@ -159,7 +165,7 @@ const Studio = () => {
             const data = await response.json();
             alert(data.message);
             if (data.status === 'success' && data.videoUrl) {
-                window.open(`http://localhost:8000${data.videoUrl}`, '_blank');
+                window.open(`${apiUrl}${data.videoUrl}`, '_blank');
             }
         } catch (error) {
             console.error("Error publishing:", error);
@@ -262,7 +268,7 @@ const Studio = () => {
                                         <div className="grid grid-cols-2 gap-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
                                             {generatedImages.map((img, idx) => (
                                                 <div key={idx} className="relative aspect-[9/16] bg-navy-900 rounded overflow-hidden border border-gray-700 group flex items-center justify-center">
-                                                    <img src={`http://localhost:8000${img}`} alt={`Generated image ${idx + 1}`} className="w-full h-full object-cover" />
+                                                    <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${img}`} alt={`Generated image ${idx + 1}`} className="w-full h-full object-cover" />
                                                 </div>
                                             ))}
                                         </div>

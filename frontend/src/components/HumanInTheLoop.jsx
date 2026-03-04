@@ -11,7 +11,8 @@ const HumanInTheLoop = () => {
         // Poll for pending questions every 3 seconds
         const pollQuestions = async () => {
             try {
-                const res = await fetch('http://localhost:8000/api/pending-questions');
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                const res = await fetch(`${apiUrl}/api/pending-questions`);
                 const data = await res.json();
                 if (data && data.length > 0) {
                     setPendingQuestion(data[0]); // Handle the first pending question
@@ -31,7 +32,8 @@ const HumanInTheLoop = () => {
         if (!answer.trim() || !pendingQuestion) return;
         setIsSubmitting(true);
         try {
-            await fetch('http://localhost:8000/api/answer-question', {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            await fetch(`${apiUrl}/api/answer-question`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

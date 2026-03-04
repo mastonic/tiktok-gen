@@ -4,14 +4,22 @@ import urllib.parse
 import os
 
 def load_env_local():
-    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env.local")
-    if os.path.exists(env_path):
-        with open(env_path, "r") as f:
-            for line in f:
-                if "=" in line:
-                    key, val = line.strip().split("=", 1)
-                    val = val.strip('"').strip("'")
-                    os.environ[key] = val
+    """Load keys from .env.local if present in the current or parent directory."""
+    # Look in the current script's parent and its parent (project root)
+    search_paths = [
+        os.path.join(os.path.dirname(__file__), ".env.local"),
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env.local")
+    ]
+    for env_path in search_paths:
+        if os.path.exists(env_path):
+            with open(env_path, "r") as f:
+                for line in f:
+                    if "=" in line and not line.strip().startswith("#"):
+                        key, val = line.strip().split("=", 1)
+                        # Only set if not already set in environment
+                        if key not in os.environ:
+                            os.environ[key] = val.strip('"').strip("'")
+            break
 
 # Load keys on module import
 load_env_local()
