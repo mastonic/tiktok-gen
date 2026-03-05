@@ -10,14 +10,12 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
-      - ./.env.local:/app/.env
       - ./backend/media:/app/media
       - ./backend/db.sqlite3:/app/db.sqlite3
     environment:
       - PYTHONUNBUFFERED=1
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     networks:
-      - web-network
+      - n8n_default
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.im-backend.rule=Host(`${BACKEND_DOMAIN}`)"
@@ -25,6 +23,7 @@ services:
       - "traefik.http.routers.im-backend.tls=true"
       - "traefik.http.routers.im-backend.tls.certresolver=myresolver"
       - "traefik.http.services.im-backend.loadbalancer.server.port=8000"
+      - "traefik.docker.network=n8n_default"
 
   frontend:
     build:
@@ -38,10 +37,9 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=production
-      - VITE_API_URL=${VITE_API_URL}
-    command: npm run dev -- --host 0.0.0.0 --port 3000
+      - VITE_API_URL=https://${BACKEND_DOMAIN}
     networks:
-      - web-network
+      - n8n_default
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.im-frontend.rule=Host(`${FRONTEND_DOMAIN}`)"
@@ -49,8 +47,8 @@ services:
       - "traefik.http.routers.im-frontend.tls=true"
       - "traefik.http.routers.im-frontend.tls.certresolver=myresolver"
       - "traefik.http.services.im-frontend.loadbalancer.server.port=3000"
+      - "traefik.docker.network=n8n_default"
 
 networks:
-  web-network:
+  n8n_default:
     external: true
-    name: ${TRAEFIK_NETWORK}
