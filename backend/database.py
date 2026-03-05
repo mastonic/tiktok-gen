@@ -49,6 +49,14 @@ class RunHistory(Base):
     duration = Column(String, default="--")
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class SystemAlert(Base):
+    __tablename__ = "system_alerts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    type = Column(String) # warning, info, danger
+    message = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 # Create all tables in the engine
 Base.metadata.create_all(bind=engine)
 

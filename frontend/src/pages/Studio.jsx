@@ -183,6 +183,13 @@ const Studio = () => {
                     </h1>
                     <p className="text-gray-400 mt-1">Générer les images FLUX.1 et exporter pour Google Veo</p>
                 </div>
+                <button
+                    onClick={fetchScripts}
+                    className="p-2 bg-navy-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-gray-500 transition-all"
+                    title="Rafraîchir les scripts"
+                >
+                    <RefreshCw className="h-5 w-5" />
+                </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -203,9 +210,9 @@ const Studio = () => {
                                 <div className="flex flex-col gap-1.5">
                                     <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
                                         <Calendar className="h-3 w-3 text-pink-400" />
-                                        {new Date(script.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                                        {script.date || (script.created_at ? new Date(script.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : 'Date inconnue')}
                                         <Clock className="h-3 w-3 text-cyan-400 ml-1" />
-                                        {new Date(script.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                        {script.time || (script.created_at ? new Date(script.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '--:--')}
                                     </div>
                                     <p className="text-xs text-gray-500 font-medium">{script.imagePrompts?.length || 0} Storyboard Prompts</p>
                                 </div>

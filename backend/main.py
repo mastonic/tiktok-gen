@@ -17,8 +17,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from crewai import Crew, Process
 from agents import create_agents
 from tasks import create_tasks
-from database import SessionLocal, ScriptInbox, PendingQuestion, RunHistory
-from datetime import datetime
+from database import SessionLocal, ScriptInbox, PendingQuestion, RunHistory, SystemAlert
+from datetime import datetime, timezone
 import uuid
 import comfyui_client
 import fal_client
@@ -83,6 +83,15 @@ async def log_generator():
 async def stream_logs():
     return StreamingResponse(log_generator(), media_type="text/event-stream")
 
+def add_system_alert(alert_type: str, message: str):
+    try:
+        db = SessionLocal()
+        db.add(SystemAlert(type=alert_type, message=message))
+        db.commit()
+        db.close()
+    except Exception as e:
+        print(f"Error adding system alert: {e}")
+
 from typing import Optional
 
 def run_crew_sync(run_type: str, run_id: Optional[str] = None):
@@ -116,19 +125,31 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
             
             data = json.loads(json_str)
             db = SessionLocal()
+            # Keywords come as a list or a string "A, B, C"
+            kw_raw = data.get("mots_cles", [])
+            kw_str = kw_raw if isinstance(kw_raw, str) else ", ".join(kw_raw)
+            
+            # We force status to pending_review so it shows up in Approvals, 
+            # even if agent says it's validated, to give human final say.
+            final_status = "pending_review" 
+            
             new_script = ScriptInbox(
                 title=data.get("titre", "Automated Script"),
                 run_type=run_type,
                 final_script=data.get("script", result),
-                viral_score=85,
+                viral_score=data.get("score_roi", 85),
                 money_score=90,
-                keywords=", ".join(data.get("mots_cles", [])),
+                keywords=kw_str,
                 image_prompts=json.dumps(data.get("image_prompts", [])),
-                status="pending_review" if not data.get("statut_validation") else "approved"
+                status=final_status
             )
             db.add(new_script)
+            
+            # Log this as a system alert
+            db.add(SystemAlert(type="info", message=f"Nouveau script généré : {new_script.title}"))
+            
             db.commit()
-            print("Successfully saved Script to Inbox.")
+            print("Successfully saved Script to Inbox and created Alert.")
             
             if run_id:
                 run_rec = db.query(RunHistory).filter(RunHistory.run_id == run_id).first()
@@ -157,6 +178,7 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
     except Exception as e:
         error_msg = f"ERROR in run_crew_sync:\n{traceback.format_exc()}"
         print(error_msg)
+        add_system_alert("danger", f"Mission échouée : {str(e)[:100]}")
         return f"Error: {e}"
     finally:
         sys.stdout = old_stdout
@@ -306,7 +328,7 @@ async def get_contents():
             "column": col,
             "assignedAgent": "QualityController",
             "riskScore": 10,
-            "created_at": s.created_at.strftime("%H:%M") if s.created_at else None,
+            "created_at": s.created_at.isoformat() if s.created_at else None,
             "date": s.created_at.strftime("%d/%m") if s.created_at else None
         })
         
@@ -360,6 +382,13 @@ async def get_approvals():
             "question": "Approve this script for final video generation and posting?"
         })
     return apps
+
+@app.get("/api/alerts")
+async def get_alerts():
+    db = SessionLocal()
+    alerts = db.query(SystemAlert).order_by(SystemAlert.id.desc()).limit(10).all()
+    db.close()
+    return [{"id": a.id, "type": a.type, "msg": a.message, "time": a.created_at.strftime("%H:%M")} for a in alerts]
 
 @app.post("/api/approvals/{item_id}/approve")
 async def approve_item(item_id: str):

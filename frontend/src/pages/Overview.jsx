@@ -12,6 +12,7 @@ import {
 const Overview = () => {
     const [isRunning, setIsRunning] = useState(false);
     const [trends, setTrends] = useState([]);
+    const [alerts, setAlerts] = useState([]);
 
     const [overviewData, setOverviewData] = useState({
         activeAgents: '0/10',
@@ -25,15 +26,18 @@ const Overview = () => {
         const fetchData = async () => {
             try {
                 const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-                const [overviewRes, trendsRes] = await Promise.all([
+                const [overviewRes, trendsRes, alertsRes] = await Promise.all([
                     fetch(`${apiUrl}/api/overview`),
-                    fetch(`${apiUrl}/api/trends`)
+                    fetch(`${apiUrl}/api/trends`),
+                    fetch(`${apiUrl}/api/alerts`)
                 ]);
                 const overviewData = await overviewRes.json();
                 const trendsData = await trendsRes.json();
+                const alertsData = await alertsRes.json();
 
                 setOverviewData(overviewData);
                 setTrends(trendsData);
+                setAlerts(alertsData);
             } catch (error) {
                 console.error("Error fetching dashboard data:", error);
             }
@@ -146,9 +150,11 @@ const Overview = () => {
                         System Alerts
                     </h3>
                     <div className="space-y-3">
-                        <AlertItem type="warning" msg="Risk threshold exceeded on trend 'Hidden iPhone Settings'" />
-                        <AlertItem type="info" msg="Budget utilization is 15% higher than average today." />
-                        <AlertItem type="danger" msg="Failed run step during 'VideoDirector' generation." />
+                        {alerts.length > 0 ? alerts.map(alert => (
+                            <AlertItem key={alert.id} type={alert.type} msg={alert.msg} time={alert.time} />
+                        )) : (
+                            <div className="text-gray-500 text-sm text-center py-4 italic">No recent alerts.</div>
+                        )}
                     </div>
                 </Card>
             </div>
@@ -172,15 +178,19 @@ const KPI = ({ title, value, icon: Icon, color, target }) => (
     </Card>
 );
 
-const AlertItem = ({ type, msg }) => {
+const AlertItem = ({ type, msg, time }) => {
     const colors = {
         warning: 'border-amber-500/30 text-amber-200 bg-amber-500/10',
         info: 'border-blue-500/30 text-blue-200 bg-blue-500/10',
-        danger: 'border-red-500/30 text-red-200 bg-red-500/10'
+        danger: 'border-red-500/30 text-red-200 bg-red-500/10 success border-emerald-500/30 text-emerald-200 bg-emerald-500/10'
     };
+    // Add fallback for 'info' color if not defined
+    const colorClass = colors[type] || 'border-gray-500/30 text-gray-200 bg-gray-500/10';
+
     return (
-        <div className={`p-3 rounded-lg border text-sm ${colors[type]}`}>
-            {msg}
+        <div className={`p-3 rounded-lg border text-sm flex justify-between items-start gap-3 ${colorClass}`}>
+            <span>{msg}</span>
+            <span className="text-[10px] opacity-60 mt-0.5">{time}</span>
         </div>
     );
 };
