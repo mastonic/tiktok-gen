@@ -6,6 +6,18 @@ const Runs = () => {
     const [runs, setRuns] = useState([]);
     const [expandedRun, setExpandedRun] = useState(null);
 
+    const triggerRun = async (type) => {
+        try {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const response = await fetch(`${apiUrl}/api/run/${type}`, { method: 'POST' });
+            const data = await response.json();
+            alert(data.message || `Mission ${type} lancée !`);
+        } catch (error) {
+            console.error("Failed to trigger run:", error);
+            alert("Erreur lors du lancement de la mission");
+        }
+    };
+
     useEffect(() => {
         const fetchRuns = async () => {
             try {
@@ -13,7 +25,7 @@ const Runs = () => {
                 const response = await fetch(`${apiUrl}/api/runs`);
                 const data = await response.json();
                 setRuns(data);
-                if (data.length > 0) setExpandedRun(data[0].id);
+                if (data.length > 0 && !expandedRun) setExpandedRun(data[0].id);
             } catch (error) {
                 console.error("Failed to fetch runs:", error);
             }
@@ -21,13 +33,33 @@ const Runs = () => {
         fetchRuns();
         const intervalId = setInterval(fetchRuns, 3000);
         return () => clearInterval(intervalId);
-    }, []);
+    }, [expandedRun]);
 
     return (
         <div className="space-y-6 h-full flex flex-col">
             <header className="mb-8">
-                <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Execution Cycles</h1>
-                <p className="text-gray-400">Monitor automated morning and evening system runs.</p>
+                <div className="flex justify-between items-end">
+                    <div>
+                        <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Execution Cycles</h1>
+                        <p className="text-gray-400">Monitor automated morning and evening system runs.</p>
+                    </div>
+                    <div className="flex gap-3">
+                        <Button
+                            onClick={() => triggerRun('matin')}
+                            variant="secondary"
+                            className="bg-amber-600/20 text-amber-400 border border-amber-600/30 hover:bg-amber-600/30"
+                        >
+                            Run Matin
+                        </Button>
+                        <Button
+                            onClick={() => triggerRun('soir')}
+                            variant="primary"
+                            className="bg-cyan-600/20 text-cyan-400 border border-cyan-600/30 hover:bg-cyan-600/30"
+                        >
+                            Run Soir
+                        </Button>
+                    </div>
+                </div>
             </header>
 
             <Card className="flex-1 overflow-hidden flex flex-col p-0 border border-gray-800">

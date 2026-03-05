@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Image, Download, Copy, PlayCircle, Loader2, Film, Wand2, Eye, Clock, Calendar } from 'lucide-react';
+import { Image, Download, Copy, PlayCircle, Loader2, Film, Wand2, Eye, Clock, Calendar, RefreshCw, Video as VideoIcon } from 'lucide-react';
 import { Player } from '@remotion/player';
 import { MyComposition } from '../components/remotion/Composition';
 import { Badge } from '../components/ui';
@@ -397,8 +397,5 @@ const Studio = () => {
         </div>
     );
 };
-
-// Lucide icon missing import above
-import { VideoIcon } from 'lucide-react';
 
 export default Studio;

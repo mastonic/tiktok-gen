@@ -67,14 +67,14 @@ const Approvals = () => {
                     All Pending
                 </button>
                 <button
-                    onClick={() => setActiveTab('topic')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'topic' ? 'bg-cyan-900/40 text-cyan-400 border border-cyan-500/30' : 'text-gray-400 hover:text-white'}`}
+                    onClick={() => setActiveTab('Topic')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'Topic' ? 'bg-cyan-900/40 text-cyan-400 border border-cyan-500/30' : 'text-gray-400 hover:text-white'}`}
                 >
                     Topics
                 </button>
                 <button
-                    onClick={() => setActiveTab('script')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'script' ? 'bg-cyan-900/40 text-cyan-400 border border-cyan-500/30' : 'text-gray-400 hover:text-white'}`}
+                    onClick={() => setActiveTab('Script')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'Script' ? 'bg-cyan-900/40 text-cyan-400 border border-cyan-500/30' : 'text-gray-400 hover:text-white'}`}
                 >
                     Scripts
                 </button>
