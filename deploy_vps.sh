@@ -1,78 +1,52 @@
 #!/bin/bash
 
 # ==============================================================================
-# iM-System: MASTER VPS Deployment Script (Git + Docker + Workflows)
+# iM-System: MASTER VPS Deployment Script with TRAEFIK Integration
 # ==============================================================================
 
 set -e
 
 echo "----------------------------------------------------------------"
-echo "�� iM-System: Starting FULL VPS Installation"
+echo "🚀 iM-System: Starting VPS Deployment (with Traefik Support)"
 echo "----------------------------------------------------------------"
 
-# 1. Install Basic Tools (Git, etc.)
-echo "📦 Installing system tools..."
-sudo apt-get update
-sudo apt-get install -y git curl ffmpeg python3 python3-pip
-
-# 2. Handle Git Cloning
+# 1. Verification des fichiers (Clonage si nécessaire)
 if [ ! -d "backend" ] || [ ! -d "frontend" ]; then
-    echo ""
-    echo "📥 Project not found locally. Let's clone it!"
-    read -p "Enter your GitHub Repo URL (e.g., https://github.com/user/repo.git): " REPO_URL
-    
-    if [ -z "$REPO_URL" ]; then
-        echo "❌ Error: Repo URL is required to proceed."
-        exit 1
-    fi
-
-    PROJECT_NAME=$(basename "$REPO_URL" .git)
-    echo "Cloning $PROJECT_NAME..."
+    echo "📥 Projet non détecté. Vous devez cloner votre repo d'abord."
+    read -p "URL de votre Repo GitHub: " REPO_URL
     git clone "$REPO_URL"
+    PROJECT_NAME=$(basename "$REPO_URL" .git)
     cd "$PROJECT_NAME"
-else
-    echo "✅ Project files detected. Skipping clone."
 fi
 
-# 3. Install Docker & Docker Compose
-echo "🐳 Installing Docker & Compose..."
-if ! command -v docker &> /dev/null; then
-    curl -fsSL https://get.docker.com -o get-docker.sh
-    sudo sh get-docker.sh
-    sudo usermod -aG docker $USER
-fi
+# 2. Configuration spécifique à Traefik
+echo ""
+echo "⚙️  Configuration du Proxy Traefik"
+echo "----------------------------------------------------------------"
+read -p "Domaine principal (ex: im.votre-vps.com): " FRONTEND_DOMAIN
+read -p "Domaine API (ex: api.votre-vps.com): " BACKEND_DOMAIN
+read -p "Réseau Docker utilisé par n8n/traefik (probablement 'n8n_default'): " TRAEFIK_NETWORK
+TRAEFIK_NETWORK=${TRAEFIK_NETWORK:-n8n_default}
 
-if ! docker compose version &> /dev/null; then
-    sudo apt-get install -y docker-compose-plugin
-fi
+# 3. Collecte des Clés API
+echo ""
+echo "🔑 Configuration des Clés API"
+read -p "Enter GEMINI_API_KEY: " GEMINI_API_KEY
+read -p "Enter OPENAI_API_KEY: " OPENAI_API_KEY
+read -p "Enter FAL_KEY: " FAL_KEY
+read -p "Enter VEO_API_KEY: " VEO_API_KEY
+read -p "Enter HF_TOKEN: " HF_TOKEN
+read -p "Enter ELEVENLABS_API_KEY (optional): " ELEVENLABS_API_KEY
 
-# 4. Prepare Directories for Persistence
-echo "📂 Preparing persistent storage..."
+# 4. Preparation de la persistence
+echo "📂 Preparation du stockage..."
 mkdir -p backend/media
 touch backend/db.sqlite3
 chmod -R 777 backend/media
 chmod 666 backend/db.sqlite3
 
-# 5. Collect Configuration & API Keys
-echo ""
-echo "🔑 Configuration: iM-System Setup"
-echo "----------------------------------------------------------------"
-
-read -p "Enter GEMINI_API_KEY: " GEMINI_API_KEY
-read -p "Enter OPENAI_API_KEY (optional): " OPENAI_API_KEY
-read -p "Enter FAL_KEY: " FAL_KEY
-read -p "Enter VEO_API_KEY: " VEO_API_KEY
-read -p "Enter HF_TOKEN: " HF_TOKEN
-read -p "Enter ELEVENLABS_API_KEY (optional): " ELEVENLABS_API_KEY
-read -p "Enter VPS Public IP or Domain (e.g., 123.45.67.89): " VPS_IP
-
-if [ -z "$VPS_IP" ]; then
-    echo "❌ Error: VPS IP is mandatory for the Frontend communication."
-    exit 1
-fi
-
-# 6. Generate Environment Files
-echo "📝 Generating .env files..."
+# 5. Generation du fichier .env pour le backend
+echo "📝 Generation de .env..."
 cat <<EOT > backend/.env
 GEMINI_API_KEY=$GEMINI_API_KEY
 GOOGLE_API_KEY=$GEMINI_API_KEY
@@ -86,21 +60,19 @@ EOT
 
 cp backend/.env .env.local
 
-# 7. Launch System
-echo "🏗️ Building and launching Docker containers..."
-export VITE_API_URL="http://$VPS_IP:8000"
+# 6. Lancement avec Traefik
+echo "🏗️  Déploiement via Traefik..."
+export FRONTEND_DOMAIN=$FRONTEND_DOMAIN
+export BACKEND_DOMAIN=$BACKEND_DOMAIN
+export TRAEFIK_NETWORK=$TRAEFIK_NETWORK
 
+# Nous injectons les variables directement dans docker-compose
 docker compose down || true
 docker compose up --build -d
 
 echo "----------------------------------------------------------------"
-echo "✅ TOTAL DEPLOYMENT SUCCESSFUL!"
+echo "✅ DEPLOYEMENT TERMINE AVEC SUCCES!"
 echo "----------------------------------------------------------------"
-echo "📍 Dashboard: http://$VPS_IP:3000"
-echo "📡 API:       http://$VPS_IP:8000"
-echo ""
-echo "Manage your system:"
-echo "- Logs:    docker compose logs -f"
-echo "- Restart: docker compose restart"
-echo "- Stop:    docker compose down"
+echo "🌐 Dashboard: https://$FRONTEND_DOMAIN"
+echo "📡 Backend API: https://$BACKEND_DOMAIN"
 echo "----------------------------------------------------------------"

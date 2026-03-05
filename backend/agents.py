@@ -5,15 +5,18 @@ import os
 import requests
 from dotenv import load_dotenv
 
-# Load from ../.env.local
+# Load from .env or .env.local
+load_dotenv() # Load from current directory .env
 env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env.local")
-load_dotenv(dotenv_path=env_path)
+if os.path.exists(env_path):
+    load_dotenv(dotenv_path=env_path)
 
 def get_gemini_llm():
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
-        print(f"WARNING: GEMINI_API_KEY not found in {env_path}")
-    return LLM(model="gemini/gemini-2.5-flash", api_key=api_key)
+        print(f"WARNING: GEMINI_API_KEY not found in environment")
+    # Using gemini-1.5-flash as default stable model
+    return LLM(model="gemini/gemini-1.5-flash", api_key=api_key)
 
 def ask_human_in_loop(agent_name: str, context: str, question: str) -> str:
     """
@@ -23,7 +26,7 @@ def ask_human_in_loop(agent_name: str, context: str, question: str) -> str:
     try:
         print(f"[{agent_name}] TRIGGERING HUMAN IN THE LOOP: {question}")
         response = requests.post(
-            "http://localhost:8000/api/internal/ask-human",
+            "http://127.0.0.1:8000/api/internal/ask-human",
             json={
                 "agent_name": agent_name,
                 "context": context[:500],

@@ -17,7 +17,8 @@ const SwarmChat = () => {
     useEffect(() => {
         const fetchThreads = async () => {
             try {
-                const res = await fetch('http://localhost:8000/api/contents');
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                const res = await fetch(`${apiUrl}/api/contents`);
                 const data = await res.json();
 
                 // Map the pipeline contents to thread format
@@ -41,7 +42,8 @@ const SwarmChat = () => {
     useEffect(() => {
         const fetchMessages = async () => {
             try {
-                const res = await fetch(`http://localhost:8000/api/messages?content_id=${selectedThread}`);
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                const res = await fetch(`${apiUrl}/api/messages?content_id=${selectedThread}`);
                 const data = await res.json();
                 setMessages(data);
                 if (data.length > 0) setSelectedMessage(data[0]);
@@ -55,7 +57,8 @@ const SwarmChat = () => {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const res = await fetch('http://localhost:8000/api/logs/history');
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                const res = await fetch(`${apiUrl}/api/logs/history`);
                 const data = await res.json();
                 if (data.logs) {
                     setLiveStreamTexts(data.logs);
@@ -66,7 +69,8 @@ const SwarmChat = () => {
         };
         fetchHistory();
 
-        const eventSource = new EventSource('http://localhost:8000/api/stream');
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+        const eventSource = new EventSource(`${apiUrl}/api/stream`);
 
         eventSource.onmessage = (event) => {
             try {
