@@ -306,7 +306,8 @@ async def get_contents():
             "column": col,
             "assignedAgent": "QualityController",
             "riskScore": 10,
-            "created_at": s.created_at.isoformat() if s.created_at else None
+            "created_at": s.created_at.strftime("%H:%M") if s.created_at else None,
+            "date": s.created_at.strftime("%d/%m") if s.created_at else None
         })
         
     db = SessionLocal()
@@ -322,7 +323,9 @@ async def get_contents():
             "costEstimate": float(run.cost),
             "column": "Script",
             "assignedAgent": "Swarm",
-            "riskScore": 5
+            "riskScore": 5,
+            "created_at": run.time,
+            "date": run.created_at.strftime("%d/%m") if run.created_at else None
         })
     
     return db_contents
@@ -591,19 +594,19 @@ async def get_routes():
     # Return the real default LLM tasks routing used by CrewAI (Gemini)
     return [
         {
-            "task": "Trend Analysis & Scraping", "model": "gemini-2.5-flash", "provider": "Google", 
+            "task": "Trend Analysis & Scraping", "model": "gemini-1.5-flash-latest", "provider": "Google", 
             "cost": "$0.0 / 1M", "reason": "Fast analysis of RSS/Search.", "icon": "⚡"
         },
         {
-            "task": "Content Scoring & Filtering", "model": "gemini-2.5-flash", "provider": "Google", 
+            "task": "Content Scoring & Filtering", "model": "gemini-1.5-flash-latest", "provider": "Google", 
             "cost": "$0.0 / 1M", "reason": "Consistent JSON and analytical reasoning.", "icon": "⚖️"
         },
         {
-            "task": "Script Generation", "model": "gemini-2.5-flash", "provider": "Google", 
+            "task": "Script Generation", "model": "gemini-1.5-flash-latest", "provider": "Google", 
             "cost": "$0.0 / 1M", "reason": "Creative generation in iM style.", "icon": "🧠"
         },
         {
-            "task": "Quality Control & Validation", "model": "gemini-2.5-flash", "provider": "Google", 
+            "task": "Quality Control & Validation", "model": "gemini-1.5-flash-latest", "provider": "Google", 
             "cost": "$0.0 / 1M", "reason": "Final DB formatting.", "icon": "🎬"
         }
     ]

@@ -25,7 +25,9 @@ const SwarmChat = () => {
                 const mappedThreads = data.map(item => ({
                     id: item.id,
                     title: item.title,
-                    status: item.column === 'Review' ? 'Script' : item.column
+                    status: item.column === 'Review' ? 'Script' : item.column,
+                    time: item.created_at,
+                    date: item.date
                 }));
 
                 setThreads(mappedThreads);
@@ -118,7 +120,9 @@ const SwarmChat = () => {
                         >
                             <div className="text-sm font-medium text-gray-200 truncate">{thread.title}</div>
                             <div className="flex justify-between items-center mt-2">
-                                <span className="text-xs text-gray-500">{thread.id}</span>
+                                <span className="text-[10px] text-gray-500 flex items-center gap-1">
+                                    <Activity className="w-3 h-3" /> {thread.date} {thread.time}
+                                </span>
                                 <Badge variant={thread.status === 'Posted' ? 'success' : 'info'} className="text-[10px] px-1.5 py-0">
                                     {thread.status}
                                 </Badge>
