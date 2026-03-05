@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# iM-System: MASTER VPS Deployment Script with TRAEFIK Integration
+# iM-System: MASTER VPS Deployment Script with TRAEFIK Integration (FIXED TLS)
 # ==============================================================================
 
 set -e
@@ -23,8 +23,8 @@ fi
 echo ""
 echo "⚙️  Configuration du Proxy Traefik"
 echo "----------------------------------------------------------------"
-read -p "Domaine principal (ex: im.votre-vps.com): " FRONTEND_DOMAIN
-read -p "Domaine API (ex: api.votre-vps.com): " BACKEND_DOMAIN
+read -p "Domaine principal (ex: m.srv123.hstgr.cloud): " FRONTEND_DOMAIN
+read -p "Domaine API (ex: api.srv123.hstgr.cloud): " BACKEND_DOMAIN
 read -p "Réseau Docker utilisé par n8n/traefik (probablement 'n8n_default'): " TRAEFIK_NETWORK
 TRAEFIK_NETWORK=${TRAEFIK_NETWORK:-n8n_default}
 
@@ -67,6 +67,9 @@ export BACKEND_DOMAIN=$BACKEND_DOMAIN
 export TRAEFIK_NETWORK=$TRAEFIK_NETWORK
 
 # Nous injectons les variables directement dans docker-compose
+# On utilise HTTPS pour le frontend si on a un domaine
+export VITE_API_URL="https://$BACKEND_DOMAIN"
+
 docker compose down || true
 docker compose up --build -d
 

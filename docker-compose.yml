@@ -21,7 +21,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.im-backend.rule=Host(`${BACKEND_DOMAIN}`)"
-      - "traefik.http.routers.im-backend.entrypoints=web"
+      - "traefik.http.routers.im-backend.entrypoints=web,websecure"
+      - "traefik.http.routers.im-backend.tls=true"
+      - "traefik.http.routers.im-backend.tls.certresolver=myresolver"
       - "traefik.http.services.im-backend.loadbalancer.server.port=8000"
 
   frontend:
@@ -43,7 +45,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.im-frontend.rule=Host(`${FRONTEND_DOMAIN}`)"
-      - "traefik.http.routers.im-frontend.entrypoints=web"
+      - "traefik.http.routers.im-frontend.entrypoints=web,websecure"
+      - "traefik.http.routers.im-frontend.tls=true"
+      - "traefik.http.routers.im-frontend.tls.certresolver=myresolver"
       - "traefik.http.services.im-frontend.loadbalancer.server.port=3000"
 
 networks:
