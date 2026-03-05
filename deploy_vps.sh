@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# iM-System: MASTER VPS Deployment Script (IP DIRECT MODE)
+# iM-System: MASTER VPS Deployment Script (IP DIRECT MODE + API KEY MEMORY)
 # ==============================================================================
 
 set -e
@@ -16,12 +16,21 @@ fi
 VPS_IP=$(curl -s ifconfig.me)
 echo "🌐 Adresse IP détectée : $VPS_IP"
 
-# 3. Clés API
-echo "🔑 Configuration des Clés API"
-read -p "Enter GEMINI_API_KEY: " GEMINI_API_KEY
-read -p "Enter FAL_KEY: " FAL_KEY
+# 3. Charger les clés existantes si elles existent
+if [ -f ".env.local" ]; then
+    echo "📂 Récupération des clés existantes depuis .env.local..."
+    source .env.local || true
+fi
 
-# 4. Génération de la configuration (IP DIRECTE)
+# 4. Clés API (avec valeurs par défaut)
+echo "🔑 Configuration des Clés API"
+read -p "Enter GEMINI_API_KEY [${GEMINI_API_KEY:-vide}]: " NEW_GEMINI
+GEMINI_API_KEY=${NEW_GEMINI:-$GEMINI_API_KEY}
+
+read -p "Enter FAL_KEY [${FAL_KEY:-vide}]: " NEW_FAL
+FAL_KEY=${NEW_FAL:-$FAL_KEY}
+
+# 5. Génération de la configuration (IP DIRECTE)
 echo "📝 Génération de la configuration IP..."
 
 # .env global
@@ -32,7 +41,7 @@ VITE_API_URL=http://$VPS_IP:8000
 TRAEFIK_NETWORK=n8n_default
 EOT
 
-# .env frontend (pour être sûr que Vite le voit)
+# .env frontend
 cat <<EOT > frontend/.env
 VITE_API_URL=http://$VPS_IP:8000
 EOT
@@ -44,24 +53,26 @@ FAL_KEY=$FAL_KEY
 PYTHONUNBUFFERED=1
 EOT
 
-cp backend/.env .env.local
+# Sauvegarder pour la prochaine fois
+cat <<EOT > .env.local
+GEMINI_API_KEY=$GEMINI_API_KEY
+FAL_KEY=$FAL_KEY
+EOT
 
-# 5. Création des dossiers storage
+# 6. Création des dossiers storage
 mkdir -p backend/media
 touch backend/db.sqlite3
 chmod -R 777 backend/media
 chmod 666 backend/db.sqlite3
 
-# 6. Relance PROPRE (On expose les ports 3000 et 8000)
-echo "🏗️  Relance des services sur les ports 3000 et 8000..."
+# 7. Relance PROPRE
+echo "🏗️  Relance des services..."
 docker compose down || true
 docker compose up --build -d
 
 echo "----------------------------------------------------------------"
-echo "✅ DEPLOYEMENT IP DIRECT REUSSI !"
+echo "✅ DEPLOYEMENT REUSSI !"
 echo "----------------------------------------------------------------"
 echo "👉 Dashboard : http://$VPS_IP:3000"
 echo "📡 API       : http://$VPS_IP:8000"
-echo "----------------------------------------------------------------"
-echo "ATTENTION : Utilise bien l'URL http://$VPS_IP:3000 (pas de HTTPS)"
 echo "----------------------------------------------------------------"
