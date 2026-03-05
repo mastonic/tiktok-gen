@@ -205,9 +205,17 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
     finally:
         sys.stdout = old_stdout
 
+@app.post("/api/run/{run_type}")
 @app.post("/api/run")
-async def run_mission(payload: dict):
-    run_type = payload.get("type", "matin") # 'matin' or 'soir'
+async def run_mission(run_type: Optional[str] = "matin", payload: Optional[dict] = None):
+    # Determine the actual run type
+    actual_run_type = run_type or "matin"
+    if payload and isinstance(payload, dict) and payload.get("type"):
+        actual_run_type = payload.get("type")
+    
+    # Clean run_type for safety
+    if actual_run_type not in ["matin", "soir"]:
+        actual_run_type = "matin"
     
     run_id = f"run_{uuid.uuid4().hex[:8]}"
     start_time_str = datetime.now().strftime("%I:%M %p")
@@ -215,10 +223,12 @@ async def run_mission(payload: dict):
     db = SessionLocal()
     new_run = RunHistory(
         run_id=run_id,
-        name=f"iM System {run_type.capitalize()}",
+        name=f"iM System {actual_run_type.capitalize()}",
         time=start_time_str,
-        schedule=run_type,
+        schedule=actual_run_type,
         status="running",
+        progress_percent=0,
+        current_step="Démarrage",
         cost="0.00",
         duration="--"
     )
@@ -227,11 +237,11 @@ async def run_mission(payload: dict):
     db.close()
     
     log_capture.history = []
-    log_capture.write(f"--- DÉMARRAGE DU RUN {run_type.upper()} ---\n")
+    log_capture.write(f"--- DÉMARRAGE DU RUN {actual_run_type.upper()} ---\n")
     
     # Run the crew in a separate thread so we don't block the FastAPI event loop
     start_ts = datetime.now()
-    result = await asyncio.to_thread(run_crew_sync, run_type, run_id)
+    result = await asyncio.to_thread(run_crew_sync, actual_run_type, run_id)
     end_ts = datetime.now()
     
     duration = end_ts - start_ts
@@ -291,6 +301,8 @@ async def get_runs():
             "time": r.time,
             "schedule": r.schedule,
             "status": r.status,
+            "progress_percent": r.progress_percent,
+            "current_step": r.current_step,
             "cost": float(r.cost),
             "duration": r.duration
         } for r in runs
