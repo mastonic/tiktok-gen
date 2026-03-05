@@ -1,6 +1,6 @@
-from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException
+from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import asyncio
@@ -202,63 +202,60 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
         print(error_msg)
         add_system_alert("danger", f"Mission échouée : {str(e)[:100]}")
         return f"Error: {e}"
-    finally:
-        sys.stdout = old_stdout
 
 @app.post("/api/run/{run_type}")
 @app.post("/api/run")
-async def run_mission(run_type: Optional[str] = "matin", payload: Optional[dict] = None):
-    # Determine the actual run type
-    actual_run_type = run_type or "matin"
-    if payload and isinstance(payload, dict) and payload.get("type"):
-        actual_run_type = payload.get("type")
-    
-    # Clean run_type for safety
-    if actual_run_type not in ["matin", "soir"]:
+async def run_mission(
+    background_tasks: BackgroundTasks,
+    run_type: Optional[str] = "matin", 
+    payload: Optional[dict] = Body(None)
+):
+    try:
+        # Determine the actual run type
         actual_run_type = "matin"
-    
-    run_id = f"run_{uuid.uuid4().hex[:8]}"
-    start_time_str = datetime.now().strftime("%I:%M %p")
-    
-    db = SessionLocal()
-    new_run = RunHistory(
-        run_id=run_id,
-        name=f"iM System {actual_run_type.capitalize()}",
-        time=start_time_str,
-        schedule=actual_run_type,
-        status="running",
-        progress_percent=0,
-        current_step="Démarrage",
-        cost="0.00",
-        duration="--"
-    )
-    db.add(new_run)
-    db.commit()
-    db.close()
-    
-    log_capture.history = []
-    log_capture.write(f"--- DÉMARRAGE DU RUN {actual_run_type.upper()} ---\n")
-    
-    # Run the crew in a separate thread so we don't block the FastAPI event loop
-    start_ts = datetime.now()
-    result = await asyncio.to_thread(run_crew_sync, actual_run_type, run_id)
-    end_ts = datetime.now()
-    
-    duration = end_ts - start_ts
-    mins, secs = divmod(duration.total_seconds(), 60)
-    final_duration = f"{int(mins)}m {int(secs)}s"
-    
-    db = SessionLocal()
-    run_rec = db.query(RunHistory).filter(RunHistory.run_id == run_id).first()
-    if run_rec:
-        run_rec.status = "completed"
-        run_rec.duration = final_duration
-        run_rec.cost = "0.05"
+        if run_type and run_type in ["matin", "soir"]:
+            actual_run_type = run_type
+        
+        if payload and isinstance(payload, dict) and payload.get("type") in ["matin", "soir"]:
+            actual_run_type = payload.get("type")
+            
+        print(f"--- Triggered Run Mission: {actual_run_type} (Background) ---")
+        
+        run_id = f"run_{uuid.uuid4().hex[:8]}"
+        start_time_str = datetime.now().strftime("%I:%M %p")
+        
+        db = SessionLocal()
+        new_run = RunHistory(
+            run_id=run_id,
+            name=f"iM System {actual_run_type.capitalize()}",
+            time=start_time_str,
+            schedule=actual_run_type,
+            status="running",
+            progress_percent=5,
+            current_step="Initialisation",
+            cost="0.00",
+            duration="--"
+        )
+        db.add(new_run)
         db.commit()
-    db.close()
-
-    log_capture.write("--- RUN TERMINÉ ---\n")
-    return {"status": "success", "result": result}
+        db.close()
+        
+        log_capture.history = []
+        log_capture.write(f"--- DÉMARRAGE DU RUN {actual_run_type.upper()} ---\n")
+        
+        # Launch in background
+        background_tasks.add_task(run_crew_sync, actual_run_type, run_id)
+        
+        return {
+            "status": "success", 
+            "message": f"Run {actual_run_type} started in background.", 
+            "run_id": run_id
+        }
+        
+    except Exception as e:
+        print(f"Error starting mission: {traceback.format_exc()}")
+        add_system_alert("danger", f"Échec du lancement : {str(e)}")
+        return {"status": "error", "message": str(e)}
 
 @app.get("/api/agents")
 async def get_agents():

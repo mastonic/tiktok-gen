@@ -10,3 +10,5 @@ trafilatura
 pytrends
 ffmpeg-python
 piper-tts
+fal-client
+pydantic
