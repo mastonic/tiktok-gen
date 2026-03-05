@@ -6,8 +6,7 @@ if [ ! -d "backend" ] || [ ! -d "frontend" ]; then
     echo "❌ Erreur : Dossiers non trouvés." exit 1
 fi
 
-# 2. Création automatique du réseau si manquant
-echo "🌐 Vérification du réseau Docker..."
+# 2. Réseau Docker
 docker network create n8n_default || true
 
 # 3. IP Auto
@@ -55,7 +54,8 @@ EOT
 
 cat <<EOT > backend/.env
 GEMINI_API_KEY=$GEMINI_API_KEY
-FAL_KEY=$FAL_KEY
+GOOGLE_API_KEY=$GEMINI_API_KEY
+GOOGLE_API_VERSION=v1
 PYTHONUNBUFFERED=1
 EOT
 
@@ -68,13 +68,11 @@ FAL_KEY=$FAL_KEY
 EOT
 
 # 9. Relance
-echo "🏗️  Relance forcée..."
+echo "🏗️  Relance avec GOOGLE_API_VERSION=v1..."
 docker compose down || true
 docker compose up --build -d
 
 echo "----------------------------------------------------------------"
 echo "✅ DÉPLOYÉ SUR : http://$FRONTEND_DOMAIN:3000"
 echo "📡 API SUR : $VITE_API_URL"
-echo "----------------------------------------------------------------"
-echo "💡 Si ça tourne dans le vide, tape : sudo ufw allow 3000/tcp"
 echo "----------------------------------------------------------------"
