@@ -15,8 +15,8 @@ def get_gemini_llm():
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
         print(f"WARNING: GEMINI_API_KEY not found in environment")
-    # Using gemini-1.5-flash as default stable model
-    return LLM(model="gemini/gemini-1.5-flash", api_key=api_key)
+    # Utilisation de gemini-1.5-flash-latest pour éviter l'erreur 404 NOT FOUND
+    return LLM(model="gemini/gemini-1.5-flash-latest", api_key=api_key)
 
 def ask_human_in_loop(agent_name: str, context: str, question: str) -> str:
     """
