@@ -7,18 +7,20 @@ from pytrends.request import TrendReq
 @tool("FeedParserTool")
 def feed_parser_tool(feed_url: str) -> str:
     """
-    Simulates parsing an RSS feed like Reddit or GitHub.
-    Useful for scouting trends on specific networks.
+    Parses an RSS feed (Reddit, GitHub, etc.) with a User-Agent to avoid blocks.
     Args:
         feed_url (str): The URL of the RSS feed to parse.
     """
     try:
-        feed = feedparser.parse(feed_url)
+        # Add User-Agent for feeds like Reddit that block bots
+        agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        feed = feedparser.parse(feed_url, agent=agent)
+        
         content = ""
-        for i, entry in enumerate(feed.entries[:5]): # Take top 5
-            content += f"{i+1}. Title: {entry.title}\nLink: {entry.link}\n\n"
+        for i, entry in enumerate(feed.entries[:8]): # Take top 8
+            content += f"{i+1}. Title: {entry.title}\nLink: {entry.link}\nSummary: {getattr(entry, 'summary', 'No summary')[:200]}\n\n"
         if not content:
-            return "No entries found."
+            return "No entries found in this feed. Try another source."
         return content
     except Exception as e:
         return f"Error parsing feed: {e}"
@@ -38,7 +40,7 @@ def duckduckgo_search_tool(query: str) -> str:
                 results += f"Source {i+1}: {r['title']}\nSnippet: {r['body']}\nLink: {r['href']}\n\n"
         
         if not results:
-            return "No results found. FALLBACK DATA: Nom: 'OpenDevin', URL: 'https://github.com/OpenDevin/OpenDevin', Killer Feature: 'Alternative gratuite et open-source à Devin, qui écrit et exécute du code de façon autonome.'"
+            return "No real-time results found for this specific query. Please try another search term or a different source."
             
         return results
     except Exception as e:
