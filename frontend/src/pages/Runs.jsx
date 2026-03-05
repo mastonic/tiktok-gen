@@ -1,20 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Badge, Button } from '../components/ui';
-import { Clock, DollarSign, Activity, Play, ChevronDown, RotateCcw, Eye } from 'lucide-react';
+import { Modal, Card, Badge, Button } from '../components/ui';
+import { Clock, DollarSign, Activity, Play, ChevronDown, RotateCcw, Eye, Zap, AlertCircle } from 'lucide-react';
 
 const Runs = () => {
     const [runs, setRuns] = useState([]);
     const [expandedRun, setExpandedRun] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [pendingRunType, setPendingRunType] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const triggerRun = async (type) => {
+    const handleOpenModal = (type) => {
+        setPendingRunType(type);
+        setIsModalOpen(true);
+    };
+
+    const triggerRun = async () => {
+        if (!pendingRunType) return;
+        setIsLoading(true);
         try {
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
-            const response = await fetch(`${apiUrl}/api/run/${type}`, { method: 'POST' });
+            const response = await fetch(`${apiUrl}/api/run/${pendingRunType}`, { method: 'POST' });
             const data = await response.json();
-            alert(data.message || `Mission ${type} lancée !`);
+            setIsModalOpen(false);
+            // Non-blocking notification or simple success handling
         } catch (error) {
             console.error("Failed to trigger run:", error);
-            alert("Erreur lors du lancement de la mission");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -45,22 +57,74 @@ const Runs = () => {
                     </div>
                     <div className="flex gap-3">
                         <Button
-                            onClick={() => triggerRun('matin')}
+                            onClick={() => handleOpenModal('matin')}
                             variant="secondary"
                             className="bg-amber-600/20 text-amber-400 border border-amber-600/30 hover:bg-amber-600/30"
                         >
+                            <Zap className="w-4 h-4 mr-2" />
                             Run Matin
                         </Button>
                         <Button
-                            onClick={() => triggerRun('soir')}
+                            onClick={() => handleOpenModal('soir')}
                             variant="primary"
-                            className="bg-cyan-600/20 text-cyan-400 border border-cyan-600/30 hover:bg-cyan-600/30"
+                            className="bg-cyan-600/20 text-cyan-400 border border-cyan-600/30 hover:bg-cyan-600/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]"
                         >
+                            <Play className="w-4 h-4 mr-2" />
                             Run Soir
                         </Button>
                     </div>
                 </div>
             </header>
+
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title={`Confirmer le Cycle ${pendingRunType?.toUpperCase()}`}
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Annuler</Button>
+                        <Button
+                            variant="primary"
+                            onClick={triggerRun}
+                            disabled={isLoading}
+                            className="bg-cyan-600 hover:bg-cyan-500 shadow-lg shadow-cyan-900/20"
+                        >
+                            {isLoading ? (
+                                <span className="flex items-center gap-2">
+                                    <RotateCcw className="w-4 h-4 animate-spin" />
+                                    Lancement...
+                                </span>
+                            ) : "Lancer la mission"}
+                        </Button>
+                    </>
+                }
+            >
+                <div className="space-y-4">
+                    <div className="flex items-start gap-4 p-4 bg-cyan-950/20 border border-cyan-500/20 rounded-xl">
+                        <AlertCircle className="w-6 h-6 text-cyan-400 shrink-0 mt-1" />
+                        <div>
+                            <p className="text-white font-medium">Vous êtes sur le point de lancer l'essaim iM System.</p>
+                            <p className="text-sm text-gray-400 mt-1">L'opération va rechercher des tendances, générer des scripts et préparer les Storyboards en arrière-plan.</p>
+                        </div>
+                    </div>
+
+                    <div className="p-4 bg-navy-950 rounded-xl border border-gray-800 space-y-3">
+                        <h4 className="text-xs font-bold text-gray-500 uppercase">Paramètres du Swarm</h4>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-400 text-xs">Modèle Principal</span>
+                            <Badge variant="cyber">GPT-4o / Gemini 1.5</Badge>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-400 text-xs">Agents Actifs</span>
+                            <span className="text-white">6 Agents Spécialisés</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-400 text-xs">Cout Estimé</span>
+                            <span className="text-amber-400">~$0.05 / run</span>
+                        </div>
+                    </div>
+                </div>
+            </Modal>
 
             <Card className="flex-1 overflow-hidden flex flex-col p-0 border border-gray-800">
                 <div className="overflow-x-auto border-b border-gray-800">
