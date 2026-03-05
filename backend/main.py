@@ -29,10 +29,10 @@ comfyui_client.load_env_local()
 
 app = FastAPI(title="iM System API")
 
-# Explicitly allow localhost:3000 as requested for the React frontend
+# Allow all origins for VPS deployment flexibility
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
