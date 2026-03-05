@@ -27,7 +27,7 @@ function App() {
             case '/approvals':
                 return <Approvals />;
             case '/runs':
-                return <Runs />;
+                return <Runs setPath={setPath} />;
             case '/studio':
                 return <Studio />;
             case '/gallery':

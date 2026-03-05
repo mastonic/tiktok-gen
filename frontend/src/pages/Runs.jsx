@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Card, Badge, Button } from '../components/ui';
 import { Clock, DollarSign, Activity, Play, ChevronDown, RotateCcw, Eye, Zap, AlertCircle } from 'lucide-react';
 
-const Runs = () => {
+const Runs = ({ setPath }) => {
     const [runs, setRuns] = useState([]);
     const [expandedRun, setExpandedRun] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -234,7 +234,11 @@ const Runs = () => {
                                                             </div>
                                                         </div>
 
-                                                        <Button variant="primary" className="w-full flex items-center justify-center gap-2 py-3 shadow-lg shadow-cyan-500/20">
+                                                        <Button
+                                                            variant="primary"
+                                                            onClick={() => setPath('/chat')}
+                                                            className="w-full flex items-center justify-center gap-2 py-3 shadow-lg shadow-cyan-500/20 active:scale-95 transition-transform"
+                                                        >
                                                             <Eye className="w-4 h-4" /> View Full Logs
                                                         </Button>
                                                     </div>
