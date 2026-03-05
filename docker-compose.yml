@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: im-system-backend
     ports:
-      - "8000:8000"
+      - "5656:8000"
     volumes:
       - ./backend:/app
       - ./backend/media:/app/media
