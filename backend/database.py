@@ -45,6 +45,8 @@ class RunHistory(Base):
     time = Column(String)
     schedule = Column(String)
     status = Column(String, default="running")
+    progress_percent = Column(Integer, default=0)
+    current_step = Column(String, default="Initialisation")
     cost = Column(String)
     duration = Column(String, default="--")
     created_at = Column(DateTime, default=datetime.utcnow)

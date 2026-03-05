@@ -83,6 +83,19 @@ async def log_generator():
 async def stream_logs():
     return StreamingResponse(log_generator(), media_type="text/event-stream")
 
+def update_run_progress(run_id: str, percent: int, step: str):
+    if not run_id: return
+    try:
+        db = SessionLocal()
+        run_rec = db.query(RunHistory).filter(RunHistory.run_id == run_id).first()
+        if run_rec:
+            run_rec.progress_percent = percent
+            run_rec.current_step = step
+            db.commit()
+        db.close()
+    except Exception as e:
+        print(f"Error updating run progress: {e}")
+
 def add_system_alert(alert_type: str, message: str):
     try:
         db = SessionLocal()
@@ -99,8 +112,11 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
     old_stdout = sys.stdout
     sys.stdout = log_capture
     try:
+        update_run_progress(run_id, 10, "Configuration des agents")
         print("Creating agents...")
         trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller = create_agents()
+        
+        update_run_progress(run_id, 25, "Planification des tâches")
         print("Creating tasks...")
         tasks = create_tasks(trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, run_type)
         
@@ -112,8 +128,10 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
             verbose=True
         )
         
+        update_run_progress(run_id, 40, "Recherche de tendances & Scoring")
         print("Kicking off crew...")
         result = str(crew.kickoff())
+        update_run_progress(run_id, 85, "Optimisation du script final")
         print(f"Crew execution completed.")
         
         # Parse outcome and save to DB
@@ -155,6 +173,8 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
                 run_rec = db.query(RunHistory).filter(RunHistory.run_id == run_id).first()
                 if run_rec:
                     run_rec.status = "completed"
+                    run_rec.progress_percent = 100
+                    run_rec.current_step = "Terminé"
                     run_rec.cost = "0.05"
                     db.commit()
             db.close()
@@ -170,6 +190,8 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
                     run_rec = db.query(RunHistory).filter(RunHistory.run_id == run_id).first()
                     if run_rec:
                         run_rec.status = "completed"
+                        run_rec.progress_percent = 100
+                        run_rec.current_step = "Terminé (Fallback)"
                         run_rec.cost = "0.05"
                         db.commit()
                 db.close()

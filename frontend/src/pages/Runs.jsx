@@ -97,10 +97,25 @@ const Runs = () => {
                                             </div>
                                         </td>
                                         <td className="py-4 px-6">
-                                            <Badge variant={run.status === 'completed' ? 'success' : 'cyber'} className="flex inline-flex items-center gap-1.5 px-3 py-1">
-                                                {run.status === 'running' && <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>}
-                                                {run.status.toUpperCase()}
-                                            </Badge>
+                                            <div className="flex flex-col gap-2">
+                                                <Badge variant={run.status === 'completed' ? 'success' : 'cyber'} className="flex inline-flex items-center gap-1.5 px-3 py-1 w-fit">
+                                                    {run.status === 'running' && <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>}
+                                                    {run.status.toUpperCase()}
+                                                </Badge>
+                                                {run.status === 'running' && (
+                                                    <div className="flex flex-col gap-1">
+                                                        <div className="w-32 bg-gray-800 rounded-full h-1.5 overflow-hidden border border-gray-700">
+                                                            <div
+                                                                className="bg-gradient-to-r from-cyan-600 to-cyan-400 h-full transition-all duration-1000"
+                                                                style={{ width: `${run.progress_percent || 0}%` }}
+                                                            ></div>
+                                                        </div>
+                                                        <span className="text-[10px] text-cyan-400 font-mono animate-pulse uppercase">
+                                                            {run.current_step || 'Initialisation...'}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="py-4 px-6 text-right">
                                             <div className="flex flex-col items-end gap-1 text-sm font-mono">
@@ -122,7 +137,14 @@ const Runs = () => {
 
                                                     {/* Timeline */}
                                                     <div className="flex-1">
-                                                        <h4 className="text-sm font-semibold text-gray-400 mb-6 uppercase tracking-wider">Swarm Execution Pipeline</h4>
+                                                        <div className="flex justify-between items-center mb-6">
+                                                            <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Swarm Execution Pipeline</h4>
+                                                            {run.status === 'running' && (
+                                                                <Badge variant="outline" className="text-cyan-400 border-cyan-500/30 bg-cyan-500/5">
+                                                                    STEP: {run.current_step} ({run.progress_percent}%)
+                                                                </Badge>
+                                                            )}
+                                                        </div>
 
                                                         <div className="relative border-l-2 border-gray-700 ml-4 space-y-6">
                                                             <TimelineStep title="Trend Analysis & Setup" time="00:00" duration="1m 30s" active={run.status === 'running'} status="done" />
