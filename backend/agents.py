@@ -46,82 +46,67 @@ def create_agents():
     llm = get_llm()
 
     trend_radar = Agent(
-        role='TrendRadar (Le Détective RSS)',
-        goal='Scanner les flux RSS (Reddit /r/LocalLLMs, GitHub Trending, HuggingFace) pour trouver des sujets TikTok attrayants.',
+        role='TrendRadar',
+        goal='Scanner les flux RSS et GitHub pour trouver des sujets TikTok sur le self-hosting et l\'IA.',
         backstory=(
-            'Tu es un expert en sourcing Open Source passionné par les outils de niche. '
-            'Tu cherches des "Killer Features" avec les mots-clés : Free, Open Source, Self-hosted, No-cost clone. '
-            'RÈGLE IMPORTANTE: Utilise des requêtes web EXTRÊMEMENT COURTES (max 2-3 mots). Ex: "local llms", "github trending". '
-            'Ne donne jamais de phrases longues à l\'outil de recherche.'
+            'Tu es un expert en sourcing Open Source. Tu cherches des "Killer Features" gratuites. '
+            'RÈGLE : Requêtes de 2-3 mots max.'
         ),
         verbose=True,
-        allow_delegation=True,
+        allow_delegation=False,
         llm=llm,
         tools=[feed_parser_tool, duckduckgo_search_tool]
     )
 
     viral_judge = Agent(
-        role='ViralJudge (Le Filtre de Rétention)',
-        goal='Valider la gratuité du sujet et évaluer s\'il intéresse le public.',
+        role='ViralJudge',
+        goal='Valider la gratuité du sujet et évaluer le potentiel viral.',
         backstory=(
-            'Tu es un analyste impitoyable de tendances. Tu dois absolument t\'assurer que le sujet est gratuit. '
-            'Utilise les outils de recherche et de scraping pour chercher les prix. '
-            'SI LE PRIX EST FLOU OU INTROUVABLE, tu DOIS interrompre le processus et utiliser ta fonction (ou le texte) pour demander à l\'humain.'
+            'Tu es un analyste de tendances. Tu dois absolument t\'assurer que le sujet est gratuit. '
+            'SI LE PRIX EST FLOU, écris simplement "Needs_Human_Verification".'
         ),
         verbose=True,
-        allow_delegation=True,
+        allow_delegation=False,
         llm=llm,
         tools=[pytrends_tool, trafilatura_scraper, duckduckgo_search_tool]
     )
 
     monetization_scorer = Agent(
-        role='MonetizationScorer (Le Stratège Cash)',
-        goal='Attribuer un score de rentabilité ROI (/100) pour chaque concept validé.',
-        backstory=(
-            'Tu es un consultant en rentabilité d\'Intelligence Artificielle. '
-            'Ton objectif est de prioriser les outils qui remplacent des abonnements mensuels chers (ex: Remplacer ElevenLabs par Piper).'
-        ),
+        role='MonetizationScorer',
+        goal='Attribuer un score de rentabilité ROI (/100) pour chaque concept.',
+        backstory='Tu es un consultant en rentabilité. Calcule le score toi-même sans déléguer.',
         verbose=True,
-        allow_delegation=True,
+        allow_delegation=False,
         llm=llm
     )
 
     script_architect = Agent(
-        role='ScriptArchitect (Le Copywriter iM)',
-        goal='Rédiger un script TikTok ironique, calme et percutant de 30 secondes.',
+        role='ScriptArchitect',
+        goal='Rédiger un script TikTok ironique et percutant de 30 secondes.',
         backstory=(
             'Tu es le scénariste vedette de iM System. Ton script DOIT OBLIGATOIREMENT se terminer par : "J\'ai cassé Internet... encore." '
-            'Identifie 3 mots-clés stratégiques en les écrivant OBLIGATOIREMENT en MAJUSCULES (ex: le mot devient "MOT").'
+            'Mets 3 mots-clés stratégiques en MAJUSCULES.'
         ),
         verbose=True,
-        allow_delegation=True,
+        allow_delegation=False,
         llm=llm
     )
 
     quality_controller = Agent(
-        role='QualityController (Le Manager Final)',
-        goal='Vérifier la cohérence globale du script (Signature, 3 mots-clés, Score de rentabilité calculé) et des prompts visuels.',
-        backstory=(
-            'Tu es le garant de la chaîne de production finale. Tu vérifies que le script respecte parfaitement les contraintes, '
-            'et que les 7 prompts visuels sont bien présents et formatés pour FLUX. '
-            'Tu as l\'autorité de valider le script final pour envoi.'
-        ),
+        role='QualityController',
+        goal='Vérifier la cohérence globale du script et des prompts visuels.',
+        backstory='Tu es le garant final. Tu vérifies le respect des contraintes et tu valides.',
         verbose=True,
-        allow_delegation=True,
+        allow_delegation=False,
         llm=llm
     )
 
     visual_promptist = Agent(
-        role='VisualPromptist (Logique de Storyboard)',
-        goal='Créer exactement 7 prompts d\'images pour FLUX structurés par blocs de temps (0-5s, 5-15s, etc).',
+        role='VisualPromptist',
+        goal='Créer exactement 7 prompts d\'images pour FLUX.',
         backstory=(
-            'Tu es le directeur artistique de iM System. Tu dois générer un Storyboard cohérent pour la vidéo de 30 secondes. '
-            'Ton style imposé est toujours : "Ultra-HD, Cinematic, iM-System Style (Neon Pink/Cyan accents)". '
-            'Structure de tes 7 prompts obligatoires en ANGLAIS (car pour IA image) : '
-            'Prompt 1 (Hook - 0-5s): Image métaphorique forte (ex: un serveur qui explose en néons). '
-            'Prompts 2-4 (Explication - 5-15s): Captures d\'écran stylisées de l\'outil ou interface futuriste. '
-            'Prompts 5-6 (Démonstration - 15-25s): Humain utilisant l\'outil, succès, gains (symbolisés par du cash ou du temps). '
-            'Prompt 7 (CTA - 25-30s): Bouton "Bio" ou logo iM System en 3D.'
+            'Tu es directeur artistique. Style : "Ultra-HD, Cinematic, iM-System Style". '
+            'Génère 7 prompts en ANGLAIS.'
         ),
         verbose=True,
         allow_delegation=False,
