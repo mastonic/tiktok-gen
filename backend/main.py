@@ -434,6 +434,9 @@ async def get_contents():
                 # Audio
                 has_audio = os.path.exists(os.path.join(job_dir, "voiceover.wav"))
 
+                # Final Video
+                has_final_video = os.path.exists(os.path.join(job_dir, "final_output.mp4"))
+
             db_contents.append({
                 "id": f"db_{s.id}",
                 "title": s.title or "Untitled Generated Script",
@@ -444,6 +447,8 @@ async def get_contents():
                 "moneyScore": s.money_score or 90,
                 "finalScore": 88,
                 "costEstimate": 0.05,
+                "hasFinalVideo": has_final_video,
+                "finalVideoUrl": f"/media/production/db_{s.id}/final_output.mp4" if has_final_video else None,
                 "column": col,
                 "assignedAgent": "QualityController",
                 "riskScore": 10,
