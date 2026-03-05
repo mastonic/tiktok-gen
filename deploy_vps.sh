@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# iM-System: MASTER VPS Deployment Script (Traefik Fix)
+# iM-System: MASTER VPS Deployment Script (Hardcoded Network Fix)
 # ==============================================================================
 
 set -e
@@ -13,26 +13,25 @@ if [ ! -d "backend" ] || [ ! -d "frontend" ]; then
 fi
 
 # 2. Configuration Traefik
-echo "⚙️  Configuration Traefik"
+echo "⚙️  Configuration Traefik Hostinger"
+echo "----------------------------------------------------------------"
 read -p "Domaine principal (ex: m.srv1146904.hstgr.cloud): " FRONTEND_DOMAIN
 read -p "Domaine API (ex: api.srv1146904.hstgr.cloud): " BACKEND_DOMAIN
-read -p "Réseau Traefik (souvent 'n8n_default' ou 'traefik_network'): " TRAEFIK_NETWORK
-TRAEFIK_NETWORK=${TRAEFIK_NETWORK:-n8n_default}
 
 # 3. Clés API
-echo "🔑 Clés API"
+echo ""
+echo "🔑 Configuration des Clés API"
 read -p "Enter GEMINI_API_KEY: " GEMINI_API_KEY
 read -p "Enter FAL_KEY: " FAL_KEY
 
 # 4. Génération des fichiers de config
 echo "📝 Génération de la configuration..."
 
-# .env global pour Docker Compose
+# .env global pour Docker Compose (BACKEND_DOMAIN et FRONTEND_DOMAIN sont utilisés dans docker-compose.yml)
 cat <<EOT > .env
 FRONTEND_DOMAIN=$FRONTEND_DOMAIN
 BACKEND_DOMAIN=$BACKEND_DOMAIN
 VITE_API_URL=https://$BACKEND_DOMAIN
-TRAEFIK_NETWORK=$TRAEFIK_NETWORK
 EOT
 
 # .env spécifique au Backend
@@ -51,12 +50,13 @@ chmod -R 777 backend/media
 chmod 666 backend/db.sqlite3
 
 # 6. Relance PROPRE
-echo "🏗️  Relance des services..."
+echo "🏗️  Relance des services (Hardcoded Network: n8n_default)..."
 docker compose down || true
 docker compose up --build -d
 
 echo "----------------------------------------------------------------"
-echo "✅ Mise à jour terminée."
-echo "Si le domaine ne marche pas encore, essaie l'IP directement :"
-echo "http://$(curl -s ifconfig.me):3000"
+echo "✅ DEPLOYEMENT REUSSI !"
+echo "----------------------------------------------------------------"
+echo "🌐 Dashboard: https://$FRONTEND_DOMAIN"
+echo "📡 Backend API: https://$BACKEND_DOMAIN"
 echo "----------------------------------------------------------------"
