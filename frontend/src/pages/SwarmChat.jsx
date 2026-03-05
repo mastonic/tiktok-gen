@@ -17,7 +17,7 @@ const SwarmChat = () => {
     useEffect(() => {
         const fetchThreads = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
                 const res = await fetch(`${apiUrl}/api/contents`);
                 const data = await res.json();
 
@@ -44,7 +44,7 @@ const SwarmChat = () => {
     useEffect(() => {
         const fetchMessages = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
                 const res = await fetch(`${apiUrl}/api/messages?content_id=${selectedThread}`);
                 const data = await res.json();
                 setMessages(data);
@@ -59,7 +59,7 @@ const SwarmChat = () => {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
                 const res = await fetch(`${apiUrl}/api/logs/history`);
                 const data = await res.json();
                 if (data.logs) {
@@ -71,7 +71,7 @@ const SwarmChat = () => {
         };
         fetchHistory();
 
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
         const eventSource = new EventSource(`${apiUrl}/api/stream`);
 
         eventSource.onmessage = (event) => {

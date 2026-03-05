@@ -19,7 +19,7 @@ const Studio = () => {
 
     const fetchScripts = async () => {
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
             const response = await fetch(`${apiUrl}/api/contents`);
             const data = await response.json();
             // Filter scripts that actually have image prompts
@@ -41,7 +41,7 @@ const Studio = () => {
         if (!selectedScript) return;
         setIsGenerating(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
             const response = await fetch(`${apiUrl}/api/flux/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -78,7 +78,7 @@ const Studio = () => {
         if (!selectedScript) return;
         try {
             setVideoProgress({ total: 100, completed: 0, status: 'Démarrage...' });
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
             const response = await fetch(`${apiUrl}/api/workflows/image-to-video`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -88,7 +88,7 @@ const Studio = () => {
 
             const interval = setInterval(async () => {
                 try {
-                    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
                     const res = await fetch(`${apiUrl}/api/workflows/progress/${selectedScript.id}`);
                     if (!res.ok) return;
                     const progressData = await res.json();
@@ -120,7 +120,7 @@ const Studio = () => {
     const handleAssemblageViral = async () => {
         if (!selectedScript) return;
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
             const response = await fetch(`${apiUrl}/api/workflows/assemblage-viral`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -156,7 +156,7 @@ const Studio = () => {
         if (!selectedScript) return;
         try {
             alert("Rendu de la vidéo finale en cours via FFmpeg. Cela peut prendre quelques secondes...");
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
             const response = await fetch(`${apiUrl}/api/workflows/publish`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -275,7 +275,7 @@ const Studio = () => {
                                         <div className="grid grid-cols-2 gap-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
                                             {generatedImages.map((img, idx) => (
                                                 <div key={idx} className="relative aspect-[9/16] bg-navy-900 rounded overflow-hidden border border-gray-700 group flex items-center justify-center">
-                                                    <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${img}`} alt={`Generated image ${idx + 1}`} className="w-full h-full object-cover" />
+                                                    <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:5656'}${img}`} alt={`Generated image ${idx + 1}`} className="w-full h-full object-cover" />
                                                 </div>
                                             ))}
                                         </div>

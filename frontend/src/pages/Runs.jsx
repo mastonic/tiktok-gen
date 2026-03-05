@@ -8,7 +8,7 @@ const Runs = () => {
 
     const triggerRun = async (type) => {
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
             const response = await fetch(`${apiUrl}/api/run/${type}`, { method: 'POST' });
             const data = await response.json();
             alert(data.message || `Mission ${type} lancée !`);
@@ -21,7 +21,7 @@ const Runs = () => {
     useEffect(() => {
         const fetchRuns = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
                 const response = await fetch(`${apiUrl}/api/runs`);
                 const data = await response.json();
                 setRuns(data);

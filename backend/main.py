@@ -279,14 +279,17 @@ async def get_trends():
     
     trends = []
     for s in scripts:
-        trends.append({
-            "id": s.id,
-            "title": s.title or "Untitled Script",
-            "viralScore": s.viral_score or 85,
-            "moneyScore": s.money_score or 90,
-            "finalScore": 88,
-            "status": s.status.replace("_", " ").title()
-        })
+        try:
+            trends.append({
+                "id": s.id,
+                "title": s.title or "Untitled Script",
+                "viralScore": s.viral_score or 85,
+                "moneyScore": s.money_score or 90,
+                "finalScore": 88,
+                "status": (s.status or "pending").replace("_", " ").title()
+            })
+        except:
+            continue
     return trends
 
 @app.get("/api/runs")
@@ -318,22 +321,40 @@ async def get_log_history():
 
 @app.get("/api/overview")
 async def get_overview():
-    db = SessionLocal()
-    scripts = db.query(ScriptInbox).all()
-    videos = sum(1 for s in scripts if s.status == "posted")
-    runs = db.query(RunHistory).all()
-    db.close()
-    
-    cost = sum(float(r.cost) for r in runs if hasattr(r, 'cost') and r.cost)
-    profit_score = sum(s.money_score or 0 for s in scripts) / max(len(scripts), 1)
+    try:
+        db = SessionLocal()
+        scripts = db.query(ScriptInbox).all()
+        videos = sum(1 for s in scripts if s.status == "posted")
+        runs = db.query(RunHistory).all()
+        db.close()
+        
+        total_cost = 0.0
+        for r in runs:
+            try:
+                if r.cost and str(r.cost).replace('.', '', 1).isdigit():
+                    total_cost += float(r.cost)
+            except:
+                continue
+                
+        profit_score = sum(s.money_score or 0 for s in scripts) / max(len(scripts), 1)
 
-    return {
-        "activeAgents": "5/5",
-        "videosToday": f"{videos}/{max(videos, 2)}",
-        "aiCostToday": f"${cost:.2f}",
-        "estProfitScore": f"{profit_score:.1f}",
-        "budgetRemaining": f"${max(0, 15 - cost):.2f}"
-    }
+        return {
+            "activeAgents": "5/5",
+            "videosToday": f"{videos}/{max(videos, 2)}",
+            "aiCostToday": f"${total_cost:.2f}",
+            "estProfitScore": f"{profit_score:.1f}",
+            "budgetRemaining": f"${max(0.0, 15.0 - total_cost):.2f}"
+        }
+    except Exception as e:
+        print(f"Error in get_overview: {traceback.format_exc()}")
+        return {
+            "activeAgents": "5/5",
+            "videosToday": "0/2",
+            "aiCostToday": "$0.00",
+            "estProfitScore": "0.0",
+            "budgetRemaining": "$15.00",
+            "error": str(e)
+        }
 
 @app.get("/api/contents")
 async def get_contents():
@@ -349,12 +370,17 @@ async def get_contents():
         elif s.status == "posted": col = "Posted"
         elif s.status == "pending_review": col = "Review"
         
+        try:
+            image_prompts = json.loads(s.image_prompts) if s.image_prompts else []
+        except:
+            image_prompts = []
+
         db_contents.append({
             "id": f"db_{s.id}",
             "title": s.title or "Untitled Generated Script",
             "script": s.final_script,
             "keywords": s.keywords,
-            "imagePrompts": json.loads(s.image_prompts) if s.image_prompts else [],
+            "imagePrompts": image_prompts,
             "viralScore": s.viral_score or 85,
             "moneyScore": s.money_score or 90,
             "finalScore": 88,
@@ -398,10 +424,10 @@ async def get_approvals():
         apps.append({
             "id": f"q_{q.id}",
             "title": f"Question from {q.agent_name}",
-            "type": "Manual Review",
+            "type": "Topic",
             "status": "Pending",
-            "context": q.context,
-            "question": q.question
+            "context": q.context or "No context provided",
+            "question": q.question or "No question available"
         })
     for s in scripts:
         apps.append({
@@ -409,7 +435,7 @@ async def get_approvals():
             "title": s.title or "Generated Script Review",
             "type": "Script",
             "script": s.final_script,
-            "keywords": s.keywords,
+            "keywords": s.keywords or "",
             "imagePrompts": json.loads(s.image_prompts) if s.image_prompts else [],
             "status": "Review",
             "context": "Final review of the generated script content.",
