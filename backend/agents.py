@@ -11,14 +11,13 @@ env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env.local"
 if os.path.exists(env_path):
     load_dotenv(dotenv_path=env_path)
 
-def get_llm():
+def get_llm(model_name="openai/gpt-4o-mini"):
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         print(f"WARNING: OPENAI_API_KEY not found in environment, falling back to gemini")
-        # Fallback Gemini stable logic if OpenAI missing
         return ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=os.environ.get("GEMINI_API_KEY"))
     
-    return LLM(model="openai/gpt-4o-mini", api_key=api_key)
+    return LLM(model=model_name, api_key=api_key)
 
 def ask_human_in_loop(agent_name: str, context: str, question: str) -> str:
     """
@@ -42,8 +41,11 @@ def ask_human_in_loop(agent_name: str, context: str, question: str) -> str:
     except Exception as e:
         return f"Failed to reach Human: {e}"
 
-def create_agents():
-    llm = get_llm()
+def create_agents(config=None):
+    # config is a dict: { 'TrendRadar': 'openai/gpt-4o', ... }
+    def get_agent_llm(role):
+        m = config.get(role, "openai/gpt-4o-mini") if config else "openai/gpt-4o-mini"
+        return get_llm(m)
 
     trend_radar = Agent(
         role='TrendRadar',
@@ -54,7 +56,7 @@ def create_agents():
         ),
         verbose=True,
         allow_delegation=False,
-        llm=llm,
+        llm=get_agent_llm('TrendRadar'),
         tools=[feed_parser_tool, duckduckgo_search_tool]
     )
 
@@ -67,7 +69,7 @@ def create_agents():
         ),
         verbose=True,
         allow_delegation=False,
-        llm=llm,
+        llm=get_agent_llm('ViralJudge'),
         tools=[pytrends_tool, trafilatura_scraper, duckduckgo_search_tool]
     )
 
@@ -77,7 +79,7 @@ def create_agents():
         backstory='Tu es un consultant en rentabilité. Calcule le score toi-même sans déléguer.',
         verbose=True,
         allow_delegation=False,
-        llm=llm
+        llm=get_agent_llm('MonetizationScorer')
     )
 
     script_architect = Agent(
@@ -89,7 +91,7 @@ def create_agents():
         ),
         verbose=True,
         allow_delegation=False,
-        llm=llm
+        llm=get_agent_llm('ScriptArchitect')
     )
 
     quality_controller = Agent(
@@ -98,7 +100,7 @@ def create_agents():
         backstory='Tu es le garant final. Tu vérifies le respect des contraintes et tu valides.',
         verbose=True,
         allow_delegation=False,
-        llm=llm
+        llm=get_agent_llm('QualityController')
     )
 
     visual_promptist = Agent(
@@ -110,7 +112,7 @@ def create_agents():
         ),
         verbose=True,
         allow_delegation=False,
-        llm=llm
+        llm=get_agent_llm('VisualPromptist')
     )
 
     return trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller

@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException, Body, Request
+from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -17,7 +18,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from crewai import Crew, Process
 from agents import create_agents
 from tasks import create_tasks
-from database import SessionLocal, ScriptInbox, PendingQuestion, RunHistory, SystemAlert
+from database import SessionLocal, ScriptInbox, PendingQuestion, RunHistory, SystemAlert, AgentConfig
 from datetime import datetime, timezone
 import uuid
 import comfyui_client
@@ -121,8 +122,12 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
     sys.stdout = log_capture
     try:
         update_run_progress(run_id, 10, "Configuration des agents")
-        print("Creating agents...")
-        trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller = create_agents()
+        db = SessionLocal()
+        agent_configs = db.query(AgentConfig).all()
+        db.close()
+        config_dict = {a.role: a.model for a in agent_configs}
+        
+        trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller = create_agents(config=config_dict)
         
         update_run_progress(run_id, 25, "Planification des tâches")
         print("Creating tasks...")
@@ -269,14 +274,39 @@ async def run_mission(
 
 @app.get("/api/agents")
 async def get_agents():
-    # Real agent configurations
-    return [
-        {"id": "a1", "name": "TrendRadar", "role": "Détective RSS", "status": "Idle", "performance": 100},
-        {"id": "a2", "name": "ViralJudge", "role": "Filtre Rétention", "status": "Idle", "performance": 100},
-        {"id": "a3", "name": "MonetizationScorer", "role": "Stratège Cash", "status": "Idle", "performance": 100},
-        {"id": "a4", "name": "ScriptArchitect", "role": "Copywriter iM", "status": "Idle", "performance": 100},
-        {"id": "a5", "name": "QualityController", "role": "Manager Final", "status": "Idle", "performance": 100}
-    ]
+    db = SessionLocal()
+    agents = db.query(AgentConfig).all()
+    db.close()
+    return [{
+        "id": a.id,
+        "role": a.role,
+        "name": a.name,
+        "status": a.status,
+        "model": a.model,
+        "performance": 100
+    } for a in agents]
+
+class UpdateAgentPayload(BaseModel):
+    id: int
+    model: Optional[str] = None
+    status: Optional[str] = None
+
+@app.post("/api/agents/update")
+async def update_agent(payload: UpdateAgentPayload):
+    db = SessionLocal()
+    agent = db.query(AgentConfig).filter(AgentConfig.id == payload.id).first()
+    if not agent:
+        db.close()
+        raise HTTPException(status_code=404, detail="Agent non trouvé")
+    
+    if payload.model:
+        agent.model = payload.model
+    if payload.status:
+        agent.status = payload.status
+    
+    db.commit()
+    db.close()
+    return {"status": "success", "message": f"Agent {agent.name} mis à jour."}
 
 @app.get("/api/trends")
 async def get_trends():

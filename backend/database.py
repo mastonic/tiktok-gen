@@ -112,9 +112,40 @@ class SystemAlert(Base):
     message = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class AgentConfig(Base):
+    __tablename__ = "agent_configs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    role = Column(String, unique=True, index=True)
+    name = Column(String)
+    model = Column(String, default="openai/gpt-4o-mini")
+    temperature = Column(String, default="0.7")
+    status = Column(String, default="Idle")
+    is_active = Column(Boolean, default=True)
+
 # Create all tables in the engine
 Base.metadata.create_all(bind=engine)
 migrate_db()
+
+# Seeding default agents if empty
+def seed_agents():
+    db = SessionLocal()
+    count = db.query(AgentConfig).count()
+    if count == 0:
+        defaults = [
+            {"role": "TrendRadar", "name": "TrendRadar", "model": "openai/gpt-4o-mini"},
+            {"role": "ViralJudge", "name": "ViralJudge", "model": "openai/gpt-4o-mini"},
+            {"role": "MonetizationScorer", "name": "MonetizationScorer", "model": "openai/gpt-4o-mini"},
+            {"role": "ScriptArchitect", "name": "ScriptArchitect", "model": "openai/gpt-4o-mini"},
+            {"role": "VisualPromptist", "name": "VisualPromptist", "model": "openai/gpt-4o-mini"},
+            {"role": "QualityController", "name": "QualityController", "model": "openai/gpt-4o-mini"},
+        ]
+        for d in defaults:
+            db.add(AgentConfig(**d))
+        db.commit()
+    db.close()
+
+seed_agents()
 
 def get_db():
     db = SessionLocal()
