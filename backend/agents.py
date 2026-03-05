@@ -11,17 +11,14 @@ env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env.local"
 if os.path.exists(env_path):
     load_dotenv(dotenv_path=env_path)
 
-def get_gemini_llm():
-    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+def get_llm():
+    api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        print(f"WARNING: GEMINI_API_KEY not found in environment")
+        print(f"WARNING: OPENAI_API_KEY not found in environment, falling back to gemini")
+        # Fallback Gemini stable logic if OpenAI missing
+        return ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=os.environ.get("GEMINI_API_KEY"))
     
-    # Utilisation de ChatGoogleGenerativeAI (LangChain) qui est plus robuste sur les endpoints API
-    return ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
-        google_api_key=api_key,
-        temperature=0.7
-    )
+    return LLM(model="openai/gpt-4o-mini", api_key=api_key)
 
 def ask_human_in_loop(agent_name: str, context: str, question: str) -> str:
     """
@@ -46,7 +43,7 @@ def ask_human_in_loop(agent_name: str, context: str, question: str) -> str:
         return f"Failed to reach Human: {e}"
 
 def create_agents():
-    gemini_llm = get_gemini_llm()
+    llm = get_llm()
 
     trend_radar = Agent(
         role='TrendRadar (Le Détective RSS)',
@@ -59,7 +56,7 @@ def create_agents():
         ),
         verbose=True,
         allow_delegation=True,
-        llm=gemini_llm,
+        llm=llm,
         tools=[feed_parser_tool, duckduckgo_search_tool]
     )
 
@@ -73,7 +70,7 @@ def create_agents():
         ),
         verbose=True,
         allow_delegation=True,
-        llm=gemini_llm,
+        llm=llm,
         tools=[pytrends_tool, trafilatura_scraper, duckduckgo_search_tool]
     )
 
@@ -86,7 +83,7 @@ def create_agents():
         ),
         verbose=True,
         allow_delegation=True,
-        llm=gemini_llm
+        llm=llm
     )
 
     script_architect = Agent(
@@ -98,7 +95,7 @@ def create_agents():
         ),
         verbose=True,
         allow_delegation=True,
-        llm=gemini_llm
+        llm=llm
     )
 
     quality_controller = Agent(
@@ -111,7 +108,7 @@ def create_agents():
         ),
         verbose=True,
         allow_delegation=True,
-        llm=gemini_llm
+        llm=llm
     )
 
     visual_promptist = Agent(
@@ -128,7 +125,7 @@ def create_agents():
         ),
         verbose=True,
         allow_delegation=False,
-        llm=gemini_llm
+        llm=llm
     )
 
     return trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller
