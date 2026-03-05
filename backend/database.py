@@ -9,6 +9,46 @@ DB_PATH = os.path.join(BASE_DIR, "db.sqlite3")
 engine = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+def migrate_db():
+    import sqlite3
+    if not os.path.exists(DB_PATH):
+        return
+    
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    # Check run_history
+    cursor.execute("PRAGMA table_info(run_history)")
+    columns = [row[1] for row in cursor.fetchall()]
+    
+    if columns: # Only if table exists
+        needed = {
+            "progress_percent": "INTEGER DEFAULT 0",
+            "current_step": "TEXT DEFAULT 'Initialisation'",
+            "duration": "TEXT DEFAULT '--'",
+            "schedule": "TEXT"
+        }
+        for col, type_def in needed.items():
+            if col not in columns:
+                try:
+                    cursor.execute(f"ALTER TABLE run_history ADD COLUMN {col} {type_def}")
+                    print(f"Migration: added {col} to run_history")
+                except:
+                    pass
+    
+    # Check script_inbox
+    cursor.execute("PRAGMA table_info(script_inbox)")
+    columns = [row[1] for row in cursor.fetchall()]
+    if columns and "image_prompts" not in columns:
+        try:
+            cursor.execute("ALTER TABLE script_inbox ADD COLUMN image_prompts TEXT")
+            print("Migration: added image_prompts to script_inbox")
+        except:
+            pass
+            
+    conn.commit()
+    conn.close()
+
 Base = declarative_base()
 
 class ScriptInbox(Base):
@@ -61,6 +101,7 @@ class SystemAlert(Base):
 
 # Create all tables in the engine
 Base.metadata.create_all(bind=engine)
+migrate_db()
 
 def get_db():
     db = SessionLocal()
