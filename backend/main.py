@@ -382,6 +382,28 @@ async def get_contents():
             except:
                 image_prompts = []
 
+            # Check for existing assets to persist state in Studio
+            job_dir = f"media/production/db_{s.id}"
+            has_images = False
+            has_videos = False
+            has_audio = False
+            existing_clips = []
+            
+            if os.path.exists(job_dir):
+                # Images
+                imgs = [f for f in os.listdir(job_dir) if f.startswith("img_") and f.endswith((".jpg", ".png"))]
+                has_images = len(imgs) > 0
+                
+                # Videos (clips)
+                clips_dir = os.path.join(job_dir, "clips_video")
+                if os.path.exists(clips_dir):
+                    vids = [f for f in os.listdir(clips_dir) if f.endswith(".mp4")]
+                    has_videos = len(vids) > 0
+                    existing_clips = [f"/media/production/db_{s.id}/clips_video/{v}" for v in sorted(vids)]
+                
+                # Audio
+                has_audio = os.path.exists(os.path.join(job_dir, "voiceover.wav"))
+
             db_contents.append({
                 "id": f"db_{s.id}",
                 "title": s.title or "Untitled Generated Script",
@@ -396,7 +418,11 @@ async def get_contents():
                 "assignedAgent": "QualityController",
                 "riskScore": 10,
                 "created_at": s.created_at.isoformat() if s.created_at else None,
-                "date": s.created_at.strftime("%d/%m") if s.created_at else None
+                "date": s.created_at.strftime("%d/%m") if s.created_at else None,
+                "hasImages": has_images,
+                "hasVideos": has_videos,
+                "hasAudio": has_audio,
+                "existingClips": existing_clips
             })
             
         db = SessionLocal()
