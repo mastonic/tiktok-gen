@@ -15,8 +15,13 @@ def get_gemini_llm():
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
         print(f"WARNING: GEMINI_API_KEY not found in environment")
-    # Utilisation du nom standard LiteLLM pour Gemini 1.5 Flash
-    return LLM(model="gemini/gemini-1.5-flash", api_key=api_key)
+    
+    # Utilisation de ChatGoogleGenerativeAI (LangChain) qui est plus robuste sur les endpoints API
+    return ChatGoogleGenerativeAI(
+        model="gemini-1.5-flash",
+        google_api_key=api_key,
+        temperature=0.7
+    )
 
 def ask_human_in_loop(agent_name: str, context: str, question: str) -> str:
     """
