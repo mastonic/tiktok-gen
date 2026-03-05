@@ -355,59 +355,68 @@ async def get_overview():
 
 @app.get("/api/contents")
 async def get_contents():
-    # Return mock pipeline contents plus any finalized scripts from DB
-    db = SessionLocal()
-    scripts = db.query(ScriptInbox).all()
-    db.close()
-    
-    db_contents = []
-    for s in scripts:
-        col = "Review"
-        if s.status == "approved": col = "Scheduled"
-        elif s.status == "posted": col = "Posted"
-        elif s.status == "pending_review": col = "Review"
+    try:
+        db = SessionLocal()
+        scripts = db.query(ScriptInbox).all()
+        db.close()
         
-        try:
-            image_prompts = json.loads(s.image_prompts) if s.image_prompts else []
-        except:
-            image_prompts = []
+        db_contents = []
+        for s in scripts:
+            col = "Review"
+            if s.status == "approved": col = "Scheduled"
+            elif s.status == "posted": col = "Posted"
+            elif s.status == "pending_review": col = "Review"
+            
+            try:
+                image_prompts = json.loads(s.image_prompts) if s.image_prompts else []
+            except:
+                image_prompts = []
 
-        db_contents.append({
-            "id": f"db_{s.id}",
-            "title": s.title or "Untitled Generated Script",
-            "script": s.final_script,
-            "keywords": s.keywords,
-            "imagePrompts": image_prompts,
-            "viralScore": s.viral_score or 85,
-            "moneyScore": s.money_score or 90,
-            "finalScore": 88,
-            "costEstimate": 0.05,
-            "column": col,
-            "assignedAgent": "QualityController",
-            "riskScore": 10,
-            "created_at": s.created_at.isoformat() if s.created_at else None,
-            "date": s.created_at.strftime("%d/%m") if s.created_at else None
-        })
+            db_contents.append({
+                "id": f"db_{s.id}",
+                "title": s.title or "Untitled Generated Script",
+                "script": s.final_script,
+                "keywords": s.keywords,
+                "imagePrompts": image_prompts,
+                "viralScore": s.viral_score or 85,
+                "moneyScore": s.money_score or 90,
+                "finalScore": 88,
+                "costEstimate": 0.05,
+                "column": col,
+                "assignedAgent": "QualityController",
+                "riskScore": 10,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+                "date": s.created_at.strftime("%d/%m") if s.created_at else None
+            })
+            
+        db = SessionLocal()
+        runs = db.query(RunHistory).filter(RunHistory.status == "running").all()
+        db.close()
+        for run in runs:
+            # Multi-layered safety for cost
+            try:
+                cost_val = float(run.cost) if run.cost and str(run.cost).replace('.', '', 1).isdigit() else 0.0
+            except:
+                cost_val = 0.0
+                
+            db_contents.append({
+                "id": f"run_{run.run_id}",
+                "title": f"Processing {run.name}",
+                "viralScore": 0,
+                "moneyScore": 0,
+                "finalScore": 0,
+                "costEstimate": cost_val,
+                "column": "Script",
+                "assignedAgent": "Swarm",
+                "riskScore": 5,
+                "created_at": run.time,
+                "date": run.created_at.strftime("%d/%m") if run.created_at else None
+            })
         
-    db = SessionLocal()
-    runs = db.query(RunHistory).filter(RunHistory.status == "running").all()
-    db.close()
-    for run in runs:
-        db_contents.append({
-            "id": f"run_{run.run_id}",
-            "title": f"Processing {run.name}",
-            "viralScore": 0,
-            "moneyScore": 0,
-            "finalScore": 0,
-            "costEstimate": float(run.cost),
-            "column": "Script",
-            "assignedAgent": "Swarm",
-            "riskScore": 5,
-            "created_at": run.time,
-            "date": run.created_at.strftime("%d/%m") if run.created_at else None
-        })
-    
-    return db_contents
+        return db_contents
+    except Exception as e:
+        print(f"Error in get_contents: {traceback.format_exc()}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 @app.get("/api/approvals")
 async def get_approvals():

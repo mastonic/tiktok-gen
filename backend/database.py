@@ -23,28 +23,41 @@ def migrate_db():
     
     if columns: # Only if table exists
         needed = {
+            "run_id": "TEXT",
+            "name": "TEXT",
+            "time": "TEXT",
+            "schedule": "TEXT",
+            "status": "TEXT DEFAULT 'running'",
             "progress_percent": "INTEGER DEFAULT 0",
             "current_step": "TEXT DEFAULT 'Initialisation'",
-            "duration": "TEXT DEFAULT '--'",
-            "schedule": "TEXT"
+            "cost": "TEXT DEFAULT '0.00'",
+            "duration": "TEXT DEFAULT '--'"
         }
         for col, type_def in needed.items():
             if col not in columns:
                 try:
                     cursor.execute(f"ALTER TABLE run_history ADD COLUMN {col} {type_def}")
                     print(f"Migration: added {col} to run_history")
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Migration error on run_history {col}: {e}")
     
     # Check script_inbox
     cursor.execute("PRAGMA table_info(script_inbox)")
     columns = [row[1] for row in cursor.fetchall()]
-    if columns and "image_prompts" not in columns:
-        try:
-            cursor.execute("ALTER TABLE script_inbox ADD COLUMN image_prompts TEXT")
-            print("Migration: added image_prompts to script_inbox")
-        except:
-            pass
+    if columns:
+        needed_script = {
+            "image_prompts": "TEXT",
+            "viral_score": "INTEGER DEFAULT 0",
+            "money_score": "INTEGER DEFAULT 0",
+            "run_type": "TEXT"
+        }
+        for col, type_def in needed_script.items():
+            if col not in columns:
+                try:
+                    cursor.execute(f"ALTER TABLE script_inbox ADD COLUMN {col} {type_def}")
+                    print(f"Migration: added {col} to script_inbox")
+                except Exception as e:
+                    pass
             
     conn.commit()
     conn.close()
