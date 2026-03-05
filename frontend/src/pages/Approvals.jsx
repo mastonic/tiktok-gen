@@ -19,10 +19,28 @@ const Approvals = () => {
     };
 
     useEffect(() => {
+        const intervalId = setInterval(async () => {
+            try {
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                const response = await fetch(`${apiUrl}/api/approvals`);
+                const data = await response.json();
+
+                setApprovals(prev => {
+                    // Update selectedItem if it exists in the new data
+                    if (selectedItem) {
+                        const updated = data.find(item => item.id === selectedItem.id && item.type === selectedItem.type);
+                        if (updated) setSelectedItem(updated);
+                    }
+                    return data;
+                });
+            } catch (error) {
+                console.error("Failed to fetch approvals:", error);
+            }
+        }, 3000);
+
         fetchApprovals();
-        const intervalId = setInterval(fetchApprovals, 3000);
         return () => clearInterval(intervalId);
-    }, []);
+    }, [selectedItem]);
 
     const handleApprove = async (id) => {
         try {
