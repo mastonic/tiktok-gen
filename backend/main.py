@@ -81,7 +81,15 @@ async def log_generator():
 
 @app.get("/api/stream")
 async def stream_logs():
-    return StreamingResponse(log_generator(), media_type="text/event-stream")
+    return StreamingResponse(
+        log_generator(), 
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
 
 def update_run_progress(run_id: str, percent: int, step: str):
     if not run_id: return
@@ -202,6 +210,8 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
         print(error_msg)
         add_system_alert("danger", f"Mission échouée : {str(e)[:100]}")
         return f"Error: {e}"
+    finally:
+        sys.stdout = old_stdout
 
 @app.post("/api/run/{run_type}")
 @app.post("/api/run")
