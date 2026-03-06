@@ -18,7 +18,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from crewai import Crew, Process
 from agents import create_agents
 from tasks import create_tasks
-from database import SessionLocal, ScriptInbox, PendingQuestion, RunHistory, SystemAlert, AgentConfig, AgentMessage, GrowthRecommendation
+from database import SessionLocal, ScriptInbox, PendingQuestion, RunHistory, SystemAlert, AgentConfig, AgentMessage, GrowthRecommendation, SystemConfig
 from datetime import datetime, timezone
 import uuid
 
@@ -941,27 +941,74 @@ async def run_assemblage_viral(payload: Optional[dict] = None):
         "subtitles": subtitles
     }
 
+class UpdateSystemConfigPayload(BaseModel):
+    daily_cap: Optional[float] = None
+    auto_stop: Optional[bool] = None
+    is_active: Optional[bool] = None
+
+@app.get("/api/system/config")
+async def get_system_config():
+    db = SessionLocal()
+    conf = db.query(SystemConfig).first()
+    db.close()
+    if not conf:
+        return {"daily_cap": 15.0, "today_spend": 2.45, "auto_stop": True, "is_active": True}
+    return {
+        "daily_cap": conf.daily_cap,
+        "today_spend": conf.today_spend,
+        "auto_stop": conf.auto_stop,
+        "is_active": conf.is_active
+    }
+
+@app.post("/api/system/config")
+async def update_system_config(payload: UpdateSystemConfigPayload):
+    db = SessionLocal()
+    conf = db.query(SystemConfig).first()
+    if not conf:
+        conf = SystemConfig()
+        db.add(conf)
+    
+    if payload.daily_cap is not None:
+        conf.daily_cap = payload.daily_cap
+    if payload.auto_stop is not None:
+        conf.auto_stop = payload.auto_stop
+    if payload.is_active is not None:
+        conf.is_active = payload.is_active
+        
+    db.commit()
+    db.close()
+    return {"status": "success"}
+
 @app.get("/api/routes")
 async def get_routes():
-    # Return the real default LLM tasks routing used by CrewAI (Gemini)
-    return [
-        {
-            "task": "Trend Analysis & Scraping", "model": "gemini-1.5-flash-latest", "provider": "Google", 
-            "cost": "$0.0 / 1M", "reason": "Fast analysis of RSS/Search.", "icon": "⚡"
-        },
-        {
-            "task": "Content Scoring & Filtering", "model": "gemini-1.5-flash-latest", "provider": "Google", 
-            "cost": "$0.0 / 1M", "reason": "Consistent JSON and analytical reasoning.", "icon": "⚖️"
-        },
-        {
-            "task": "Script Generation", "model": "gemini-1.5-flash-latest", "provider": "Google", 
-            "cost": "$0.0 / 1M", "reason": "Creative generation in iM style.", "icon": "🧠"
-        },
-        {
-            "task": "Quality Control & Validation", "model": "gemini-1.5-flash-latest", "provider": "Google", 
-            "cost": "$0.0 / 1M", "reason": "Final DB formatting.", "icon": "🎬"
-        }
-    ]
+    db = SessionLocal()
+    agents = db.query(AgentConfig).filter(AgentConfig.is_active == True).all()
+    db.close()
+    
+    # Mapping to display strategic tasks based on roles
+    task_mapping = {
+        "TrendRadar": {"task": "Trend Analysis & Scraping", "reason": "Fast analysis of RSS/Search.", "icon": "⚡"},
+        "ViralJudge": {"task": "Content Scoring & Filtering", "reason": "Consistent JSON and analytical reasoning.", "icon": "⚖️"},
+        "MonetizationScorer": {"task": "Profit Valuation", "reason": "Business logic & ROI.", "icon": "💰"},
+        "ScriptArchitect": {"task": "Creative Script Generation", "reason": "iM Style storytelling.", "icon": "🧠"},
+        "VisualPromptist": {"task": "Visual Planning (FLUX)", "reason": "Photorealistic prompting.", "icon": "🎬"},
+        "QualityController": {"task": "Final Validation & DB", "reason": "Data integrity check.", "icon": "✔️"},
+    }
+    
+    routes = []
+    for a in agents:
+        mapping = task_mapping.get(a.role, {"task": a.name, "reason": "Agent autonomous task.", "icon": "🤖"})
+        provider = "Google" if "gemini" in str(a.model).lower() else "OpenAI"
+        
+        routes.append({
+            "task": mapping["task"],
+            "model": a.model or "gpt-4o-mini",
+            "provider": provider,
+            "cost": "$0.0 / 1M" if provider == "Google" else "$0.15 / 1M",
+            "reason": mapping["reason"],
+            "icon": mapping["icon"]
+        })
+    return routes
 
 @app.post("/api/workflows/publish")
 async def publish_video(payload: dict = None):

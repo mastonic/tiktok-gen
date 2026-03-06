@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Float
 from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime
 
@@ -138,6 +138,15 @@ class SystemAlert(Base):
     message = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class SystemConfig(Base):
+    __tablename__ = "system_config"
+    id = Column(Integer, primary_key=True, index=True)
+    daily_cap = Column(Float, default=15.0)
+    today_spend = Column(Float, default=0.0)
+    auto_stop = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=True)
+    last_reset = Column(DateTime, default=datetime.utcnow)
+
 class AgentMessage(Base):
     __tablename__ = "agent_messages"
 
@@ -257,6 +266,21 @@ def seed_agents():
     db.close()
 
 seed_agents()
+
+def seed_system_config():
+    db = SessionLocal()
+    if db.query(SystemConfig).count() == 0:
+        conf = SystemConfig(
+            daily_cap=15.0,
+            today_spend=2.45, # Mock initial spend
+            auto_stop=True,
+            is_active=True
+        )
+        db.add(conf)
+        db.commit()
+    db.close()
+
+seed_system_config()
 
 def get_db():
     db = SessionLocal()
