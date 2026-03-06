@@ -145,6 +145,10 @@ class SystemConfig(Base):
     today_spend = Column(Float, default=0.0)
     auto_stop = Column(Boolean, default=True)
     is_active = Column(Boolean, default=True)
+    system_name = Column(String, default="Mission Control - Primary")
+    environment = Column(String, default="Production (Live)")
+    strict_mode = Column(Boolean, default=True)
+    debug_logging = Column(Boolean, default=False)
     last_reset = Column(DateTime, default=datetime.utcnow)
 
 class AgentMessage(Base):
@@ -272,9 +276,13 @@ def seed_system_config():
     if db.query(SystemConfig).count() == 0:
         conf = SystemConfig(
             daily_cap=15.0,
-            today_spend=2.45, # Mock initial spend
+            today_spend=2.45,
             auto_stop=True,
-            is_active=True
+            is_active=True,
+            system_name="Mission Control - Primary",
+            environment="Production (Live)",
+            strict_mode=True,
+            debug_logging=False
         )
         db.add(conf)
         db.commit()

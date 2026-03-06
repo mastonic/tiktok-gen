@@ -945,6 +945,10 @@ class UpdateSystemConfigPayload(BaseModel):
     daily_cap: Optional[float] = None
     auto_stop: Optional[bool] = None
     is_active: Optional[bool] = None
+    system_name: Optional[str] = None
+    environment: Optional[str] = None
+    strict_mode: Optional[bool] = None
+    debug_logging: Optional[bool] = None
 
 @app.get("/api/system/config")
 async def get_system_config():
@@ -952,12 +956,20 @@ async def get_system_config():
     conf = db.query(SystemConfig).first()
     db.close()
     if not conf:
-        return {"daily_cap": 15.0, "today_spend": 2.45, "auto_stop": True, "is_active": True}
+        return {
+            "daily_cap": 15.0, "today_spend": 2.45, "auto_stop": True, "is_active": True,
+            "system_name": "Mission Control - Primary", "environment": "Production (Live)",
+            "strict_mode": True, "debug_logging": False
+        }
     return {
         "daily_cap": conf.daily_cap,
         "today_spend": conf.today_spend,
         "auto_stop": conf.auto_stop,
-        "is_active": conf.is_active
+        "is_active": conf.is_active,
+        "system_name": conf.system_name,
+        "environment": conf.environment,
+        "strict_mode": conf.strict_mode,
+        "debug_logging": conf.debug_logging
     }
 
 @app.post("/api/system/config")
@@ -974,10 +986,32 @@ async def update_system_config(payload: UpdateSystemConfigPayload):
         conf.auto_stop = payload.auto_stop
     if payload.is_active is not None:
         conf.is_active = payload.is_active
+    if payload.system_name is not None:
+        conf.system_name = payload.system_name
+    if payload.environment is not None:
+        conf.environment = payload.environment
+    if payload.strict_mode is not None:
+        conf.strict_mode = payload.strict_mode
+    if payload.debug_logging is not None:
+        conf.debug_logging = payload.debug_logging
         
     db.commit()
     db.close()
     return {"status": "success"}
+
+@app.post("/api/system/purge-pipeline")
+async def purge_pipeline():
+    db = SessionLocal()
+    try:
+        db.query(ScriptInbox).delete()
+        db.query(RunHistory).delete()
+        db.commit()
+        return {"status": "success", "message": "Pipeline purgé avec succès."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
 
 @app.get("/api/routes")
 async def get_routes():
