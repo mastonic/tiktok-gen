@@ -16,6 +16,8 @@ const Agents = () => {
 
     // Form state
     const [editModel, setEditModel] = useState('');
+    const [editGoal, setEditGoal] = useState('');
+    const [editBackstory, setEditBackstory] = useState('');
 
     const fetchAgents = async () => {
         try {
@@ -35,6 +37,8 @@ const Agents = () => {
     const handleOpenEdit = (agent) => {
         setSelectedAgent(agent);
         setEditModel(agent.model || 'openai/gpt-4o-mini');
+        setEditGoal(agent.goal || '');
+        setEditBackstory(agent.backstory || '');
         setIsEditModalOpen(true);
         setSaveSuccess(false);
     };
@@ -69,7 +73,9 @@ const Agents = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     id: selectedAgent.id,
-                    model: editModel
+                    model: editModel,
+                    goal: editGoal,
+                    backstory: editBackstory
                 })
             });
             const data = await response.json();
@@ -82,6 +88,28 @@ const Agents = () => {
             }
         } catch (error) {
             console.error("Failed to save agent:", error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleResetAgent = async () => {
+        if (!selectedAgent || !window.confirm("Réinitialiser cet agent aux paramètres d'usine ?")) return;
+        setIsSaving(true);
+        try {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const response = await fetch(`${apiUrl}/api/agents/${selectedAgent.id}/reset`, {
+                method: 'POST'
+            });
+            if (response.ok) {
+                setSaveSuccess(true);
+                setTimeout(() => {
+                    setIsEditModalOpen(false);
+                    fetchAgents();
+                }, 1000);
+            }
+        } catch (error) {
+            console.error("Failed to reset agent:", error);
         } finally {
             setIsSaving(false);
         }
@@ -195,7 +223,16 @@ const Agents = () => {
                     </>
                 }
             >
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="flex justify-end">
+                        <button
+                            onClick={handleResetAgent}
+                            className="text-[10px] text-pink-500 hover:text-pink-400 font-bold uppercase tracking-wider flex items-center gap-1 border border-pink-500/30 px-2 py-1 rounded hover:bg-pink-500/5 transition-all"
+                        >
+                            <ShieldCheck className="w-3 h-3" /> Reset to Factory Defaults
+                        </button>
+                    </div>
+
                     <div>
                         <label className="text-xs font-bold text-gray-500 uppercase mb-2 block tracking-widest">Cerveau LLM (Model)</label>
                         <select
@@ -212,12 +249,34 @@ const Agents = () => {
                         </select>
                     </div>
 
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase mb-2 block tracking-widest">Agent Mission (Goal)</label>
+                        <textarea
+                            value={editGoal}
+                            onChange={(e) => setEditGoal(e.target.value)}
+                            rows={3}
+                            className="w-full bg-navy-950 border border-gray-700 rounded-xl p-4 text-gray-200 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all resize-none"
+                            placeholder="Définissez la mission principale..."
+                        />
+                    </div>
+
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase mb-2 block tracking-widest">Psychological Profile (Backstory)</label>
+                        <textarea
+                            value={editBackstory}
+                            onChange={(e) => setEditBackstory(e.target.value)}
+                            rows={4}
+                            className="w-full bg-navy-950 border border-gray-700 rounded-xl p-4 text-gray-200 text-sm focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all resize-none"
+                            placeholder="Définissez le caractère et l'historique de l'agent..."
+                        />
+                    </div>
+
                     <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
                         <p className="text-[10px] text-amber-200 leading-relaxed uppercase font-bold tracking-wider mb-1 flex items-center gap-2">
                             <ShieldCheck className="w-3 h-3" /> Attention Core Engine
                         </p>
                         <p className="text-xs text-amber-100/70">
-                            Changer le modèle affecte directement la précision de l'agent et le coût de génération. GPT-4o Mini est recommandé pour la plupart des tâches.
+                            Changer le modèle ou le prompt affecte directement la précision de l'agent et le coût de génération.
                         </p>
                     </div>
                 </div>
@@ -233,13 +292,13 @@ const Agents = () => {
                     <div>
                         <h4 className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-2">Agent Mission (Goal)</h4>
                         <div className="p-4 bg-navy-950/50 rounded-xl border border-gray-800 text-sm text-gray-300 italic">
-                            "{getAgentDetails(selectedAgent?.role).goal}"
+                            "{selectedAgent?.goal || getAgentDetails(selectedAgent?.role).goal}"
                         </div>
                     </div>
                     <div>
                         <h4 className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-2">Psychological Profile (Backstory)</h4>
                         <div className="p-4 bg-navy-950/50 rounded-xl border border-gray-800 text-sm text-gray-300">
-                            {getAgentDetails(selectedAgent?.role).backstory}
+                            {selectedAgent?.backstory || getAgentDetails(selectedAgent?.role).backstory}
                         </div>
                     </div>
                 </div>

@@ -306,6 +306,8 @@ async def get_agents():
         "name": a.name,
         "status": a.status,
         "model": a.model,
+        "goal": a.goal,
+        "backstory": a.backstory,
         "performance": 100
     } for a in agents]
 
@@ -313,6 +315,8 @@ class UpdateAgentPayload(BaseModel):
     id: int
     model: Optional[str] = None
     status: Optional[str] = None
+    goal: Optional[str] = None
+    backstory: Optional[str] = None
 
 @app.post("/api/agents/update")
 async def update_agent(payload: UpdateAgentPayload):
@@ -326,10 +330,63 @@ async def update_agent(payload: UpdateAgentPayload):
         agent.model = payload.model
     if payload.status:
         agent.status = payload.status
+    if payload.goal:
+        agent.goal = payload.goal
+    if payload.backstory:
+        agent.backstory = payload.backstory
     
     db.commit()
     db.close()
     return {"status": "success", "message": f"Agent {agent.name} mis à jour."}
+
+@app.post("/api/agents/{agent_id}/reset")
+async def reset_agent(agent_id: int):
+    db = SessionLocal()
+    agent = db.query(AgentConfig).filter(AgentConfig.id == agent_id).first()
+    if not agent:
+        db.close()
+        raise HTTPException(status_code=404, detail="Agent non trouvé")
+    
+    # Defaults Mapping from agents.py
+    defaults = {
+        'TrendRadar': {
+            'goal': 'Scanner les flux RSS et GitHub pour trouver des sujets TikTok sur le self-hosting et l\'IA.',
+            'backstory': 'Tu es un expert en sourcing Open Source. Tu cherches des "Killer Features" gratuites. RÈGLE : Requêtes de 2-3 mots max.'
+        },
+        'ViralJudge': {
+             'goal': 'Valider la gratuité du sujet et évaluer le potentiel viral.',
+             'backstory': 'Tu es un analyste de tendances. Tu dois absolument t\'assurer que le sujet est gratuit. SI LE PRIX EST FLOU, écris simplement "Needs_Human_Verification".'
+        },
+        'MonetizationScorer': {
+            'goal': 'Attribuer un score de rentabilité ROI (/100) pour chaque concept.',
+            'backstory': 'Tu es un consultant en rentabilité. Calcule le score toi-même sans déléguer.'
+        },
+        'ScriptArchitect': {
+            'goal': 'Rédiger un script TikTok ironique et percutant de 30 secondes.',
+            'backstory': 'Tu es le scénariste vedette de iM System. Ton script DOIT OBLIGATOIREMENT se terminer par : "J\'ai cassé Internet... encore." Mets 3 mots-clés stratégiques en MAJUSCULES.'
+        },
+        'VisualPromptist': {
+             'goal': 'Créer exactement 7 prompts d\'images cohérents pour FLUX qui racontent une histoire visuelle.',
+             'backstory': 'Tu es un directeur artistique de haut vol. Ta mission est de traduire le script en une suite logique de 7 images ultra-réalistes. Template: Raw cinematic shot, 35mm film grain, hyper-realistic, [THÈME], lighting, bokeh, 8k resolution.'
+        },
+        'QualityController': {
+            'goal': 'Vérifier la cohérence globale du script et des prompts visuels.',
+            'backstory': 'Tu es le garant final. Tu vérifies le respect des contraintes et tu valides.'
+        }
+    }
+    
+    d = defaults.get(agent.role)
+    if d:
+        agent.goal = d['goal']
+        agent.backstory = d['backstory']
+        agent.model = "openai/gpt-4o-mini"
+        db.commit()
+        msg = f"Agent {agent.name} réinitialisé."
+    else:
+        msg = "Pas de défauts définis pour ce rôle."
+        
+    db.close()
+    return {"status": "success", "message": msg}
 
 @app.get("/api/trends")
 async def get_trends():

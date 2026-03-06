@@ -63,6 +63,22 @@ def migrate_db():
                     print(f"Migration: added {col} to script_inbox")
                 except Exception as e:
                     print(f"Migration error on script_inbox {col}: {e}")
+
+    # Check agent_configs
+    cursor.execute("PRAGMA table_info(agent_configs)")
+    columns = [row[1] for row in cursor.fetchall()]
+    if columns:
+        needed_agent = {
+            "goal": "TEXT",
+            "backstory": "TEXT"
+        }
+        for col, type_def in needed_agent.items():
+            if col not in columns:
+                try:
+                    cursor.execute(f"ALTER TABLE agent_configs ADD COLUMN {col} {type_def}")
+                    print(f"Migration: added {col} to agent_configs")
+                except Exception as e:
+                    print(f"Migration error on agent_configs {col}: {e}")
             
     conn.commit()
     conn.close()
@@ -141,6 +157,8 @@ class AgentConfig(Base):
     role = Column(String, unique=True, index=True)
     name = Column(String)
     model = Column(String, default="openai/gpt-4o-mini")
+    goal = Column(String, nullable=True)
+    backstory = Column(String, nullable=True)
     temperature = Column(String, default="0.7")
     status = Column(String, default="Idle")
     is_active = Column(Boolean, default=True)
@@ -190,12 +208,48 @@ def seed_agents():
     count = db.query(AgentConfig).count()
     if count == 0:
         defaults = [
-            {"role": "TrendRadar", "name": "TrendRadar", "model": "openai/gpt-4o-mini"},
-            {"role": "ViralJudge", "name": "ViralJudge", "model": "openai/gpt-4o-mini"},
-            {"role": "MonetizationScorer", "name": "MonetizationScorer", "model": "openai/gpt-4o-mini"},
-            {"role": "ScriptArchitect", "name": "ScriptArchitect", "model": "openai/gpt-4o-mini"},
-            {"role": "VisualPromptist", "name": "VisualPromptist", "model": "openai/gpt-4o-mini"},
-            {"role": "QualityController", "name": "QualityController", "model": "openai/gpt-4o-mini"},
+            {
+                "role": "TrendRadar", 
+                "name": "TrendRadar", 
+                "model": "openai/gpt-4o-mini",
+                "goal": "Scanner les flux RSS et GitHub pour trouver des sujets TikTok sur le self-hosting et l'IA.",
+                "backstory": "Tu es un expert en sourcing Open Source. Tu cherches des \"Killer Features\" gratuites. RÈGLE : Requêtes de 2-3 mots max."
+            },
+            {
+                "role": "ViralJudge", 
+                "name": "ViralJudge", 
+                "model": "openai/gpt-4o-mini",
+                "goal": "Valider la gratuité du sujet et évaluer le potentiel viral.",
+                "backstory": "Tu es un analyste de tendances. Tu dois absolument t'assurer que le sujet est gratuit. SI LE PRIX EST FLOU, écris simplement \"Needs_Human_Verification\"."
+            },
+            {
+                "role": "MonetizationScorer", 
+                "name": "MonetizationScorer", 
+                "model": "openai/gpt-4o-mini",
+                "goal": "Attribuer un score de rentabilité ROI (/100) pour chaque concept.",
+                "backstory": "Tu es un consultant en rentabilité. Calcule le score toi-même sans déléguer."
+            },
+            {
+                "role": "ScriptArchitect", 
+                "name": "ScriptArchitect", 
+                "model": "openai/gpt-4o-mini",
+                "goal": "Rédiger un script TikTok ironique et percutant de 30 secondes.",
+                "backstory": "Tu es le scénariste vedette de iM System. Ton script DOIT OBLIGATOIREMENT se terminer par : \"J'ai cassé Internet... encore.\" Mets 3 mots-clés stratégiques en MAJUSCULES."
+            },
+            {
+                "role": "VisualPromptist", 
+                "name": "VisualPromptist", 
+                "model": "openai/gpt-4o-mini",
+                "goal": "Créer exactement 7 prompts d'images cohérents pour FLUX qui racontent une histoire visuelle.",
+                "backstory": "Tu es un directeur artistique de haut vol. Ta mission est de traduire le script en une suite logique de 7 images ultra-réalistes. RÈGLE D'OR : Storytelling visuel."
+            },
+            {
+                "role": "QualityController", 
+                "name": "QualityController", 
+                "model": "openai/gpt-4o-mini",
+                "goal": "Vérifier la cohérence globale du script et des prompts visuels.",
+                "backstory": "Tu es le garant final. Tu vérifies le respect des contraintes et tu valides."
+            },
         ]
         for d in defaults:
             db.add(AgentConfig(**d))
