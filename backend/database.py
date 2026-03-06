@@ -302,7 +302,18 @@ def seed_system_config():
             system_name="Mission Control - Primary",
             environment="Production (Live)",
             strict_mode=True,
-            debug_logging=False
+            debug_logging=False,
+            access_token="im-dev-token-2026",
+            allowed_ips="*",
+            openai_key="",
+            gemini_key="",
+            fal_key="",
+            stability_key="",
+            elevenlabs_key="",
+            auto_cleanup_days=30,
+            discord_webhook="",
+            telegram_token="",
+            enable_alerts=True
         )
         db.add(conf)
         db.commit()

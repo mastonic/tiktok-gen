@@ -61,6 +61,10 @@ app.add_middleware(
 os.makedirs("media", exist_ok=True)
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
+@app.get("/")
+async def root():
+    return {"status": "online", "message": "iM-System API is running", "timestamp": datetime.now().isoformat()}
+
 class AsyncLogCapture:
     def __init__(self):
         self.queue = asyncio.Queue()
