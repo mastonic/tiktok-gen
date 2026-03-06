@@ -79,8 +79,8 @@ const Approvals = () => {
                     Scripts
                 </button>
                 <button
-                    onClick={() => setActiveTab('video')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'video' ? 'bg-cyan-900/40 text-cyan-400 border border-cyan-500/30' : 'text-gray-400 hover:text-white'}`}
+                    onClick={() => setActiveTab('Video')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'Video' ? 'bg-cyan-900/40 text-cyan-400 border border-cyan-500/30' : 'text-gray-400 hover:text-white'}`}
                 >
                     Videos
                 </button>

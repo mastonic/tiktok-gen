@@ -494,9 +494,9 @@ async def get_approvals():
     db = SessionLocal()
     questions = db.query(PendingQuestion).filter(PendingQuestion.is_resolved == False).all()
     scripts = db.query(ScriptInbox).filter(ScriptInbox.status == "pending_review").all()
-    db.close()
     
     apps = []
+    # 1. Human-in-the-loop topics
     for q in questions:
         apps.append({
             "id": f"q_{q.id}",
@@ -506,6 +506,8 @@ async def get_approvals():
             "context": q.context or "No context provided",
             "question": q.question or "No question available"
         })
+        
+    # 2. Generated scripts review
     for s in scripts:
         apps.append({
             "id": f"s_{s.id}",
@@ -518,6 +520,24 @@ async def get_approvals():
             "context": "Final review of the generated script content.",
             "question": "Approve this script for final video generation and posting?"
         })
+
+    # 3. Final Videos produced but not yet posted
+    videos = db.query(ScriptInbox).filter(ScriptInbox.status == "approved").all()
+    for v in videos:
+        # Only add if final_output.mp4 exists
+        video_path = f"media/production/db_{v.id}/final_output.mp4"
+        if os.path.exists(video_path):
+            apps.append({
+                "id": f"v_{v.id}",
+                "title": v.title or "Final Video Review",
+                "type": "Video",
+                "status": "Ready",
+                "context": "Video is rendered and ready for final check.",
+                "question": "Does the video look viral enough to post?",
+                "videoUrl": f"/media/production/db_{v.id}/final_output.mp4"
+            })
+
+    db.close()
     return apps
 
 @app.get("/api/alerts")
