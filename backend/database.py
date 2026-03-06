@@ -149,6 +149,26 @@ class SystemConfig(Base):
     environment = Column(String, default="Production (Live)")
     strict_mode = Column(Boolean, default=True)
     debug_logging = Column(Boolean, default=False)
+    
+    # Security & Access
+    access_token = Column(String, default="im-dev-token-2026")
+    allowed_ips = Column(String, default="*")
+    
+    # API Keys (Stored in DB for UI management, overriding .env if present)
+    openai_key = Column(String, default="")
+    gemini_key = Column(String, default="")
+    fal_key = Column(String, default="")
+    stability_key = Column(String, default="")
+    elevenlabs_key = Column(String, default="")
+    
+    # Data Management
+    auto_cleanup_days = Column(Integer, default=30)
+    
+    # Notifications
+    discord_webhook = Column(String, default="")
+    telegram_token = Column(String, default="")
+    enable_alerts = Column(Boolean, default=True)
+    
     last_reset = Column(DateTime, default=datetime.utcnow)
 
 class AgentMessage(Base):

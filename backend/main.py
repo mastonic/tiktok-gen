@@ -949,6 +949,17 @@ class UpdateSystemConfigPayload(BaseModel):
     environment: Optional[str] = None
     strict_mode: Optional[bool] = None
     debug_logging: Optional[bool] = None
+    access_token: Optional[str] = None
+    allowed_ips: Optional[str] = None
+    openai_key: Optional[str] = None
+    gemini_key: Optional[str] = None
+    fal_key: Optional[str] = None
+    stability_key: Optional[str] = None
+    elevenlabs_key: Optional[str] = None
+    auto_cleanup_days: Optional[int] = None
+    discord_webhook: Optional[str] = None
+    telegram_token: Optional[str] = None
+    enable_alerts: Optional[bool] = None
 
 @app.get("/api/system/config")
 async def get_system_config():
@@ -959,7 +970,11 @@ async def get_system_config():
         return {
             "daily_cap": 15.0, "today_spend": 2.45, "auto_stop": True, "is_active": True,
             "system_name": "Mission Control - Primary", "environment": "Production (Live)",
-            "strict_mode": True, "debug_logging": False
+            "strict_mode": True, "debug_logging": False,
+            "access_token": "im-dev-token-2026", "allowed_ips": "*",
+            "openai_key": "", "gemini_key": "", "fal_key": "", "stability_key": "", "elevenlabs_key": "",
+            "auto_cleanup_days": 30,
+            "discord_webhook": "", "telegram_token": "", "enable_alerts": True
         }
     return {
         "daily_cap": conf.daily_cap,
@@ -969,7 +984,18 @@ async def get_system_config():
         "system_name": conf.system_name,
         "environment": conf.environment,
         "strict_mode": conf.strict_mode,
-        "debug_logging": conf.debug_logging
+        "debug_logging": conf.debug_logging,
+        "access_token": conf.access_token,
+        "allowed_ips": conf.allowed_ips,
+        "openai_key": conf.openai_key,
+        "gemini_key": conf.gemini_key,
+        "fal_key": conf.fal_key,
+        "stability_key": conf.stability_key,
+        "elevenlabs_key": conf.elevenlabs_key,
+        "auto_cleanup_days": conf.auto_cleanup_days,
+        "discord_webhook": conf.discord_webhook,
+        "telegram_token": conf.telegram_token,
+        "enable_alerts": conf.enable_alerts
     }
 
 @app.post("/api/system/config")
@@ -980,20 +1006,10 @@ async def update_system_config(payload: UpdateSystemConfigPayload):
         conf = SystemConfig()
         db.add(conf)
     
-    if payload.daily_cap is not None:
-        conf.daily_cap = payload.daily_cap
-    if payload.auto_stop is not None:
-        conf.auto_stop = payload.auto_stop
-    if payload.is_active is not None:
-        conf.is_active = payload.is_active
-    if payload.system_name is not None:
-        conf.system_name = payload.system_name
-    if payload.environment is not None:
-        conf.environment = payload.environment
-    if payload.strict_mode is not None:
-        conf.strict_mode = payload.strict_mode
-    if payload.debug_logging is not None:
-        conf.debug_logging = payload.debug_logging
+    # Simple mapping for all fields
+    update_data = payload.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(conf, key, value)
         
     db.commit()
     db.close()
