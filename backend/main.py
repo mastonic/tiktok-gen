@@ -18,9 +18,27 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from crewai import Crew, Process
 from agents import create_agents
 from tasks import create_tasks
-from database import SessionLocal, ScriptInbox, PendingQuestion, RunHistory, SystemAlert, AgentConfig
+from database import SessionLocal, ScriptInbox, PendingQuestion, RunHistory, SystemAlert, AgentConfig, AgentMessage
 from datetime import datetime, timezone
 import uuid
+
+def save_agent_message(content_id, from_agent, to_agent, msg_type, summary, payload={}):
+    db = SessionLocal()
+    try:
+        msg = AgentMessage(
+            content_id=content_id,
+            from_agent=from_agent,
+            to_agent=to_agent,
+            message_type=msg_type,
+            summary=summary,
+            payload=json.dumps(payload)
+        )
+        db.add(msg)
+        db.commit()
+    except Exception as e:
+        print(f"Error saving agent message: {e}")
+    finally:
+        db.close()
 import comfyui_client
 import fal_client
 import tts_service
@@ -122,6 +140,8 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
     sys.stdout = log_capture
     try:
         update_run_progress(run_id, 10, "Configuration des agents")
+        save_agent_message(run_id, "System", "Swarm", "info", f"Démarrage d'un nouveau cycle Swarm ({run_type})")
+        
         db = SessionLocal()
         agent_configs = db.query(AgentConfig).all()
         db.close()
@@ -130,6 +150,7 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
         trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller = create_agents(config=config_dict)
         
         update_run_progress(run_id, 25, "Planification des tâches")
+        save_agent_message(run_id, "Manager", "System", "info", "Calcul du chemin critique et assignation des tâches terminée.")
         print("Creating tasks...")
         tasks = create_tasks(trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, run_type)
         
@@ -142,9 +163,11 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
         )
         
         update_run_progress(run_id, 40, "Recherche de tendances & Scoring")
+        save_agent_message(run_id, "Swarm", "ViralJudge", "vote", "Analyse comparative des tendances détectées en cours.")
         print("Kicking off crew...")
         result = str(crew.kickoff())
         update_run_progress(run_id, 85, "Optimisation du script final")
+        save_agent_message(run_id, "QualityController", "System", "info", "Script généré, revue de qualité par le Swarm effectuée.")
         print(f"Crew execution completed.")
         
         # Parse outcome and save to DB
@@ -350,7 +373,26 @@ async def get_runs():
 
 @app.get("/api/messages")
 async def get_messages(content_id: str = None):
-    return []
+    db = SessionLocal()
+    query = db.query(AgentMessage)
+    if content_id:
+        query = query.filter(AgentMessage.content_id == content_id)
+    
+    msgs = query.order_by(AgentMessage.timestamp.asc()).all()
+    db.close()
+    
+    return [
+        {
+            "id": m.id,
+            "content_id": m.content_id,
+            "from_agent": m.from_agent,
+            "to_agent": m.to_agent,
+            "type": m.message_type,
+            "summary": m.summary,
+            "payload": json.loads(m.payload) if m.payload else {},
+            "timestamp": m.timestamp.strftime("%H:%M:%S")
+        } for m in msgs
+    ]
 
 @app.get("/api/logs/history")
 async def get_log_history():

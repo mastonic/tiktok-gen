@@ -112,6 +112,18 @@ class SystemAlert(Base):
     message = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class AgentMessage(Base):
+    __tablename__ = "agent_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    content_id = Column(String, index=True) 
+    from_agent = Column(String)
+    to_agent = Column(String)
+    message_type = Column(String) 
+    summary = Column(String)
+    payload = Column(String) 
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
 class AgentConfig(Base):
     __tablename__ = "agent_configs"
 
