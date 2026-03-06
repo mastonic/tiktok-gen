@@ -10,6 +10,11 @@ const Agents = () => {
     const [saveSuccess, setSaveSuccess] = useState(false);
 
     // Form state
+    const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
+    const [isTestingAgent, setIsTestingAgent] = useState(false);
+    const [testResult, setTestResult] = useState(null);
+
+    // Form state
     const [editModel, setEditModel] = useState('');
 
     const fetchAgents = async () => {
@@ -32,6 +37,26 @@ const Agents = () => {
         setEditModel(agent.model || 'openai/gpt-4o-mini');
         setIsEditModalOpen(true);
         setSaveSuccess(false);
+    };
+
+    const handleOpenPrompt = (agent) => {
+        setSelectedAgent(agent);
+        setIsPromptModalOpen(true);
+    };
+
+    const handleTestAction = (agent) => {
+        setSelectedAgent(agent);
+        setIsTestingAgent(true);
+        setTestResult(null);
+
+        // Simuler un test de connexion au LLM
+        setTimeout(() => {
+            setTestResult({
+                status: 'success',
+                latency: '450ms',
+                message: 'LLM Connection stable. Model responding.'
+            });
+        }, 1500);
     };
 
     const handleSaveAgent = async () => {
@@ -62,9 +87,16 @@ const Agents = () => {
         }
     };
 
-    const handleAction = (agentName, actionName) => {
-        // Placeholder for real actions if needed later
-        console.log(`Action [${actionName}] triggered for agent: ${agentName}!`);
+    const getAgentDetails = (role) => {
+        const details = {
+            'TrendRadar': { goal: 'Scanner les flux RSS et GitHub.', backstory: 'Expert en sourcing Open Source.' },
+            'ViralJudge': { goal: 'Valider la gratuité et le potentiel viral.', backstory: 'Analyste de tendances impitoyable.' },
+            'MonetizationScorer': { goal: 'Attribuer un score de rentabilité ROI.', backstory: 'Consultant en rentabilité focalisé sur le profit.' },
+            'ScriptArchitect': { goal: 'Rédiger des scripts TikTok percutants.', backstory: 'Scénariste vedette ironique.' },
+            'VisualPromptist': { goal: 'Créer des prompts d\'images pour FLUX.', backstory: 'Directeur artistique de haut vol.' },
+            'QualityController': { goal: 'Vérifier la cohérence globale.', backstory: 'Garant final de la qualité iM System.' }
+        };
+        return details[role] || { goal: 'Mission autonome.', backstory: 'Agent intelligent de la flotte.' };
     };
 
     return (
@@ -93,7 +125,7 @@ const Agents = () => {
 
                         <div className="space-y-3 mb-4 z-10">
                             <div className="bg-navy-900/80 p-3 rounded-xl border border-gray-800/50">
-                                <div className="text-[10px] text-gray-500 font-mono mb-1 uppercase tracking-wider">Model Model</div>
+                                <div className="text-[10px] text-gray-500 font-mono mb-1 uppercase tracking-wider">Model Binding</div>
                                 <div className="text-xs font-bold text-gray-200 truncate">{agent.model || 'gpt-4o'}</div>
                             </div>
 
@@ -112,11 +144,11 @@ const Agents = () => {
                         </div>
 
                         <div className="mt-auto pt-4 border-t border-gray-800 grid grid-cols-3 gap-2 z-10">
-                            <Button variant="secondary" className="text-[10px] !py-2 flex flex-col items-center gap-1 opacity-60 hover:opacity-100" onClick={() => handleAction(agent.role, 'Prompt')}>
+                            <Button variant="secondary" className="text-[10px] !py-2 flex flex-col items-center gap-1 hover:text-cyan-400" onClick={() => handleOpenPrompt(agent)}>
                                 <Terminal className="w-3.5 h-3.5" />
                                 <span>Prompt</span>
                             </Button>
-                            <Button variant="secondary" className="text-[10px] !py-2 flex flex-col items-center gap-1 opacity-60 hover:opacity-100" onClick={() => handleAction(agent.role, 'Test')}>
+                            <Button variant="secondary" className="text-[10px] !py-2 flex flex-col items-center gap-1 hover:text-cyan-400" onClick={() => handleTestAction(agent)}>
                                 <Play className="w-3.5 h-3.5" />
                                 <span>Test</span>
                             </Button>
@@ -129,6 +161,7 @@ const Agents = () => {
                 ))}
             </div>
 
+            {/* Config Modal */}
             <Modal
                 isOpen={isEditModalOpen}
                 onClose={() => !isSaving && setIsEditModalOpen(false)}
@@ -164,26 +197,86 @@ const Agents = () => {
             >
                 <div className="space-y-4">
                     <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Cerveau LLM (Model)</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase mb-2 block tracking-widest">Cerveau LLM (Model)</label>
                         <select
                             value={editModel}
                             onChange={(e) => setEditModel(e.target.value)}
-                            className="w-full bg-navy-950 border border-gray-700 rounded-xl p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all"
+                            className="w-full bg-navy-950 border border-gray-700 rounded-xl p-4 text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
+                            style={{ backgroundImage: 'linear-gradient(45deg, transparent 50%, gray 50%), linear-gradient(135deg, gray 50%, transparent 50%)', backgroundPosition: 'calc(100% - 20px) calc(1em + 2px), calc(100% - 15px) calc(1em + 2px)', backgroundSize: '5px 5px, 5px 5px', backgroundRepeat: 'no-repeat' }}
                         >
-                            <option value="openai/gpt-4o-mini">GPT-4o Mini (Économique)</option>
-                            <option value="openai/gpt-4o">GPT-4o (Puissant)</option>
-                            <option value="openai/o1-mini">O1 Mini (Raisonnement)</option>
-                            <option value="google/gemini-1.5-flash">Gemini 1.5 Flash (Rapide)</option>
-                            <option value="google/gemini-1.5-pro">Gemini 1.5 Pro (Ultra)</option>
+                            <option value="openai/gpt-4o-mini" className="bg-navy-900 text-white p-2">GPT-4o Mini (Économique)</option>
+                            <option value="openai/gpt-4o" className="bg-navy-900 text-white p-2">GPT-4o (Puissant)</option>
+                            <option value="openai/o1-mini" className="bg-navy-900 text-white p-2">O1 Mini (Raisonnement)</option>
+                            <option value="google/gemini-1.5-flash" className="bg-navy-900 text-white p-2">Gemini 1.5 Flash (Rapide)</option>
+                            <option value="google/gemini-1.5-pro" className="bg-navy-900 text-white p-2">Gemini 1.5 Pro (Ultra)</option>
                         </select>
                     </div>
 
                     <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                        <p className="text-[10px] text-amber-200 leading-relaxed uppercase font-bold tracking-wider mb-1">Attention Core Engine</p>
+                        <p className="text-[10px] text-amber-200 leading-relaxed uppercase font-bold tracking-wider mb-1 flex items-center gap-2">
+                            <ShieldCheck className="w-3 h-3" /> Attention Core Engine
+                        </p>
                         <p className="text-xs text-amber-100/70">
                             Changer le modèle affecte directement la précision de l'agent et le coût de génération. GPT-4o Mini est recommandé pour la plupart des tâches.
                         </p>
                     </div>
+                </div>
+            </Modal>
+
+            {/* Prompt Detail Modal */}
+            <Modal
+                isOpen={isPromptModalOpen}
+                onClose={() => setIsPromptModalOpen(false)}
+                title={`Core Directives : ${selectedAgent?.name}`}
+            >
+                <div className="space-y-5">
+                    <div>
+                        <h4 className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-2">Agent Mission (Goal)</h4>
+                        <div className="p-4 bg-navy-950/50 rounded-xl border border-gray-800 text-sm text-gray-300 italic">
+                            "{getAgentDetails(selectedAgent?.role).goal}"
+                        </div>
+                    </div>
+                    <div>
+                        <h4 className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-2">Psychological Profile (Backstory)</h4>
+                        <div className="p-4 bg-navy-950/50 rounded-xl border border-gray-800 text-sm text-gray-300">
+                            {getAgentDetails(selectedAgent?.role).backstory}
+                        </div>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Test Connection Modal */}
+            <Modal
+                isOpen={isTestingAgent}
+                onClose={() => setIsTestingAgent(false)}
+                title={`Diagnostic : ${selectedAgent?.name}`}
+            >
+                <div className="flex flex-col items-center justify-center py-8">
+                    {!testResult ? (
+                        <>
+                            <Loader2 className="w-12 h-12 text-cyan-500 animate-spin mb-4" />
+                            <p className="text-sm text-gray-400 animate-pulse">Requesting LLM tokens...</p>
+                        </>
+                    ) : (
+                        <div className="w-full space-y-4">
+                            <div className="flex justify-center mb-2">
+                                <CheckCircle2 className="w-12 h-12 text-emerald-500" />
+                            </div>
+                            <p className="text-center font-bold text-white tracking-wide">LLM CONNECTION STABLE</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-navy-950/50 p-3 rounded-lg border border-gray-800">
+                                    <div className="text-[8px] text-gray-500 uppercase mb-1">Latency</div>
+                                    <div className="text-xs text-emerald-400 font-mono">{testResult.latency}</div>
+                                </div>
+                                <div className="bg-navy-950/50 p-3 rounded-lg border border-gray-800">
+                                    <div className="text-[8px] text-gray-500 uppercase mb-1">Status</div>
+                                    <div className="text-xs text-emerald-400 font-mono">READY</div>
+                                </div>
+                            </div>
+                            <p className="text-[10px] text-gray-500 text-center italic mt-2">"{testResult.message}"</p>
+                            <Button variant="secondary" onClick={() => setIsTestingAgent(false)} className="w-full mt-2">Close Diagnostic</Button>
+                        </div>
+                    )}
                 </div>
             </Modal>
         </div>

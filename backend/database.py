@@ -49,7 +49,12 @@ def migrate_db():
             "image_prompts": "TEXT",
             "viral_score": "INTEGER DEFAULT 0",
             "money_score": "INTEGER DEFAULT 0",
-            "run_type": "TEXT"
+            "run_type": "TEXT",
+            "tiktok_url": "TEXT",
+            "views": "INTEGER DEFAULT 0",
+            "likes": "INTEGER DEFAULT 0",
+            "shares": "INTEGER DEFAULT 0",
+            "retention_rate": "INTEGER DEFAULT 0"
         }
         for col, type_def in needed_script.items():
             if col not in columns:
@@ -57,7 +62,7 @@ def migrate_db():
                     cursor.execute(f"ALTER TABLE script_inbox ADD COLUMN {col} {type_def}")
                     print(f"Migration: added {col} to script_inbox")
                 except Exception as e:
-                    pass
+                    print(f"Migration error on script_inbox {col}: {e}")
             
     conn.commit()
     conn.close()
@@ -76,6 +81,11 @@ class ScriptInbox(Base):
     keywords = Column(String)
     image_prompts = Column(String, nullable=True)
     status = Column(String, default="pending_review") # pending_review, approved, posted
+    tiktok_url = Column(String, nullable=True)
+    views = Column(Integer, default=0)
+    likes = Column(Integer, default=0)
+    shares = Column(Integer, default=0)
+    retention_rate = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class PendingQuestion(Base):

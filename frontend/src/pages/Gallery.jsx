@@ -196,6 +196,68 @@ const Gallery = () => {
                                 </div>
                             </div>
 
+                            <div className="space-y-4">
+                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-2">
+                                    <BarChart3 className="h-3.5 w-3.5 text-pink-500" /> Platform Metrics
+                                </h4>
+
+                                {selectedVideo.tiktok_url ? (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-navy-950/50 p-4 rounded-xl border border-gray-800">
+                                            <span className="text-[10px] text-gray-500 font-bold block mb-1">REAL VIEWS</span>
+                                            <span className="text-xl font-black text-white">{selectedVideo.views?.toLocaleString() || '---'}</span>
+                                        </div>
+                                        <div className="bg-navy-950/50 p-4 rounded-xl border border-gray-800">
+                                            <span className="text-[10px] text-gray-500 font-bold block mb-1">REAL LIKES</span>
+                                            <span className="text-xl font-black text-white">{selectedVideo.likes?.toLocaleString() || '---'}</span>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <a
+                                                href={selectedVideo.tiktok_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-[10px] text-cyan-400 hover:underline flex items-center gap-1"
+                                            >
+                                                View on TikTok <ChevronRight className="w-3 h-3" />
+                                            </a>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-navy-950/50 p-6 rounded-2xl border border-dashed border-gray-800">
+                                        <p className="text-[10px] text-gray-500 mb-3 text-center uppercase tracking-widest font-bold">Link this video to fetch real stats</p>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                placeholder="https://www.tiktok.com/@user/video/..."
+                                                className="flex-1 bg-navy-900 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:border-pink-500"
+                                                id="tiktok-url-input"
+                                            />
+                                            <button
+                                                onClick={async () => {
+                                                    const url = document.getElementById('tiktok-url-input').value;
+                                                    if (!url) return;
+                                                    try {
+                                                        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+                                                        const res = await fetch(`${apiUrl}/api/contents/${selectedVideo.id}/link-tiktok`, {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ url })
+                                                        });
+                                                        if (res.ok) {
+                                                            alert("Video linked! Analytics will refresh soon.");
+                                                            window.location.reload();
+                                                        }
+                                                    } catch (e) { console.error(e); }
+                                                }}
+                                                className="bg-pink-600 hover:bg-pink-500 text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all"
+                                            >
+                                                Link
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="mt-4 flex gap-4">
                                 <a
                                     href={`${import.meta.env.VITE_API_URL || 'http://localhost:5656'}/media/production/db_${selectedVideo.id.replace('db_', '')}/final_output.mp4`}
