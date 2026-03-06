@@ -115,6 +115,26 @@ const Agents = () => {
         }
     };
 
+    const handleToggleAgent = async (agent) => {
+        try {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const newStatus = !agent.is_active;
+            const response = await fetch(`${apiUrl}/api/agents/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: agent.id,
+                    is_active: newStatus
+                })
+            });
+            if (response.ok) {
+                fetchAgents();
+            }
+        } catch (error) {
+            console.error("Failed to toggle agent:", error);
+        }
+    };
+
     const getAgentDetails = (role) => {
         const details = {
             'TrendRadar': { goal: 'Scanner les flux RSS et GitHub.', backstory: 'Expert en sourcing Open Source.' },
@@ -148,7 +168,7 @@ const Agents = () => {
                                 </div>
                                 <h3 className="font-semibold text-gray-100">{agent.name}</h3>
                             </div>
-                            <Toggle active={agent.status === "Executing"} />
+                            <Toggle active={agent.is_active} onClick={() => handleToggleAgent(agent)} />
                         </div>
 
                         <div className="space-y-3 mb-4 z-10">
@@ -347,8 +367,11 @@ const BotIcon = ({ role, className }) => {
     return <Cpu className={className} />;
 };
 
-const Toggle = ({ active }) => (
-    <div className={`w-10 h-5 rounded-full p-0.5 transition-colors duration-300 ${active ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]' : 'bg-gray-700'}`}>
+const Toggle = ({ active, onClick }) => (
+    <div
+        onClick={onClick}
+        className={`w-10 h-5 rounded-full p-0.5 transition-colors duration-300 cursor-pointer ${active ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]' : 'bg-gray-700'}`}
+    >
         <div className={`w-4 h-4 rounded-full bg-white transition-transform duration-300 ${active ? 'translate-x-5' : 'translate-x-0'}`}></div>
     </div>
 );

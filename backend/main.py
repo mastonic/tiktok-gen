@@ -308,6 +308,7 @@ async def get_agents():
         "model": a.model,
         "goal": a.goal,
         "backstory": a.backstory,
+        "is_active": a.is_active,
         "performance": 100
     } for a in agents]
 
@@ -317,6 +318,7 @@ class UpdateAgentPayload(BaseModel):
     status: Optional[str] = None
     goal: Optional[str] = None
     backstory: Optional[str] = None
+    is_active: Optional[bool] = None
 
 @app.post("/api/agents/update")
 async def update_agent(payload: UpdateAgentPayload):
@@ -334,6 +336,8 @@ async def update_agent(payload: UpdateAgentPayload):
         agent.goal = payload.goal
     if payload.backstory:
         agent.backstory = payload.backstory
+    if payload.is_active is not None:
+        agent.is_active = payload.is_active
     
     db.commit()
     db.close()
