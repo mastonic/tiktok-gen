@@ -181,17 +181,17 @@ const Studio = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
                         <Image className="h-6 w-6 text-pink-500" />
                         Production Studio
                     </h1>
-                    <p className="text-gray-400 mt-1">Générer les images FLUX.1 et exporter pour Google Veo</p>
+                    <p className="text-gray-400 mt-1 text-sm">Générer les images FLUX.1 et vidéo viral</p>
                 </div>
                 <button
                     onClick={fetchScripts}
-                    className="p-2 bg-navy-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-gray-500 transition-all"
+                    className="p-2 bg-navy-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-gray-500 transition-all self-end sm:self-auto"
                 >
                     <RefreshCw className="h-5 w-5" />
                 </button>
@@ -237,42 +237,42 @@ const Studio = () => {
                 {/* Main View */}
                 <div className="md:col-span-3 space-y-6">
                     {selectedScript ? (
-                        <div className="bg-navy-800/50 rounded-2xl border border-gray-700 p-6">
-                            <div className="flex justify-between items-start mb-6">
-                                <div>
-                                    <h2 className="text-xl font-bold text-white mb-1">{selectedScript.title}</h2>
-                                    <div className="flex gap-2">
+                        <div className="bg-navy-800/50 rounded-2xl border border-gray-700 p-4 md:p-6">
+                            <div className="flex flex-col xl:flex-row justify-between items-start gap-6 mb-6">
+                                <div className="w-full">
+                                    <h2 className="text-xl font-bold text-white mb-2">{selectedScript.title}</h2>
+                                    <div className="flex flex-wrap gap-2">
                                         {selectedScript.keywords?.split(',').map((kw, i) => (
-                                            <span key={i} className="text-[10px] bg-navy-900 text-gray-400 px-2 py-0.5 rounded border border-gray-800 truncate max-w-[100px]">
+                                            <span key={i} className="text-[10px] bg-navy-900 text-gray-400 px-2 py-1 rounded border border-gray-800 truncate max-w-[120px]">
                                                 {kw.trim()}
                                             </span>
                                         ))}
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full xl:w-auto">
                                     <button
                                         onClick={handleGenerateImages}
                                         disabled={isGenerating}
-                                        className="flex items-center gap-2 px-4 py-2 bg-pink-600 hover:bg-pink-500 disabled:bg-gray-700 text-white rounded-lg text-sm font-semibold transition-all shadow-lg shadow-pink-900/20"
+                                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-pink-600 hover:bg-pink-500 disabled:bg-gray-700 text-white rounded-lg text-xs font-semibold transition-all shadow-lg"
                                     >
                                         {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-                                        {selectedScript.hasImages ? "Régénérer" : "Générer Images"}
+                                        <span className="whitespace-nowrap">{selectedScript.hasImages ? "Régénérer" : "Images"}</span>
                                     </button>
                                     <button
                                         onClick={handleImageToVideo}
                                         disabled={!selectedScript.hasImages || videoProgress}
-                                        className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-700 text-white rounded-lg text-sm font-semibold transition-all shadow-lg shadow-cyan-900/20"
+                                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-700 text-white rounded-lg text-xs font-semibold transition-all shadow-lg"
                                     >
                                         <Film className="h-4 w-4" />
-                                        Clips Vidéo
+                                        <span className="whitespace-nowrap">Clips</span>
                                     </button>
                                     <button
                                         onClick={handleAssemblageViral}
                                         disabled={!selectedScript.hasImages}
-                                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 text-white rounded-lg text-sm font-semibold transition-all shadow-lg shadow-emerald-900/20"
+                                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 text-white rounded-lg text-xs font-semibold transition-all shadow-lg"
                                     >
                                         <PlayCircle className="h-4 w-4" />
-                                        Preview
+                                        <span className="whitespace-nowrap">Preview</span>
                                     </button>
                                 </div>
                             </div>
@@ -324,7 +324,7 @@ const Studio = () => {
                             )}
 
                             {/* Storyboard Grid */}
-                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {selectedScript.imagePrompts.map((prompt, i) => (
                                     <div key={i} className="group relative bg-navy-900 rounded-xl overflow-hidden border border-gray-800 transition-all hover:border-pink-500/50">
                                         <div className="aspect-[9/16] bg-gray-800">

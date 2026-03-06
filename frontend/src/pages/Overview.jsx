@@ -69,35 +69,35 @@ const Overview = () => {
 
     return (
         <div className="space-y-6">
-            <header className="flex justify-between items-center mb-8">
+            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Overview Dashboard</h1>
-                    <p className="text-gray-400">System status and top level metrics for today.</p>
+                    <p className="text-gray-400 text-sm">System status and top level metrics for today.</p>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex gap-3 w-full sm:w-auto">
                     <Button
                         variant="secondary"
-                        className="flex items-center gap-2 bg-[#FF007F]/20 text-[#FF007F] border border-[#FF007F]/50 hover:bg-[#FF007F]/40 hover:shadow-[0_0_15px_rgba(255,0,127,0.5)] transition-all"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[#FF007F]/20 text-[#FF007F] border border-[#FF007F]/50 hover:bg-[#FF007F]/40 transition-all font-bold"
                         onClick={() => handleRunCycle('matin')}
                         disabled={isRunning}
                     >
                         <Play className="h-4 w-4" />
-                        {isRunning ? 'Running...' : 'RUN MATIN'}
+                        {isRunning ? '...' : 'MATIN'}
                     </Button>
                     <Button
                         variant="primary"
-                        className="flex items-center gap-2 bg-[#00E5FF]/20 text-[#00E5FF] border border-[#00E5FF]/50 hover:bg-[#00E5FF]/40 hover:shadow-[0_0_15px_rgba(0,229,255,0.5)] transition-all"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[#00E5FF]/20 text-[#00E5FF] border border-[#00E5FF]/50 hover:bg-[#00E5FF]/40 transition-all font-bold"
                         onClick={() => handleRunCycle('soir')}
                         disabled={isRunning}
                     >
                         <Play className="h-4 w-4" />
-                        {isRunning ? 'Running...' : 'RUN SOIR'}
+                        {isRunning ? '...' : 'SOIR'}
                     </Button>
                 </div>
             </header>
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
                 <KPI title="Active Agents" value={overviewData.activeAgents} icon={Bot} color="text-cyan-400" />
                 <KPI title="Videos Today" value={overviewData.videosToday} icon={Video} color="text-emerald-400" target="target: 2" />
                 <KPI title="AI Cost Today" value={overviewData.aiCostToday} icon={DollarSign} color="text-amber-400" />
@@ -109,8 +109,8 @@ const Overview = () => {
                 {/* Main Section */}
                 <Card className="lg:col-span-2">
                     <h3 className="text-xl font-semibold text-white mb-4 border-b border-gray-700/50 pb-2">Top Trending Topics</h3>
-                    <div className="space-y-4 shadow-inner custom-scrollbar overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-collapse min-w-[600px]">
                             <thead>
                                 <tr className="text-gray-400 text-sm border-b border-gray-800">
                                     <th className="py-3 px-4 font-medium">Topic</th>
