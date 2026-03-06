@@ -135,11 +135,46 @@ class AgentConfig(Base):
     status = Column(String, default="Idle")
     is_active = Column(Boolean, default=True)
 
+class GrowthRecommendation(Base):
+    __tablename__ = "growth_recommendations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    type = Column(String) # scale, alert, pivot
+    title = Column(String)
+    description = Column(String)
+    action_label = Column(String, default="Apply to Pipeline")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 # Create all tables in the engine
 Base.metadata.create_all(bind=engine)
 migrate_db()
 
-# Seeding default agents if empty
+# Seeding default recommendations if empty
+db = SessionLocal()
+if db.query(GrowthRecommendation).count() == 0:
+    recs = [
+        GrowthRecommendation(
+            type="scale", 
+            title="Scale this niche", 
+            description="'Self-hosting for Beginners' content outperformed the baseline by 35%. Dedicate 1 extra run per week to this topic.",
+            action_label="Apply to Pipeline"
+        ),
+        GrowthRecommendation(
+            type="alert", 
+            title="Change hook structure", 
+            description="Listicles starting with 'Stop doing this...' are showing high ad fatigue. Try curiosity gaps ('I tried X for 30 days...').",
+            action_label="Update Prompts"
+        ),
+        GrowthRecommendation(
+            type="pivot", 
+            title="Pivot format", 
+            description="Videos over 60s are losing 80% retention. Limit scripts to 45s maximum length for the next 7 days.",
+            action_label="Adjust Scripting"
+        )
+    ]
+    db.add_all(recs)
+    db.commit()
+db.close()
 def seed_agents():
     db = SessionLocal()
     count = db.query(AgentConfig).count()

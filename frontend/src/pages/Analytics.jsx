@@ -76,25 +76,42 @@ const Analytics = () => {
                     </h3>
 
                     <div className="space-y-4 flex-1">
-                        <div className="p-4 bg-emerald-900/10 border border-emerald-500/20 rounded-xl relative">
-                            <div className="text-sm font-semibold text-emerald-400 mb-1">Scale this niche</div>
-                            <p className="text-sm text-gray-300">"Personal Finance for Gen Z" content outperformed the baseline by 45%. Dedicate 1 extra run per week to this topic.</p>
-                            <Button variant="primary" className="mt-3 text-xs !py-1.5 w-full bg-emerald-600 hover:bg-emerald-500 shadow-none border border-emerald-500">Apply to Pipeline</Button>
-                        </div>
+                        {runMetrics?.recommendations?.length > 0 ? (
+                            runMetrics.recommendations.map(rec => (
+                                <div
+                                    key={rec.id}
+                                    className={`p-4 rounded-xl border relative transition-all hover:scale-[1.02] ${rec.type === 'scale'
+                                            ? 'bg-emerald-900/10 border-emerald-500/20'
+                                            : 'bg-navy-800 border-gray-700'
+                                        }`}
+                                >
+                                    {rec.type === 'scale' && <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500/50 rounded-t-xl"></div>}
 
-                        <div className="p-4 bg-navy-800 rounded-xl border border-gray-700">
-                            <div className="text-sm font-semibold text-gray-200 mb-1 flex items-center gap-2">
-                                <AlertCircle className="w-4 h-4 text-amber-500" /> Change hook structure
+                                    <div className={`text-sm font-semibold mb-1 flex items-center gap-2 ${rec.type === 'scale' ? 'text-emerald-400' : 'text-gray-200'
+                                        }`}>
+                                        {rec.type !== 'scale' && <AlertCircle className="w-4 h-4 text-amber-500" />}
+                                        {rec.title}
+                                    </div>
+                                    <p className={`text-sm ${rec.type === 'scale' ? 'text-gray-300' : 'text-gray-400'}`}>
+                                        {rec.description}
+                                    </p>
+                                    <Button
+                                        variant={rec.type === 'scale' ? 'primary' : 'outline'}
+                                        className={`mt-3 text-[10px] uppercase tracking-wider font-bold !py-2 w-full ${rec.type === 'scale'
+                                                ? 'bg-emerald-600 hover:bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-900/20'
+                                                : 'border-gray-700 text-gray-400 hover:text-white'
+                                            }`}
+                                    >
+                                        {rec.action_label}
+                                    </Button>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="h-40 flex flex-col items-center justify-center text-center px-4">
+                                <Sparkles className="w-8 h-8 text-gray-700 mb-2 opacity-20" />
+                                <p className="text-gray-500 text-sm italic">Waiting for agents to generate strategic growth insights...</p>
                             </div>
-                            <p className="text-sm text-gray-400">Listicles starting with "Stop doing this..." are showing high ad fatigue. Try curiosity gaps ("I tried X for 30 days...").</p>
-                        </div>
-
-                        <div className="p-4 bg-navy-800 rounded-xl border border-gray-700">
-                            <div className="text-sm font-semibold text-gray-200 mb-1 flex items-center gap-2">
-                                <AlertCircle className="w-4 h-4 text-amber-500" /> Pivot format
-                            </div>
-                            <p className="text-sm text-gray-400">Videos over 60s are losing 80% retention at the 45s mark. Limit scripts to 45s maximum length for the next 7 days.</p>
-                        </div>
+                        )}
                     </div>
                 </Card>
             </div>

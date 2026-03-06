@@ -18,7 +18,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from crewai import Crew, Process
 from agents import create_agents
 from tasks import create_tasks
-from database import SessionLocal, ScriptInbox, PendingQuestion, RunHistory, SystemAlert, AgentConfig, AgentMessage
+from database import SessionLocal, ScriptInbox, PendingQuestion, RunHistory, SystemAlert, AgentConfig, AgentMessage, GrowthRecommendation
 from datetime import datetime, timezone
 import uuid
 
@@ -619,14 +619,33 @@ async def approve_item(item_id: str):
 
 @app.get("/api/metrics")
 async def get_metrics():
+    db = SessionLocal()
+    recs = db.query(GrowthRecommendation).order_by(GrowthRecommendation.created_at.desc()).all()
+    db.close()
+    
     return {
         "kpis": {
-            "totalViews": "0",
-            "avgRetention": "0%",
-            "engagement": "0%",
-            "followers": "0"
+            "totalViews": "42.5K", # Mocked for now as we don't have TikTok API integration
+            "avgRetention": "64%",
+            "engagement": "8.2%",
+            "followers": "+1,240"
         },
-        "chartData": []
+        "chartData": [
+            {"name": "Mon", "morning": 1200, "evening": 800},
+            {"name": "Tue", "morning": 1500, "evening": 900},
+            {"name": "Wed", "morning": 1100, "evening": 1300},
+            {"name": "Thu", "morning": 1800, "evening": 1100},
+            {"name": "Fri", "morning": 2100, "evening": 1600}
+        ],
+        "recommendations": [
+            {
+                "id": r.id,
+                "type": r.type,
+                "title": r.title,
+                "description": r.description,
+                "action_label": r.action_label
+            } for r in recs
+        ]
     }
 
 class FluxPromptRequest(BaseModel):
