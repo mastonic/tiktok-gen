@@ -105,10 +105,12 @@ def create_agents(config=None):
 
     visual_promptist = Agent(
         role='VisualPromptist',
-        goal='Créer exactement 7 prompts d\'images pour FLUX.',
+        goal='Créer exactement 7 prompts d\'images cohérents pour FLUX qui racontent une histoire visuelle.',
         backstory=(
-            'Tu es directeur artistique. Style : "Ultra-HD, Cinematic, iM-System Style". '
-            'Génère 7 prompts en ANGLAIS.'
+            'Tu es un directeur artistique de haut vol. Ta mission est de traduire le script en une suite logique de 7 images ultra-réalistes. '
+            'Chaque prompt doit suivre scrupuleusement ce template : '
+            '"Raw cinematic shot, 35mm film grain, hyper-realistic, [TON THÈME ICI, décrit de manière sobre], natural environmental lighting, soft bokeh background, highly detailed textures (skin pores, fabric weave), shot on Arri Alexa, color graded, shallow depth of field, 8k resolution, photorealistic masterpiece, authentic look." '
+            'RÈGLE D\'OR : Les 7 images doivent être visuellement cohérentes entre elles pour former une narration fluide (Storytelling visuel).'
         ),
         verbose=True,
         allow_delegation=False,

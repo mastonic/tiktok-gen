@@ -54,12 +54,14 @@ def create_tasks(trend_radar, viral_judge, monetization_scorer, script_architect
 
     task_visuals = Task(
         description=(
-            "À partir du script validé par ScriptArchitect, rédige EXACTEMENT 7 prompts en ANGLAIS optimisés pour le modèle FLUX.1. "
-            f"Chaque prompt DOIT inclure le style imposé: 'Ultra-HD, Cinematic, iM-System Style (Neon Pink/Cyan accents)'. "
-            f"Prends en compte que l'actualité/la date de diffusion est le {now}. "
-            "Respecte la structure: 1(0-5s Hook), 2-4(5-15s Explication), 5-6(15-25s Démo), 7(25-30s CTA Logo)."
+            "À partir du script validé par ScriptArchitect, rédige EXACTEMENT 7 prompts en ANGLAIS pour FLUX.1. "
+            "Chaque prompt DOIT suivre ce format précis : "
+            "'Raw cinematic shot, 35mm film grain, hyper-realistic, [CONTENU DE LA SCÈNE ICI], natural environmental lighting, soft bokeh background, highly detailed textures, shot on Arri Alexa, color graded, shallow depth of field, 8k resolution.' "
+            "IMPORTANT : Les 7 images doivent raconter une HISTOIRE COHÉRENTE. Le sujet, les couleurs et l'ambiance doivent être constants du début à la fin (Visual consistency). "
+            f"Prends en compte que l'actualité est le {now}. "
+            "Structure : 1(Hook), 2-4(Story/Explication), 5-6(Demo/Action), 7(Final/Logo)."
         ),
-        expected_output="Une liste de 7 prompts en anglais prêts à être envoyés au modèle de génération d'image.",
+        expected_output="Une suite cohérente de 7 prompts cinématiques en anglais racontant une histoire visuelle complète.",
         agent=visual_promptist
     )
 
