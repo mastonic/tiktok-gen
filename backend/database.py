@@ -80,6 +80,36 @@ def migrate_db():
                 except Exception as e:
                     print(f"Migration error on agent_configs {col}: {e}")
             
+    # Check system_config
+    cursor.execute("PRAGMA table_info(system_config)")
+    columns = [row[1] for row in cursor.fetchall()]
+    if columns:
+        needed_sys = {
+            "system_name": "TEXT DEFAULT 'Mission Control - Primary'",
+            "environment": "TEXT DEFAULT 'Production (Live)'",
+            "strict_mode": "BOOLEAN DEFAULT 1",
+            "debug_logging": "BOOLEAN DEFAULT 0",
+            "access_token": "TEXT DEFAULT 'im-dev-token-2026'",
+            "allowed_ips": "TEXT DEFAULT '*'",
+            "openai_key": "TEXT DEFAULT ''",
+            "gemini_key": "TEXT DEFAULT ''",
+            "fal_key": "TEXT DEFAULT ''",
+            "stability_key": "TEXT DEFAULT ''",
+            "elevenlabs_key": "TEXT DEFAULT ''",
+            "auto_cleanup_days": "INTEGER DEFAULT 30",
+            "discord_webhook": "TEXT DEFAULT ''",
+            "telegram_token": "TEXT DEFAULT ''",
+            "enable_alerts": "BOOLEAN DEFAULT 1",
+            "last_reset": "TEXT"
+        }
+        for col, type_def in needed_sys.items():
+            if col not in columns:
+                try:
+                    cursor.execute(f"ALTER TABLE system_config ADD COLUMN {col} {type_def}")
+                    print(f"Migration: added {col} to system_config")
+                except Exception as e:
+                    print(f"Migration error on system_config {col}: {e}")
+
     conn.commit()
     conn.close()
 
