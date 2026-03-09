@@ -21,23 +21,27 @@ const Overview = () => {
         estProfitScore: '0.0',
         budgetRemaining: '$0.00'
     });
+    const [config, setConfig] = useState({ commando_mode: false });
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
-                const [overviewRes, trendsRes, alertsRes] = await Promise.all([
+                const [overviewRes, trendsRes, alertsRes, configRes] = await Promise.all([
                     fetch(`${apiUrl}/api/overview`),
                     fetch(`${apiUrl}/api/trends`),
-                    fetch(`${apiUrl}/api/alerts`)
+                    fetch(`${apiUrl}/api/alerts`),
+                    fetch(`${apiUrl}/api/system/config`)
                 ]);
                 const overviewData = await overviewRes.json();
                 const trendsData = await trendsRes.json();
                 const alertsData = await alertsRes.json();
+                const configData = await configRes.json();
 
                 setOverviewData(overviewData);
                 setTrends(trendsData);
                 setAlerts(alertsData);
+                setConfig(configData);
             } catch (error) {
                 console.error("Error fetching dashboard data:", error);
             }
@@ -72,7 +76,14 @@ const Overview = () => {
             <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Overview Dashboard</h1>
-                    <p className="text-gray-400 text-sm">System status and top level metrics for today.</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-gray-400 text-sm">System status and top level metrics for today.</p>
+                        {config.commando_mode && (
+                            <Badge variant="danger" className="animate-pulse bg-red-500/20 text-red-500 border border-red-500/50 flex items-center gap-1">
+                                <TrendingUp className="w-3 h-3" /> COMMANDO 10K ACTIVE
+                            </Badge>
+                        )}
+                    </div>
                 </div>
                 <div className="flex gap-3 w-full sm:w-auto">
                     <Button

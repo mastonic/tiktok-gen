@@ -158,28 +158,34 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
         db.close()
         config_dict = {a.role: a.model for a in agent_configs}
         
-        # 1. Instantiate the 8 agents (including Commander and Distributor)
-        trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, tiktok_distributor, growth_commander = create_agents(config=config_dict)
+        # 1. Instantiate agents (conditional Commando Mode)
+        commando_enabled = conf.commando_mode if conf else False
         
+        agents_out = create_agents(config=config_dict, commando_mode=commando_enabled)
+        
+        # Unpack based on mode
+        if commando_enabled:
+            trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, tiktok_distributor, growth_commander = agents_out
+            agents_list = [trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, tiktok_distributor, growth_commander]
+        else:
+            trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller = agents_out
+            agents_list = [trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller]
+
         update_run_progress(run_id, 25, "Planification des tâches")
         save_agent_message(run_id, "Manager", "System", "info", "Calcul du chemin critique et assignation des tâches terminée.")
-        print("Creating tasks...")
-        # 2. Create the 8 tasks
+        print(f"Creating tasks (Commando: {commando_enabled})...")
+        
+        # 2. Create tasks based on mode
         tasks = create_tasks(
-            trend_radar, viral_judge, monetization_scorer, 
-            script_architect, visual_promptist, quality_controller, 
-            tiktok_distributor, growth_commander, 
-            run_type
+            *agents_out, 
+            run_type=run_type, 
+            commando_mode=commando_enabled
         )
         
         print("Instantiating crew...")
         # 3. Add all agents to the crew
         crew = Crew(
-            agents=[
-                trend_radar, viral_judge, monetization_scorer, 
-                script_architect, visual_promptist, quality_controller, 
-                tiktok_distributor, growth_commander
-            ],
+            agents=agents_list,
             tasks=tasks,
             process=Process.sequential,
             verbose=True
@@ -1020,6 +1026,7 @@ class UpdateSystemConfigPayload(BaseModel):
     telegram_token: Optional[str] = None
     telegram_chat_id: Optional[str] = None
     enable_alerts: Optional[bool] = None
+    commando_mode: Optional[bool] = None
 
 @app.get("/api/system/config")
 async def get_system_config():
@@ -1034,7 +1041,7 @@ async def get_system_config():
             "access_token": "im-dev-token-2026", "allowed_ips": "*",
             "openai_key": "", "gemini_key": "", "fal_key": "", "stability_key": "", "elevenlabs_key": "",
             "auto_cleanup_days": 30,
-            "discord_webhook": "", "telegram_token": "", "telegram_chat_id": "", "enable_alerts": True
+            "discord_webhook": "", "telegram_token": "", "telegram_chat_id": "", "enable_alerts": True, "commando_mode": False
         }
     return {
         "daily_cap": conf.daily_cap,
@@ -1056,7 +1063,8 @@ async def get_system_config():
         "discord_webhook": conf.discord_webhook,
         "telegram_token": conf.telegram_token,
         "telegram_chat_id": conf.telegram_chat_id,
-        "enable_alerts": conf.enable_alerts
+        "enable_alerts": conf.enable_alerts,
+        "commando_mode": conf.commando_mode
     }
 
 @app.post("/api/system/config")

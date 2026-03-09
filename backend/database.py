@@ -103,6 +103,7 @@ def migrate_db():
             "telegram_token": "TEXT DEFAULT ''",
             "telegram_chat_id": "TEXT DEFAULT ''",
             "enable_alerts": "BOOLEAN DEFAULT 1",
+            "commando_mode": "BOOLEAN DEFAULT 0",
             "last_reset": "TEXT"
         }
         for col, type_def in needed_sys.items():
@@ -184,6 +185,7 @@ class SystemConfig(Base):
     environment = Column(String, default="Production (Live)")
     strict_mode = Column(Boolean, default=True)
     debug_logging = Column(Boolean, default=False)
+    commando_mode = Column(Boolean, default=False)
     
     # Security & Access
     access_token = Column(String, default="im-dev-token-2026")
@@ -394,7 +396,8 @@ def seed_system_config():
             discord_webhook="",
             telegram_token="",
             telegram_chat_id="",
-            enable_alerts=True
+            enable_alerts=True,
+            commando_mode=False
         )
         db.add(conf)
         db.commit()

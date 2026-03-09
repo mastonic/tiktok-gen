@@ -2,10 +2,16 @@ from crewai import Task
 from agents import ask_human_in_loop
 import datetime
 
-def create_tasks(trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, tiktok_distributor, growth_commander, run_type="matin"):
+def create_tasks(*args, run_type="matin", commando_mode=False):
     now = datetime.datetime.now().strftime("%d/%m/%Y à %H:%M")
     focus_topic = "News IA, Outils gratuits, Nouveautés LLMs" if run_type == "matin" else "Tutoriels techniques, Self-hosting, Contours d'abonnements"
     
+    # Unpack agents
+    if commando_mode:
+        trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, tiktok_distributor, growth_commander = args
+    else:
+        trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller = args
+
     task_scout = Task(
         description=(
             f"Fais une recherche exhaustive sur le Web et via des flux RSS (Reddit /r/LocalLLMs, GitHub Trending) "
@@ -30,15 +36,20 @@ def create_tasks(trend_radar, viral_judge, monetization_scorer, script_architect
         agent=viral_judge
     )
 
-    task_growth_strategy = Task(
-        description=(
-            "Analyse le sujet sélectionné et définis le 'HOOK' (l'accroche) le plus violent possible pour TikTok. "
-            "Ta mission est de hacker l'attention en 1.5 seconde. "
-            "Donne des instructions précises à ScriptArchitect pour que le script soit une machine à vues."
-        ),
-        expected_output="Une stratégie de hook (visuel + texte) agressive pour maximiser le watchtime.",
-        agent=growth_commander
-    )
+    tasks = [task_scout, task_filter]
+
+    # Optional Commando Strategy Task
+    if commando_mode:
+        task_growth_strategy = Task(
+            description=(
+                "Analyse le sujet sélectionné et définis le 'HOOK' (l'accroche) le plus violent possible pour TikTok. "
+                "Ta mission est de hacker l'attention en 1.5 seconde. "
+                "Donne des instructions précises à ScriptArchitect pour que le script soit une machine à vues."
+            ),
+            expected_output="Une stratégie de hook (visuel + texte) agressive pour maximiser le watchtime.",
+            agent=growth_commander
+        )
+        tasks.append(task_growth_strategy)
 
     task_scoring = Task(
         description=(
@@ -48,59 +59,67 @@ def create_tasks(trend_radar, viral_judge, monetization_scorer, script_architect
         expected_output="Un score /100 justifié par un paragraphe expliquant l'économie réalisée par l'abonnement évité.",
         agent=monetization_scorer
     )
+    tasks.append(task_scoring)
 
+    # Dynamic CTA based on mode
+    cta = "J'ai cassé Internet... encore. Alors abonne-toi et mets un cœur pour ne rien rater !" if commando_mode else "J'ai cassé Internet... encore."
     task_scripting = Task(
         description=(
-            "En utilisant le sujet, la 'Killer Feature' et LA STRATÉGIE DE HOOK de GrowthCommander, écris un script TikTok narratif en français d'exactement 30 secondes (environ 60-75 mots). "
+            f"En utilisant le sujet, la 'Killer Feature' (et la stratégie de hook si disponible), écris un script TikTok narratif en français d'exactement 30 secondes. "
             "Adopte ton ton 'iM' unique : calme, posé, direct, et avec une touche d'ironie hautaine. "
             "Identifie 3 mots-clés dans le texte qui expriment le coeur de la valeur (ex: GRATUIT, LOCAL, INFINI) et mets-les TOUT EN MAJUSCULES. "
-            "La toute dernière ligne de ton script DOIT ÊTRE EXACTEMENT : 'J'ai cassé Internet... encore. Alors abonne-toi et mets un cœur pour ne rien rater !'"
+            f"La toute dernière ligne de ton script DOIT ÊTRE EXACTEMENT : '{cta}'"
         ),
         expected_output="Un script TikTok complet, avec les 3 mots clés EN MAJUSCULES, et la signature exacte à la fin.",
         agent=script_architect
     )
+    tasks.append(task_scripting)
 
     task_visuals = Task(
         description=(
             "À partir du script validé par ScriptArchitect, rédige EXACTEMENT 7 prompts en ANGLAIS pour FLUX.1. "
             "Chaque prompt DOIT suivre ce format précis : "
             "'Raw cinematic shot, 35mm film grain, hyper-realistic, [CONTENU DE LA SCÈNE ICI], natural environmental lighting, soft bokeh background, highly detailed textures, shot on Arri Alexa, color graded, shallow depth of field, 8k resolution.' "
-            "IMPORTANT : Les 7 images doivent raconter une HISTOIRE COHÉRENTE. Le sujet, les couleurs et l'ambiance doivent être constants du début à la fin (Visual consistency). "
+            "IMPORTANT : Les 7 images doivent raconter une HISTOIRE COHÉRENTE. Le sujet, les couleurs et l'ambiance doivent être constants du début à la fin. "
             f"Prends en compte que l'actualité est le {now}. "
             "Structure : 1(Hook), 2-4(Story/Explication), 5-6(Demo/Action), 7(Final/Logo)."
         ),
         expected_output="Une suite cohérente de 7 prompts cinématiques en anglais racontant une histoire visuelle complète.",
         agent=visual_promptist
     )
+    tasks.append(task_visuals)
 
-    task_distribution = Task(
-        description=(
-            "Crée la 'Caption' TikTok parfaite (description + hashtags) pour ce script. "
-            "Utilise un Hook textuel en première ligne, des émojis stratégiques, et mélange 5 hashtags de niche et 2 hashtags larges."
-        ),
-        expected_output="Une description TikTok optimisée SEO et viralité avec hashtags.",
-        agent=tiktok_distributor
-    )
+    # Optional Distribution Task
+    if commando_mode:
+        task_distribution = Task(
+            description=(
+                "Crée la 'Caption' TikTok parfaite (description + hashtags) pour ce script. "
+                "Utilise un Hook textuel en première ligne, des émojis stratégiques, et mélange 5 hashtags de niche et 2 hashtags larges."
+            ),
+            expected_output="Une description TikTok optimisée SEO et viralité avec hashtags.",
+            agent=tiktok_distributor
+        )
+        tasks.append(task_distribution)
 
     task_review = Task(
         description=(
-            "Relis le script, les prompts de visuals et la caption de distribution. Vérifie 4 éléments critiques: "
-            "1. Le script a-t-il exactement la phrase de fin requise avec le CTA 'abonne-toi' ? "
+            "Relis le script, les prompts de visuals (et la caption si disponible). Vérifie les éléments critiques: "
+            f"1. Le script a-t-il exactement la phrase de fin requise ? ({cta}) "
             "2. Y a-t-il bien 3 mots en MAJUSCULES pour le montage vidéo ? "
-            "3. La caption de TikTokDistributor est-elle percutante ? "
-            "4. Y a-t-il exactement 7 prompts visuels en anglais avec le style imposé ? \n\n"
-            "RÉCUPÉRATION BLOG: Récupère également la liste des 5 sujets initiaux trouvés par TrendRadar.\n\n"
+            "3. Y a-t-il exactement 7 prompts visuels en anglais avec le style imposé ? \n\n"
+            "RÉCUPÉRATION BLOG: Récupère également la liste des 5 sujets initiaux pour le blog.\n\n"
             "Si tout est validé, approuve le lancement en production finale."
         ),
         expected_output=(
             "Un bloc JSON contenant :\n"
-            "- 'titre', 'script', 'score_roi', 'mots_cles' (string), 'image_prompts' (list), 'tiktok_caption' (string), 'statut_validation' (bool)\n"
-            "- 'top_5_concepts': une liste d'objets [{'titre': ..., 'killerfeature': ...}] issue du scouting initial pour le blog.\n"
+            "- 'titre', 'script', 'score_roi', 'mots_cles' (string), 'image_prompts' (list), 'tiktok_caption' (string, if any), 'statut_validation' (bool)\n"
+            "- 'top_5_concepts': une liste d'objetsissue du scouting initial pour le blog.\n"
             "Tu dois IMPÉRATIVEMENT renvoyer la réponse FORMATÉE EN JSON VALIDE DANS UN BLOC ```json ... ```."
         ),
         agent=quality_controller
     )
+    tasks.append(task_review)
 
-    return [task_scout, task_filter, task_growth_strategy, task_scoring, task_scripting, task_visuals, task_distribution, task_review]
+    return tasks
 
     return [task_scout, task_filter, task_scoring, task_scripting, task_visuals, task_review]

@@ -19,7 +19,8 @@ const Settings = () => {
         discord_webhook: "",
         telegram_token: "",
         telegram_chat_id: "",
-        enable_alerts: true
+        enable_alerts: true,
+        commando_mode: false
     });
     const [isSaving, setIsSaving] = useState(false);
     const [activeTab, setActiveTab] = useState("General");
@@ -191,6 +192,12 @@ const Settings = () => {
                                         description="Persist verbose Swarm Chat logs and internal agent traces."
                                         active={config.debug_logging}
                                         onClick={() => setConfig({ ...config, debug_logging: !config.debug_logging })}
+                                    />
+                                    <ToggleSetting
+                                        title="🚀 Opération Commando 10k"
+                                        description="Active l'unité d'élite (GrowthCommander) pour maximiser les abonnés en 30 jours via des Hooks ultra-agressifs."
+                                        active={config.commando_mode}
+                                        onClick={() => setConfig({ ...config, commando_mode: !config.commando_mode })}
                                     />
                                 </div>
                             </section>

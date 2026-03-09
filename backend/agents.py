@@ -41,7 +41,7 @@ def ask_human_in_loop(agent_name: str, context: str, question: str) -> str:
     except Exception as e:
         return f"Failed to reach Human: {e}"
 
-def create_agents(config=None):
+def create_agents(config=None, commando_mode=False):
     # config is a dict: { 'TrendRadar': 'openai/gpt-4o', ... }
     def get_agent_llm(role):
         m = config.get(role, "openai/gpt-4o-mini") if config else "openai/gpt-4o-mini"
@@ -82,26 +82,19 @@ def create_agents(config=None):
         llm=get_agent_llm('MonetizationScorer')
     )
 
+    # Note: If commando_mode is ON, ScriptArchitect uses a harder CTA
+    cta_text = '"J\'ai cassé Internet... encore. Alors abonne-toi et mets un cœur pour ne rien rater !"' if commando_mode else '"J\'ai cassé Internet... encore."'
+
     script_architect = Agent(
         role='ScriptArchitect',
         goal='Rédiger un script TikTok ironique et percutant de 30 secondes.',
         backstory=(
-            'Tu es le scénariste vedette de iM System. Ton script DOIT OBLIGATOIREMENT se terminer par : '
-            '"J\'ai cassé Internet... encore. Alors abonne-toi et mets un cœur pour ne rien rater !" '
+            f'Tu es le scénariste vedette de iM System. Ton script DOIT OBLIGATOIREMENT se terminer par : {cta_text} '
             'Mets 3 mots-clés stratégiques en MAJUSCULES.'
         ),
         verbose=True,
         allow_delegation=False,
         llm=get_agent_llm('ScriptArchitect')
-    )
-
-    quality_controller = Agent(
-        role='QualityController',
-        goal='Vérifier la cohérence globale du script et des prompts visuels.',
-        backstory='Tu es le garant final. Tu vérifies le respect des contraintes et tu valides.',
-        verbose=True,
-        allow_delegation=False,
-        llm=get_agent_llm('QualityController')
     )
 
     visual_promptist = Agent(
@@ -117,6 +110,18 @@ def create_agents(config=None):
         allow_delegation=False,
         llm=get_agent_llm('VisualPromptist')
     )
+
+    quality_controller = Agent(
+        role='QualityController',
+        goal='Vérifier la cohérence globale du script et des prompts visuels.',
+        backstory='Tu es le garant final. Tu vérifies le respect des contraintes et tu valides.',
+        verbose=True,
+        allow_delegation=False,
+        llm=get_agent_llm('QualityController')
+    )
+
+    if not commando_mode:
+        return trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller
 
     tiktok_distributor = Agent(
         role='TikTokDistributor',
