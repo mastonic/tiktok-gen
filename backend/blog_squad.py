@@ -75,7 +75,7 @@ class BlogSquad:
     - 1 fichier .md sauvegardé dans /blog/posts/
     """
 
-    BLOG_POSTS_DIR = Path(__file__).parent.parent / "blog" / "posts"
+    BLOG_POSTS_DIR = Path(__file__).parent / "blog" / "posts"
 
     def __init__(self, model: str = "openai/gpt-4o-mini"):
         self.llm = _get_llm(model)

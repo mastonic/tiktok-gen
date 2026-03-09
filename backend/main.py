@@ -1406,7 +1406,7 @@ async def run_blog_squad(payload: BlogSquadRunPayload, background_tasks: Backgro
 @app.get("/api/blog-squad/posts")
 async def list_blog_posts():
     """Liste tous les fichiers .md générés dans /blog/posts/, triés du plus récent au plus ancien."""
-    posts_dir = Path(__file__).parent.parent / "blog" / "posts"
+    posts_dir = Path(__file__).parent / "blog" / "posts"
     if not posts_dir.exists():
         return []
 
@@ -1452,7 +1452,7 @@ async def list_blog_posts():
 @app.get("/api/blog-squad/post/{slug}")
 async def get_blog_post_raw(slug: str):
     """Sert le contenu Markdown brut d'un article pour le rendu côté React."""
-    posts_dir = Path(__file__).parent.parent / "blog" / "posts"
+    posts_dir = Path(__file__).parent / "blog" / "posts"
     file_path = posts_dir / f"{slug}.md"
 
     if not file_path.exists():

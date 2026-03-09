@@ -14,19 +14,30 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5656';
  */
 function parseMarkdownFile(rawContent) {
     const frontmatter = {};
-    let body = rawContent;
+    let body = rawContent.trim();
     let bentoData = null;
 
+    // Supprime d'éventuels backticks de code block au début (si l'IA s'est trompée)
+    body = body.replace(/^```markdown\r?\n/i, '').replace(/\r?\n```$/, '');
+
     // Extract YAML frontmatter between ---
-    const fmMatch = rawContent.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+    // On utilise un regex plus souple qui accepte des espaces avant le premier ---
+    const fmMatch = body.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+
     if (fmMatch) {
         const yamlStr = fmMatch[1];
-        body = fmMatch[2];
+        body = fmMatch[2].trim();
         // Simple YAML key: "value" parser
         yamlStr.split(/\r?\n/).forEach(line => {
-            const kv = line.match(/^(\w+):\s*"?([\s\S]*?)"?\s*$/);
+            const kv = line.match(/^([\w-]+):\s*"?([\s\S]*?)"?\s*$/);
             if (kv) frontmatter[kv[1]] = kv[2].replace(/^"(.*)"$/, '$1').trim();
         });
+    }
+
+    // Secondary cleanup: if body still starts with YAML-like structure, it's a bug in generation or double FM
+    if (body.startsWith('---')) {
+        const secondMatch = body.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+        if (secondMatch) body = secondMatch[2].trim();
     }
 
     // Extract AFFILIATE_BENTO_DATA JSON comment
