@@ -59,7 +59,7 @@ const PostCard = ({ post, onClick }) => (
 // ─────────────────────────────────────────
 // Section Héro Vidéo
 // ─────────────────────────────────────────
-const HeroSection = ({ data }) => {
+const HeroSection = ({ data, onReadArticle }) => {
     const tools = data?.tools || [];
 
     return (
@@ -89,17 +89,25 @@ const HeroSection = ({ data }) => {
                     </div>
                 </div>
 
-                <div className="space-y-4">
-                    <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1]">
+                <div className="space-y-6">
+                    <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-white">
                         {data?.videoTitle || 'Le Secret de l\'IA Révélé'}
-                        <br className="hidden md:block" />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
-                            {' '}(1M de Vues !)
-                        </span>
                     </h1>
+
                     <p className="text-gray-400 text-lg md:text-xl max-w-2xl leading-relaxed">
                         {data?.summary || 'Voici les outils exacts utilisés pour créer cette vidéo. Testez-les gratuitement.'}
                     </p>
+
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => onReadArticle(data?.slug || "")}
+                            className="bg-cyan-500 hover:bg-cyan-400 text-black px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all transform hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center gap-2"
+                        >
+                            <BookOpen className="w-5 h-5" />
+                            Lire l'article
+                        </button>
+                    </div>
+
                     <ul className="hidden md:block space-y-3 text-gray-500 border-l-2 border-white/5 pl-6 text-sm">
                         <li>• Automatisation complète via CrewAI</li>
                         <li>• Rendu cinématique via Luma Dream Machine</li>
@@ -222,7 +230,7 @@ const Blog = () => {
                         <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
                     </div>
                 ) : heroData ? (
-                    <HeroSection data={heroData} />
+                    <HeroSection data={heroData} onReadArticle={(slug) => setActivePost(slug)} />
                 ) : (
                     <div className="text-center py-20 text-gray-600">
                         <AlertCircle className="w-10 h-10 mx-auto mb-3 text-gray-700" />

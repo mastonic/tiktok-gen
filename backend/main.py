@@ -1330,9 +1330,13 @@ async def get_blog_data(script_id: int):
 
     video_path = f"/media/production/db_{script.id}/final_output.mp4"
     
+    # Simple slugify for matching
+    slug = re.sub(r'[^a-z0-9]+', '-', script.title.lower()).strip('-')
+    
     return {
         "videoTitle": script.title,
         "videoUrl": f"http://localhost:5656{video_path}",
+        "slug": slug,
         "summary": script.blog_summary or f"Voici les outils utilisés dans cette vidéo sur {script.title}.",
         "tools": [{
             "name": l.name, "category": l.category,
