@@ -1451,6 +1451,9 @@ async def list_blog_posts():
             print(f"Error reading blog post {f.name}: {e}")
             continue
             
+    # Sort by date (YYYY-MM-DD) string, then by mtime
+    posts.sort(key=lambda x: (x.get("date") or "0000-00-00", x.get("mtime", 0)), reverse=True)
+    
     return posts
 
 @app.get("/api/blog-squad/post/{slug}")
