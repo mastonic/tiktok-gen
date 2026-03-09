@@ -13,14 +13,18 @@ import traceback
 import re
 import wave
 import contextlib
+from pathlib import Path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from crewai import Crew, Process
 from agents import create_agents
 from tasks import create_tasks
-from database import SessionLocal, ScriptInbox, PendingQuestion, RunHistory, SystemAlert, AgentConfig, AgentMessage, GrowthRecommendation, SystemConfig
+from database import SessionLocal, ScriptInbox, PendingQuestion, RunHistory, SystemAlert, AgentConfig, AgentMessage, GrowthRecommendation, SystemConfig, AffiliateLink
 from datetime import datetime, timezone
 import uuid
+from apscheduler.schedulers.background import BackgroundScheduler
+from notifications import send_telegram_message, send_telegram_video
+from production import automate_visual_production
 
 def save_agent_message(content_id, from_agent, to_agent, msg_type, summary, payload={}):
     db = SessionLocal()
@@ -144,6 +148,9 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
     sys.stdout = log_capture
     try:
         update_run_progress(run_id, 10, "Configuration des agents")
+        msg = f"🚀 <b>iM-System [{run_type.upper()}]</b>\nDémarrage de l'essaim d'agents IA..."
+        send_telegram_message(msg)
+        
         save_agent_message(run_id, "System", "Swarm", "info", f"Démarrage d'un nouveau cycle Swarm ({run_type})")
         
         db = SessionLocal()
@@ -171,6 +178,7 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
         print("Kicking off crew...")
         result = str(crew.kickoff())
         update_run_progress(run_id, 85, "Optimisation du script final")
+        send_telegram_message(f"✅ <b>Script généré</b>\nAnalyse et scoring terminé par ViralJudge.")
         save_agent_message(run_id, "QualityController", "System", "info", "Script généré, revue de qualité par le Swarm effectuée.")
         print(f"Crew execution completed.")
         
@@ -208,6 +216,41 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
             
             db.commit()
             print("Successfully saved Script to Inbox and created Alert.")
+            
+            # Send Telegram notification with script preview
+            script_preview = data.get("script", result)[:300] + "..."
+            send_telegram_message(f"📝 <b>Nouveau Script : {new_script.title}</b>\n\n{script_preview}\n\n<i>Lancement de la production visuelle (Images/Vidéo)...</i>")
+            
+            # --- AUTOMATION: Trigger BlogSquad & Visual Production ---
+            import threading
+            
+            # 1. BlogSquad Automation: Refresh the blog with Top 5 latest scripts
+            try:
+                # Use the top_5_concepts from the agent's output if available, 
+                # otherwise fallback to DB (for safety)
+                blog_concepts = data.get("top_5_concepts", [])
+                
+                if not blog_concepts:
+                    db_blog = SessionLocal()
+                    latest_scripts = db_blog.query(ScriptInbox).order_by(ScriptInbox.created_at.desc()).limit(5).all()
+                    db_blog.close()
+                    if latest_scripts:
+                        blog_concepts = [{"titre": s.title, "killerfeature": s.keywords or s.title} for s in latest_scripts]
+                
+                if blog_concepts:
+                    # We trigger the background runner (_run_blog_squad_sync is defined at line 1329)
+                    blog_thread = threading.Thread(target=_run_blog_squad_sync, args=(blog_concepts,))
+                    blog_thread.start()
+                    print(f"✅ BlogSquad auto-triggered for {len(blog_concepts)} scripts (including bonus ones).")
+            except Exception as blog_e:
+                print(f"⚠️ Manual/Auto BlogSquad trigger skipped: {blog_e}")
+
+            # 2. Visual Production Automation: Only for scheduled or designated runs (matin/soir)
+            if run_type in ["matin", "soir"]:
+                send_telegram_message(f"⚙️ <b>Automatisation Activée</b>\nLancement immédiat du pipeline visuel Fal.ai (Flux + Kling)...")
+                # Hand over to production flow in background
+                prod_thread = threading.Thread(target=automate_visual_production, args=(new_script.id,))
+                prod_thread.start()
             
             if run_id:
                 run_rec = db.query(RunHistory).filter(RunHistory.run_id == run_id).first()
@@ -963,6 +1006,7 @@ class UpdateSystemConfigPayload(BaseModel):
     auto_cleanup_days: Optional[int] = None
     discord_webhook: Optional[str] = None
     telegram_token: Optional[str] = None
+    telegram_chat_id: Optional[str] = None
     enable_alerts: Optional[bool] = None
 
 @app.get("/api/system/config")
@@ -978,7 +1022,7 @@ async def get_system_config():
             "access_token": "im-dev-token-2026", "allowed_ips": "*",
             "openai_key": "", "gemini_key": "", "fal_key": "", "stability_key": "", "elevenlabs_key": "",
             "auto_cleanup_days": 30,
-            "discord_webhook": "", "telegram_token": "", "enable_alerts": True
+            "discord_webhook": "", "telegram_token": "", "telegram_chat_id": "", "enable_alerts": True
         }
     return {
         "daily_cap": conf.daily_cap,
@@ -999,6 +1043,7 @@ async def get_system_config():
         "auto_cleanup_days": conf.auto_cleanup_days,
         "discord_webhook": conf.discord_webhook,
         "telegram_token": conf.telegram_token,
+        "telegram_chat_id": conf.telegram_chat_id,
         "enable_alerts": conf.enable_alerts
     }
 
@@ -1182,4 +1227,239 @@ async def finalize_script(payload: FinalizeScriptPayload):
     db.add(script)
     db.commit()
     db.close()
+    db.commit()
+    db.close()
     return {"status": "success", "message": "Script saved to Inbox"}
+
+# --- Scheduler Setup ---
+
+scheduler = BackgroundScheduler()
+
+def scheduled_job():
+    now = datetime.now()
+    run_type = "matin" if now.hour < 12 else "soir"
+    print(f"⏰ [SCHEDULER] Triggering {run_type} run at {now.strftime('%H:%M:%S')}")
+    
+    send_telegram_message(f"⏰ <b>iM-System | Mission Programmée</b>\nDémarrage automatique du run de {run_type} (8h/20h).")
+    
+    # We can't easily use background_tasks here, so we call run_crew_sync directly in a separate thread
+    # or just start a thread manually. 
+    import threading
+    t = threading.Thread(target=run_crew_sync, args=(run_type,))
+    t.start()
+
+# Schedule for 08:00 and 20:00
+scheduler.add_job(scheduled_job, 'cron', hour=8, minute=0)
+scheduler.add_job(scheduled_job, 'cron', hour=20, minute=0)
+scheduler.start()
+# --- AFFILIATE LINKS API ---
+
+@app.get("/api/affiliates")
+async def get_affiliates():
+    db = SessionLocal()
+    links = db.query(AffiliateLink).filter(AffiliateLink.is_active == True).all()
+    db.close()
+    return [{
+        "id": l.id, "name": l.name, "category": l.category,
+        "description": l.description, "cta": l.cta, "link": l.link,
+        "gradient": l.gradient, "reconciliation_keywords": l.reconciliation_keywords
+    } for l in links]
+
+class AffiliateLinkPayload(BaseModel):
+    name: str
+    category: str
+    description: str
+    cta: Optional[str] = "Tester Gratuitement"
+    link: str
+    gradient: Optional[str] = "from-cyan-400 to-emerald-400"
+    reconciliation_keywords: Optional[str] = ""
+
+@app.post("/api/affiliates")
+async def create_affiliate(payload: AffiliateLinkPayload):
+    db = SessionLocal()
+    link = AffiliateLink(**payload.dict())
+    db.add(link)
+    db.commit()
+    db.close()
+    return {"status": "success"}
+
+@app.delete("/api/affiliates/{link_id}")
+async def delete_affiliate(link_id: int):
+    db = SessionLocal()
+    link = db.query(AffiliateLink).get(link_id)
+    if link:
+        db.delete(link)
+        db.commit()
+    db.close()
+    return {"status": "success"}
+
+@app.get("/api/blog/latest")
+async def get_latest_blog():
+    """Returns blog data for the most recently generated script."""
+    db = SessionLocal()
+    script = db.query(ScriptInbox).order_by(ScriptInbox.created_at.desc()).first()
+    db.close()
+    if not script:
+        raise HTTPException(status_code=404, detail="No scripts yet")
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/api/blog/{script.id}")
+
+@app.get("/api/blog/{script_id}")
+async def get_blog_data(script_id: int):
+    """Returns the data needed for the Public Blog page for a given script."""
+    db = SessionLocal()
+    script = db.query(ScriptInbox).get(script_id)
+    if not script:
+        db.close()
+        raise HTTPException(status_code=404, detail="Script not found")
+    
+    # Match affiliate links based on keywords in the script
+    all_links = db.query(AffiliateLink).filter(AffiliateLink.is_active == True).all()
+    db.close()
+    
+    script_text = (script.final_script or "").lower()
+    matched_links = []
+    for l in all_links:
+        keywords = [kw.strip() for kw in (l.reconciliation_keywords or "").split(",")]
+        if any(kw and kw in script_text for kw in keywords):
+            matched_links.append(l)
+    
+    # If no matches, return all links (better than an empty page)
+    if not matched_links:
+        matched_links = all_links[:3]
+
+    video_path = f"/media/production/db_{script.id}/final_output.mp4"
+    
+    return {
+        "videoTitle": script.title,
+        "videoUrl": f"http://localhost:5656{video_path}",
+        "summary": script.blog_summary or f"Voici les outils utilisés dans cette vidéo sur {script.title}.",
+        "tools": [{
+            "name": l.name, "category": l.category,
+            "description": l.description, "cta": l.cta,
+            "link": l.link, "gradient": l.gradient
+        } for l in matched_links]
+    }
+
+
+
+# ─────────────────────────────────────────────
+# BLOG SQUAD API
+# ─────────────────────────────────────────────
+
+from blog_squad import BlogSquad
+
+class BlogSquadRunPayload(BaseModel):
+    concepts: Optional[list] = None  # If None, fetch Top 5 from DB automatically
+
+def _run_blog_squad_sync(concepts: list):
+    """Background runner for BlogSquad."""
+    try:
+        send_telegram_message("✍️ <b>iM-System | BlogSquad</b>\nLancement de la rédaction de 5 articles SEO...")
+        squad = BlogSquad()
+        results = squad.run(concepts)
+        
+        success_list = [r for r in results if r.get("success")]
+        
+        msg = f"📰 <b>BlogSquad : Rapport de Production</b>\n"
+        msg += f"✅ {len(success_list)} articles publiés sur le blog.\n\n"
+        
+        for r in success_list:
+            title = r.get("concept", "Sans titre")
+            slug = r.get("slug", "")
+            # Assuming frontend is on port 3000 as per start_servers.sh
+            msg += f"🔹 <b>{title}</b>\n"
+            msg += f"🔗 <i>{slug}.md généré</i>\n\n"
+            
+        msg += "🌍 <i>Disponible sur ton Dashboard section Blog.</i>"
+        send_telegram_message(msg)
+        
+    except Exception as e:
+        send_telegram_message(f"❌ <b>BlogSquad Erreur</b>\n{e}")
+
+@app.post("/api/blog-squad/run")
+async def run_blog_squad(payload: BlogSquadRunPayload, background_tasks: BackgroundTasks):
+    """
+    Déclenche la BlogSquad sur les 5 concepts fournis, ou récupère
+    automatiquement les 5 derniers scripts en base si aucun n'est fourni.
+    """
+    concepts = payload.concepts
+
+    if not concepts:
+        db = SessionLocal()
+        scripts = db.query(ScriptInbox).order_by(ScriptInbox.created_at.desc()).limit(5).all()
+        db.close()
+        if not scripts:
+            raise HTTPException(status_code=404, detail="Aucun script en base pour alimenter la BlogSquad.")
+        concepts = [{"titre": s.title, "killerfeature": s.keywords or s.title} for s in scripts]
+
+    import threading
+    t = threading.Thread(target=_run_blog_squad_sync, args=(concepts,))
+    t.start()
+
+    return {
+        "status": "started",
+        "message": f"BlogSquad lancée sur {len(concepts)} concept(s). Tu recevras les résultats sur Telegram.",
+        "concepts": [c.get("titre", "?") for c in concepts]
+    }
+
+@app.get("/api/blog-squad/posts")
+async def list_blog_posts():
+    """Liste tous les fichiers .md générés dans /blog/posts/, triés du plus récent au plus ancien."""
+    posts_dir = Path(__file__).parent.parent / "blog" / "posts"
+    if not posts_dir.exists():
+        return []
+
+    # Get all .md files with their mtime
+    files = list(posts_dir.glob("*.md"))
+    # Sort files by modification time descending (newest first)
+    files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
+
+    posts = []
+    for f in files:
+        try:
+            content = f.read_text(encoding="utf-8")
+            title_match = re.search(r'^title:\s*"?(.+?)"?\s*$', content, re.MULTILINE)
+            date_match = re.search(r'^date:\s*"?(.+?)"?\s*$', content, re.MULTILINE)
+            excerpt_match = re.search(r'^excerpt:\s*"?(.+?)"?\s*$', content, re.MULTILINE)
+            cover_match = re.search(r'^cover_image:\s*"?(.+?)"?\s*$', content, re.MULTILINE)
+            category_match = re.search(r'^category:\s*"?(.+?)"?\s*$', content, re.MULTILINE)
+            
+            # Tags can be "tag1, tag2" or YAML list
+            tags = []
+            tags_match = re.search(r'^tags:\s*\[?(.*?)\]?$', content, re.MULTILINE)
+            if tags_match:
+                tags = [t.strip().replace('"', '') for t in tags_match.group(1).split(",") if t.strip()]
+
+            posts.append({
+                "slug": f.stem,
+                "filename": f.name,
+                "title": title_match.group(1).replace('"', '') if title_match else f.stem,
+                "date": date_match.group(1).replace('"', '') if date_match else "",
+                "excerpt": excerpt_match.group(1).replace('"', '') if excerpt_match else "",
+                "cover_image": cover_match.group(1).replace('"', '') if cover_match else None,
+                "category": category_match.group(1).replace('"', '') if category_match else "Général",
+                "tags": tags,
+                "mtime": f.stat().st_mtime,
+                "size_bytes": f.stat().st_size
+            })
+        except Exception as e:
+            print(f"Error reading blog post {f.name}: {e}")
+            continue
+            
+    return posts
+
+@app.get("/api/blog-squad/post/{slug}")
+async def get_blog_post_raw(slug: str):
+    """Sert le contenu Markdown brut d'un article pour le rendu côté React."""
+    posts_dir = Path(__file__).parent.parent / "blog" / "posts"
+    file_path = posts_dir / f"{slug}.md"
+
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail=f"Article '{slug}' introuvable.")
+
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(
+        content=file_path.read_text(encoding="utf-8"),
+        media_type="text/plain; charset=utf-8"
+    )

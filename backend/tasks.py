@@ -9,24 +9,22 @@ def create_tasks(trend_radar, viral_judge, monetization_scorer, script_architect
     task_scout = Task(
         description=(
             f"Fais une recherche exhaustive sur le Web et via des flux RSS (Reddit /r/LocalLLMs, GitHub Trending) "
-            f"pour identifier le meilleur sujet TikTok actuel correspondant au thème : {focus_topic}. "
-            f"Aujourd'hui nous sommes le {now}. Essaie de trouver une actualité de ces dernières 24-48h. "
+            f"pour identifier les 5 MEILLEURS sujets TikTok actuels correspondant au thème : {focus_topic}. "
+            f"Aujourd'hui nous sommes le {now}. Essaie de trouver des actualités de ces dernières 24-48h. "
             f"Cherche impérativement les mots clés: Free, Open Source, Self-hosted, No-cost clone. "
             f"CONSIGNE DE RECHERCHE STRICTE: Outil web strict -> pas plus de 3 mots par recherche (ex: 'LLM open source', 'github trends'). "
-            f"Fournis le Nom, l'URL, et la 'Killer Feature' du sujet."
+            f"Fournis une liste de 5 sujets avec : Nom, URL, et 'Killer Feature'."
         ),
-        expected_output="Un résumé détaillé avec Nom, URL, et Killer Feature du meilleur sujet open source trouvé.",
+        expected_output="Une liste structurée de 5 sujets open source trouvés avec Nom, URL, et Killer Feature pour chacun.",
         agent=trend_radar
     )
 
     task_filter = Task(
         description=(
-            "À partir du sujet identifié par TrendRadar, vérifie qu'il est 100% gratuit. "
-            "Recherche la page de prix (pricing) via l'URL avec l'outil de scraping ou Web Search. "
-            "Si la gratuité est avérée, note-le. "
-            "SI LE PRIX EST FLOU OU SI TU AS LE MOINDRE DOUTE : utilise tes capacités pour formuler que "
-            "tu as besoin de l'aide de l'humain. (Note : Dans un vrai système complexe, tu appellerais une fonction Python, "
-            "mais ici documente simplement le statut de prix comme 'Needs_Human_Verification' si douteux)."
+            "À partir de la liste des 5 sujets fournis par TrendRadar, sélectionne l'unique sujet le plus 'Killer' pour la vidéo. "
+            "Vérifie qu'il est 100% gratuit en cherchant la page de prix (pricing) via l'URL. "
+            "Si la gratuité est avérée, valide-le. "
+            "SI LE PRIX EST FLOU OU SI TU AS LE MOINDRE DOUTE : formule que tu as besoin de l'aide de l'humain."
         ),
         expected_output="Rapport de viabilité et de gratuité du sujet. Indication claire si le modèle de prix est validé ou s'il bloque le process.",
         agent=viral_judge
@@ -71,10 +69,16 @@ def create_tasks(trend_radar, viral_judge, monetization_scorer, script_architect
             "1. Le script a-t-il exactement la phrase de fin requise ? "
             "2. Y a-t-il bien 3 mots en MAJUSCULES pour le montage vidéo ? "
             "3. L'explication de rentabilité de MonetizationScorer est-elle bien implicitement présente ? "
-            "4. Y a-t-il exactement 7 prompts visuels en anglais avec le style imposé ? "
+            "4. Y a-t-il exactement 7 prompts visuels en anglais avec le style imposé ? \n\n"
+            "RÉCUPÉRATION BLOG: Récupère également la liste des 5 sujets initiaux trouvés par TrendRadar.\n\n"
             "Si tout est validé, approuve le lancement en production finale."
         ),
-        expected_output="Un bloc JSON contenant les clés 'titre', 'script', 'score_roi', 'mots_cles' (chaîne de caractères contenant la liste), 'image_prompts' (une simple liste json de strings), et 'statut_validation' (booléen). Tu dois IMPÉRATIVEMENT renvoyer la réponse FORMATÉE EN JSON VALIDE DANS UN BLOC ```json ... ```.",
+        expected_output=(
+            "Un bloc JSON contenant :\n"
+            "- 'titre', 'script', 'score_roi', 'mots_cles' (string), 'image_prompts' (list), 'statut_validation' (bool)\n"
+            "- 'top_5_concepts': une liste d'objets [{'titre': ..., 'killerfeature': ...}] issue du scouting initial pour le blog.\n"
+            "Tu dois IMPÉRATIVEMENT renvoyer la réponse FORMATÉE EN JSON VALIDE DANS UN BLOC ```json ... ```."
+        ),
         agent=quality_controller
     )
 

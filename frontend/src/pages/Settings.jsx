@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Badge } from '../components/ui';
-import { Save, Shield, Bell, Key, Database, Globe, Loader2, AlertCircle, TriangleAlert } from 'lucide-react';
+import { Save, Shield, Bell, Key, Database, Globe, Loader2, AlertCircle, TriangleAlert, DollarSign, Plus, Trash2, ExternalLink } from 'lucide-react';
 
 const Settings = () => {
     const [config, setConfig] = useState({
@@ -18,15 +18,19 @@ const Settings = () => {
         auto_cleanup_days: 30,
         discord_webhook: "",
         telegram_token: "",
+        telegram_chat_id: "",
         enable_alerts: true
     });
     const [isSaving, setIsSaving] = useState(false);
     const [activeTab, setActiveTab] = useState("General");
     const [isLoading, setIsLoading] = useState(true);
+    const [affiliates, setAffiliates] = useState([]);
+    const [newAffiliate, setNewAffiliate] = useState({ name: '', category: '', description: '', cta: 'Tester Gratuitement', link: '', gradient: 'from-cyan-400 to-emerald-400', reconciliation_keywords: '' });
+    const [addingAffiliate, setAddingAffiliate] = useState(false);
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
 
     const fetchConfig = async () => {
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
             const response = await fetch(`${apiUrl}/api/system/config`);
             if (response.ok) {
                 const data = await response.json();
@@ -39,14 +43,21 @@ const Settings = () => {
         }
     };
 
+    const fetchAffiliates = async () => {
+        try {
+            const res = await fetch(`${apiUrl}/api/affiliates`);
+            if (res.ok) setAffiliates(await res.json());
+        } catch (e) { console.error(e); }
+    };
+
     useEffect(() => {
         fetchConfig();
+        fetchAffiliates();
     }, []);
 
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
             await fetch(`${apiUrl}/api/system/config`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -60,11 +71,31 @@ const Settings = () => {
         }
     };
 
+    const handleAddAffiliate = async () => {
+        if (!newAffiliate.name || !newAffiliate.link) return alert("Nom et URL requis.");
+        setAddingAffiliate(true);
+        try {
+            await fetch(`${apiUrl}/api/affiliates`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newAffiliate)
+            });
+            setNewAffiliate({ name: '', category: '', description: '', cta: 'Tester Gratuitement', link: '', gradient: 'from-cyan-400 to-emerald-400', reconciliation_keywords: '' });
+            fetchAffiliates();
+        } catch (e) { console.error(e); }
+        finally { setAddingAffiliate(false); }
+    };
+
+    const handleDeleteAffiliate = async (id) => {
+        if (!confirm('Supprimer ce lien affilié ?')) return;
+        await fetch(`${apiUrl}/api/affiliates/${id}`, { method: 'DELETE' });
+        fetchAffiliates();
+    };
+
     const handlePurge = async () => {
         if (!confirm("⚠️ DANGER : Est-tu sûr de vouloir purger TOUT le pipeline (Scripts + Historique) ? Cette action est irréversible.")) return;
 
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
             const response = await fetch(`${apiUrl}/api/system/purge-pipeline`, { method: 'POST' });
             if (response.ok) {
                 alert("Pipeline purgé avec succès.");
@@ -107,6 +138,7 @@ const Settings = () => {
                     <SettingNav icon={Key} title="API Keys" active={activeTab === "API Keys"} onClick={() => setActiveTab("API Keys")} />
                     <SettingNav icon={Database} title="Data Management" active={activeTab === "Data"} onClick={() => setActiveTab("Data")} />
                     <SettingNav icon={Bell} title="Notifications" active={activeTab === "Notifications"} onClick={() => setActiveTab("Notifications")} />
+                    <SettingNav icon={DollarSign} title="Monétisation" active={activeTab === "Monetisation"} onClick={() => setActiveTab("Monetisation")} />
                 </nav>
 
                 <Card className="md:col-span-3 space-y-8 bg-navy-900/40 backdrop-blur-sm border-gray-800">
@@ -276,8 +308,69 @@ const Settings = () => {
                                         value={config.telegram_token || ''}
                                         onChange={(e) => setConfig({ ...config, telegram_token: e.target.value })}
                                         className="w-full bg-navy-900 border border-gray-700/50 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 transition-all font-mono"
+                                        placeholder="bot123456:ABC-DEF..."
                                     />
                                 </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">Telegram Chat ID</label>
+                                    <input
+                                        type="text"
+                                        value={config.telegram_chat_id || ''}
+                                        onChange={(e) => setConfig({ ...config, telegram_chat_id: e.target.value })}
+                                        className="w-full bg-navy-900 border border-gray-700/50 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 transition-all font-mono"
+                                        placeholder="123456789"
+                                    />
+                                </div>
+                            </div>
+                        </section>
+                    )}
+
+                    {activeTab === "Monetisation" && (
+                        <section className="space-y-6 animate-in fade-in duration-300">
+                            <h3 className="text-lg font-semibold text-white border-b border-gray-800 pb-4 flex items-center gap-2">
+                                <DollarSign className="w-5 h-5 text-emerald-400" />
+                                Liens d'Affiliation
+                            </h3>
+
+                            {/* Formulaire Ajout */}
+                            <div className="p-5 bg-navy-900/60 border border-emerald-900/40 rounded-2xl space-y-4">
+                                <p className="text-sm font-semibold text-emerald-400">➕ Ajouter un Lien Affilié</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <input placeholder="Nom (ex: ElevenLabs)" value={newAffiliate.name} onChange={e => setNewAffiliate({ ...newAffiliate, name: e.target.value })} className="bg-navy-900 border border-gray-700/50 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all" />
+                                    <input placeholder="Catégorie (ex: Voice IA, Cloud Hosting)" value={newAffiliate.category} onChange={e => setNewAffiliate({ ...newAffiliate, category: e.target.value })} className="bg-navy-900 border border-gray-700/50 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all" />
+                                    <input placeholder="URL Affilié" value={newAffiliate.link} onChange={e => setNewAffiliate({ ...newAffiliate, link: e.target.value })} className="bg-navy-900 border border-gray-700/50 rounded-xl p-3 text-sm text-gray-200 font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all" />
+                                    <input placeholder="Mots-clés (ex: voice, tts, audio)" value={newAffiliate.reconciliation_keywords} onChange={e => setNewAffiliate({ ...newAffiliate, reconciliation_keywords: e.target.value })} className="bg-navy-900 border border-gray-700/50 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all" />
+                                    <input placeholder="Description courte" value={newAffiliate.description} onChange={e => setNewAffiliate({ ...newAffiliate, description: e.target.value })} className="bg-navy-900 border border-gray-700/50 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all md:col-span-2" />
+                                </div>
+                                <button onClick={handleAddAffiliate} disabled={addingAffiliate} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl transition-all text-sm disabled:opacity-50">
+                                    {addingAffiliate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                                    Ajouter
+                                </button>
+                            </div>
+
+                            {/* Liste des affiliés */}
+                            <div className="space-y-3">
+                                {affiliates.length === 0 && <p className="text-gray-500 text-sm text-center py-4">Aucun lien affilié configuré.</p>}
+                                {affiliates.map(a => (
+                                    <div key={a.id} className="flex items-center justify-between p-4 bg-navy-900/60 border border-gray-800 rounded-xl hover:border-gray-700 transition-colors">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="font-semibold text-gray-200 flex items-center gap-2">
+                                                {a.name}
+                                                <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded-full">{a.category}</span>
+                                            </div>
+                                            <div className="text-xs text-gray-500 mt-1 font-mono truncate">{a.link}</div>
+                                            {a.reconciliation_keywords && <div className="text-xs text-emerald-600 mt-1">🔑 {a.reconciliation_keywords}</div>}
+                                        </div>
+                                        <div className="flex items-center gap-2 ml-4 shrink-0">
+                                            <a href={a.link} target="_blank" rel="noreferrer" className="p-2 text-gray-500 hover:text-cyan-400 transition-colors">
+                                                <ExternalLink className="w-4 h-4" />
+                                            </a>
+                                            <button onClick={() => handleDeleteAffiliate(a.id)} className="p-2 text-gray-500 hover:text-red-400 transition-colors">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </section>
                     )}

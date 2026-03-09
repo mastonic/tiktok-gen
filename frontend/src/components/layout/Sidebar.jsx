@@ -11,7 +11,8 @@ import {
     Settings,
     Image as ImageIcon,
     Clock,
-    Library
+    Library,
+    ExternalLink
 } from 'lucide-react';
 
 const Sidebar = ({ currentPath, setPath }) => {
@@ -34,6 +35,7 @@ const Sidebar = ({ currentPath, setPath }) => {
         { name: 'Agents', icon: Bot, path: '/agents' },
         { name: 'Budget & Models', icon: Wallet, path: '/budget' },
         { name: 'Settings', icon: Settings, path: '/settings' },
+        { name: 'Blog Preview', icon: ExternalLink, path: '/blog' },
     ];
 
     return (

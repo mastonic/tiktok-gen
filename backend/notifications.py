@@ -1,0 +1,55 @@
+import os
+import requests
+import json
+from database import SessionLocal, SystemConfig
+
+def send_telegram_message(message: str):
+    """Sends a text message to Telegram using bot token and chat ID from DB."""
+    db = SessionLocal()
+    conf = db.query(SystemConfig).first()
+    db.close()
+    
+    if not conf or not conf.telegram_token or not conf.telegram_chat_id:
+        print("Telegram notification skipped: Missing token or chat_id in SystemConfig.")
+        return False
+        
+    try:
+        url = f"https://api.telegram.org/bot{conf.telegram_token}/sendMessage"
+        payload = {
+            "chat_id": conf.telegram_chat_id,
+            "text": message,
+            "parse_mode": "HTML"
+        }
+        response = requests.post(url, json=payload, timeout=10)
+        return response.status_code == 200
+    except Exception as e:
+        print(f"Error sending Telegram message: {e}")
+        return False
+
+def send_telegram_video(video_path: str, caption: str = ""):
+    """Sends a video file to Telegram."""
+    db = SessionLocal()
+    conf = db.query(SystemConfig).first()
+    db.close()
+    
+    if not conf or not conf.telegram_token or not conf.telegram_chat_id:
+        print("Telegram video skip: Missing token or chat_id.")
+        return False
+        
+    if not os.path.exists(video_path):
+        print(f"Telegram video error: File not found at {video_path}")
+        return False
+
+    try:
+        url = f"https://api.telegram.org/bot{conf.telegram_token}/sendVideo"
+        files = {'video': open(video_path, 'rb')}
+        data = {
+            "chat_id": conf.telegram_chat_id,
+            "caption": caption,
+            "parse_mode": "HTML"
+        }
+        response = requests.post(url, data=data, files=files, timeout=60)
+        return response.status_code == 200
+    except Exception as e:
+        print(f"Error sending Telegram video: {e}")
+        return False

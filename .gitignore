@@ -61,3 +61,6 @@ Thumbs.db
 *.png
 /backend/db.sqlite3
 /backend/__pycache__/
+
+# Dolt database files (added by bd init)
+.dolt/

@@ -1,12 +1,13 @@
 import os
 import requests
+import asyncio
 
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY")
 
 def generate_tts(text: str, output_path: str, voice_id: str = "pNInz6obpgDQGcFmaJcg") -> bool:
     """
     Generates TTS audio using ElevenLabs API and saves it to output_path.
-    If ELEVENLABS_API_KEY is not set, tries to use gTTS as fallback.
+    If ELEVENLABS_API_KEY is not set, tries to use edge-tts as high quality fallback.
     """
     if ELEVENLABS_API_KEY:
         try:
@@ -33,9 +34,25 @@ def generate_tts(text: str, output_path: str, voice_id: str = "pNInz6obpgDQGcFma
             print(f"TTS successfully generated to {output_path} via ElevenLabs")
             return True
         except Exception as e:
-            print(f"ElevenLabs TTS failed: {e}. Falling back to gTTS.")
+            print(f"ElevenLabs TTS failed: {e}. Falling back to edge-tts.")
 
-    # Fallback to gTTS
+    # High-quality fallback via edge-tts (Microsoft Azure free voices)
+    try:
+        import edge_tts
+        # Default high-quality french voice
+        VOICE = "fr-FR-VivienneMultilingualNeural" 
+        
+        async def run_edge_tts():
+            communicate = edge_tts.Communicate(text, VOICE)
+            await communicate.save(output_path)
+            
+        asyncio.run(run_edge_tts())
+        print(f"TTS successfully generated to {output_path} via edge-tts (high quality).")
+        return True
+    except Exception as e:
+        print(f"Edge-TTS failed: {e}. Falling back to basic gTTS.")
+
+    # Basic fallback to gTTS (low quality)
     try:
         from gtts import gTTS
         tts = gTTS(text=text, lang='fr')
@@ -45,3 +62,4 @@ def generate_tts(text: str, output_path: str, voice_id: str = "pNInz6obpgDQGcFma
     except Exception as e:
         print(f"Failed to generate TTS: {e}")
         return False
+

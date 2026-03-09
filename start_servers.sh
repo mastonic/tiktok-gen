@@ -43,7 +43,7 @@ cd ..
 
 echo "------------------------------------------------"
 echo "🌐 iM-System is now running!"
-echo "📍 Backend: http://localhost:8000"
+echo "📍 Backend:  http://localhost:5656"
 echo "📍 Frontend: http://localhost:3000"
 echo "------------------------------------------------"
 echo "Check logs with:"

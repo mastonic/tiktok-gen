@@ -12,6 +12,7 @@ import Budget from './pages/Budget';
 import Settings from './pages/Settings';
 import Studio from './pages/Studio';
 import Gallery from './pages/Gallery';
+import Blog from './pages/Blog';
 
 function App() {
     const [currentPath, setPath] = useState('/overview');
@@ -40,10 +41,16 @@ function App() {
                 return <Budget />;
             case '/settings':
                 return <Settings />;
+            case '/blog':
+                return <Blog />;
             default:
                 return <Overview />;
         }
     };
+
+    if (currentPath === '/blog') {
+        return <Blog />;
+    }
 
     return (
         <>

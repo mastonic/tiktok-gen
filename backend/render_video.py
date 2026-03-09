@@ -4,6 +4,7 @@ import subprocess
 import argparse
 import sqlite3
 from pathlib import Path
+from notifications import send_telegram_message, send_telegram_video
 
 def generate_video(job_dir: str):
     """
@@ -109,12 +110,96 @@ def generate_video(job_dir: str):
     try:
         subprocess.run(cmd, check=True)
         print(f"SUCCESS: Output saved to: {vid_out}")
+        
+        # Send to Telegram
+        caption = f"🎬 <b>Vidéo Terminée !</b>\nSujet : {final_script[:50]}...\nID: {job_name}"
+        send_telegram_video(str(vid_out), caption=caption)
     except Exception as e:
         print(f"FFmpeg failed: {e}")
 
+def format_ass_time(seconds):
+    hours = int(seconds // 3600)
+    mins = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    centis = int((seconds - int(seconds)) * 100)
+    return f"{hours}:{mins:02d}:{secs:02d}.{centis:02d}"
+
 def generate_ass_subtitles(script, keywords, output_path, audio_path):
     """
-    Generates an Advanced SubStation Alpha script with dynamic word-level highlights.
+    Generates an Advanced SubStation Alpha script with AI-synced word-level highlights.
+    Uses OpenAI Whisper API for exact timing.
+    """
+    from openai import OpenAI
+    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+    if not os.path.exists(audio_path):
+        print(f"Error: Audio file {audio_path} not found for transcription.")
+        return
+
+    print(f"Transcribing {audio_path} via OpenAI Whisper...")
+    try:
+        audio_file = open(audio_path, "rb")
+        # Get word-level timestamps from Whisper
+        transcript = client.audio.transcriptions.create(
+            file=audio_file,
+            model="whisper-1",
+            response_format="verbose_json",
+            timestamp_granularities=["word"]
+        )
+        words_data = getattr(transcript, 'words', [])
+        if not words_data:
+            # Fallback to segments if words are not available
+            words_data = getattr(transcript, 'segments', [])
+            print("Using segment-level synchronization.")
+        else:
+            print(f"Successfully retrieved {len(words_data)} words with timestamps.")
+    except Exception as e:
+        print(f"Whisper transcription failed: {e}. Falling back to linear sync.")
+        return generate_ass_subtitles_linear(script, keywords, output_path, audio_path)
+
+    ass_header = f"""[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,90,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,6,2,5,10,10,10,1
+Style: Highlight,Arial,110,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,8,2,5,10,10,10,1
+"""
+    
+    events = "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
+    
+    # We group words into small chunks (1-2 words) for TikTok style "dynamic captions"
+    chunk_size = 2
+    for i in range(0, len(words_data), chunk_size):
+        chunk = words_data[i:i+chunk_size]
+        # Handle both word-level and segment-level data
+        if hasattr(chunk[0], 'word'): # Word level
+            chunk_text = " ".join([w.word.upper() for w in chunk])
+            start_time = chunk[0].start
+            end_time = chunk[-1].end
+        else: # Segment level
+            chunk_text = chunk[0].get('text', '').upper().strip()
+            start_time = chunk[0].get('start', 0.0)
+            end_time = chunk[0].get('end', 1.0)
+        
+        start_ts = format_ass_time(start_time)
+        end_ts = format_ass_time(end_time)
+        
+        # Check if any word in chunk is a keyword for yellow highlight
+        use_highlight = any(kw.lower() in chunk_text.lower() for kw in keywords)
+        style = "Highlight" if use_highlight else "Default"
+        
+        # Centered position for maximum impact
+        events += f"Dialogue: 0,{start_ts},{end_ts},{style},,0,0,0,,{{\\pos(540,960)}}{chunk_text}\n"
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(ass_header + "\n" + events)
+
+def generate_ass_subtitles_linear(script, keywords, output_path, audio_path):
+    """
+    Fallback linear subtitle generation (less accurate).
     """
     import wave
     import contextlib
@@ -131,10 +216,9 @@ def generate_ass_subtitles(script, keywords, output_path, audio_path):
 
     words = script.split()
     if not words:
-        words = ["Abonnez-vous", "pour", "plus", "de", "contenu", "viral", "!"]
+        words = ["FOLLOW", "FOR", "MORE"]
     
     time_per_word = duration / len(words)
-
     ass_header = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: 1080
@@ -142,39 +226,26 @@ PlayResY: 1920
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,100,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,6,2,5,10,10,10,1
-Style: Highlight,Arial,120,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,8,2,5,10,10,10,1
+Style: Default,Arial,90,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,6,2,5,10,10,10,1
+Style: Highlight,Arial,110,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,8,2,5,10,10,10,1
 """
-    
     events = "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
-    
     current_time = 0.0
-    chunk_size = 2 # Show 2 words at a time for impact
-    
+    chunk_size = 2
     for i in range(0, len(words), chunk_size):
         chunk = words[i:i+chunk_size]
         chunk_text = " ".join(chunk).upper()
         chunk_duration = len(chunk) * time_per_word
-        
         start_ts = format_ass_time(current_time)
         end_ts = format_ass_time(current_time + chunk_duration)
-        
-        # Check if any word in chunk is a keyword
         use_highlight = any(kw.lower() in chunk_text.lower() for kw in keywords)
         style = "Highlight" if use_highlight else "Default"
-        
         events += f"Dialogue: 0,{start_ts},{end_ts},{style},,0,0,0,,{{\\pos(540,960)}}{chunk_text}\n"
         current_time += chunk_duration
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(ass_header + "\n" + events)
 
-def format_ass_time(seconds):
-    hours = int(seconds // 3600)
-    mins = int((seconds % 3600) // 60)
-    secs = int(seconds % 60)
-    centis = int((seconds - int(seconds)) * 100)
-    return f"{hours}:{mins:02d}:{secs:02d}.{centis:02d}"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Render final TikTok video using FFmpeg")

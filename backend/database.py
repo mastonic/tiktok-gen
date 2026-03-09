@@ -54,7 +54,9 @@ def migrate_db():
             "views": "INTEGER DEFAULT 0",
             "likes": "INTEGER DEFAULT 0",
             "shares": "INTEGER DEFAULT 0",
-            "retention_rate": "INTEGER DEFAULT 0"
+            "retention_rate": "INTEGER DEFAULT 0",
+            "blog_summary": "TEXT",
+            "selected_tools": "TEXT"
         }
         for col, type_def in needed_script.items():
             if col not in columns:
@@ -99,6 +101,7 @@ def migrate_db():
             "auto_cleanup_days": "INTEGER DEFAULT 30",
             "discord_webhook": "TEXT DEFAULT ''",
             "telegram_token": "TEXT DEFAULT ''",
+            "telegram_chat_id": "TEXT DEFAULT ''",
             "enable_alerts": "BOOLEAN DEFAULT 1",
             "last_reset": "TEXT"
         }
@@ -132,6 +135,8 @@ class ScriptInbox(Base):
     likes = Column(Integer, default=0)
     shares = Column(Integer, default=0)
     retention_rate = Column(Integer, default=0)
+    blog_summary = Column(String, nullable=True)
+    selected_tools = Column(String, nullable=True) # JSON list of tool IDs or data
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class PendingQuestion(Base):
@@ -197,6 +202,7 @@ class SystemConfig(Base):
     # Notifications
     discord_webhook = Column(String, default="")
     telegram_token = Column(String, default="")
+    telegram_chat_id = Column(String, default="")
     enable_alerts = Column(Boolean, default=True)
     
     last_reset = Column(DateTime, default=datetime.utcnow)
@@ -235,6 +241,18 @@ class GrowthRecommendation(Base):
     description = Column(String)
     action_label = Column(String, default="Apply to Pipeline")
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class AffiliateLink(Base):
+    __tablename__ = "affiliate_links"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True)
+    category = Column(String)
+    description = Column(String)
+    cta = Column(String, default="Tester Gratuitement")
+    link = Column(String)
+    gradient = Column(String, default="from-cyan-400 to-emerald-400")
+    reconciliation_keywords = Column(String) # e.g. "voice, tts, speech"
+    is_active = Column(Boolean, default=True)
 
 # Create all tables in the engine
 Base.metadata.create_all(bind=engine)
@@ -321,6 +339,38 @@ def seed_agents():
 
 seed_agents()
 
+def seed_affiliates():
+    db = SessionLocal()
+    if db.query(AffiliateLink).count() == 0:
+        links = [
+            AffiliateLink(
+                name="ElevenLabs", category="Voice IA", 
+                description="La voix n°1 pour tes vidéos virales. Hyper-réaliste.",
+                link="https://elevenlabs.io/?from=tonid",
+                gradient="from-cyan-400 to-emerald-400",
+                reconciliation_keywords="voix, tts, speech, audio, elevenlabs"
+            ),
+            AffiliateLink(
+                name="Luma Dream Machine", category="Video Gen",
+                description="Anime tes images Flux en vidéos cinématiques HD.",
+                link="https://luma.ai",
+                gradient="from-violet-500 to-fuchsia-500",
+                reconciliation_keywords="video, animation, luma, kling, clip"
+            ),
+            AffiliateLink(
+                name="Hetzner", category="Cloud Hosting",
+                description="Le meilleur rapport qualité/prix pour auto-héberger tes outils.",
+                link="https://hetzner.cloud",
+                gradient="from-orange-400 to-red-500",
+                reconciliation_keywords="hosting, server, cloud, vps, docker, self-hosting"
+            )
+        ]
+        db.add_all(links)
+        db.commit()
+    db.close()
+
+seed_affiliates()
+
 def seed_system_config():
     db = SessionLocal()
     if db.query(SystemConfig).count() == 0:
@@ -343,6 +393,7 @@ def seed_system_config():
             auto_cleanup_days=30,
             discord_webhook="",
             telegram_token="",
+            telegram_chat_id="",
             enable_alerts=True
         )
         db.add(conf)

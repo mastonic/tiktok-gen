@@ -7,6 +7,58 @@ FAL_KEY = os.environ.get("FAL_KEY")
 
 from typing import Optional
 
+def generate_flux_image(prompt: str, save_path: str) -> bool:
+    """
+    Generates a high-fidelity image using Flux.1 via Fal.ai.
+    """
+    if not FAL_KEY:
+        print("WARNING: FAL_KEY not found in environment.")
+        return False
+
+    url = "https://queue.fal.run/fal-ai/flux/schnell" # Using Schnell for faster/cheaper automation
+    headers = {
+        "Authorization": f"Key {FAL_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "prompt": prompt,
+        "image_size": "portrait_4_3",
+        "num_inference_steps": 4,
+        "enable_safety_checker": True
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        res_data = response.json()
+        
+        # Poll for completion
+        status_url = res_data.get("status_url")
+        result_url = res_data.get("response_url")
+        
+        if not status_url or not result_url:
+            return False
+
+        for _ in range(20):
+            time.sleep(2)
+            status_res = requests.get(status_url, headers=headers)
+            status_data = status_res.json()
+            if status_data.get("status") == "COMPLETED":
+                res = requests.get(result_url, headers=headers)
+                img_url = res.json().get("images")[0].get("url")
+                
+                # Download and save
+                img_res = requests.get(img_url)
+                with open(save_path, "wb") as f:
+                    f.write(img_res.content)
+                return True
+            elif status_data.get("status") in ["FAILED", "CANCELED"]:
+                return False
+        return False
+    except Exception as e:
+        print(f"Flux generation error: {e}")
+        return False
+
 def generate_video_from_image(image_path: str, prompt: str) -> Optional[str]:
     """
     Submits an image to generative video AI via Fal.ai.
