@@ -111,11 +111,28 @@ def generate_video(job_dir: str):
         subprocess.run(cmd, check=True)
         print(f"SUCCESS: Output saved to: {vid_out}")
         
-        # Send to Telegram
-        caption = f"🎬 <b>Vidéo Terminée !</b>\nSujet : {final_script[:50]}...\nID: {job_name}"
-        send_telegram_video(str(vid_out), caption=caption)
+        # --- SEND TO TELEGRAM WITH VALIDATION ---
+        from notifications import send_telegram_video_with_validation
+        
+        # Attempt to read the generated caption (description + hashtags)
+        tiktok_json = job_path / "tiktok_data.json"
+        description = ""
+        if tiktok_json.exists():
+            try:
+                with open(tiktok_json, "r") as f:
+                    description = json.load(f).get("caption", "")
+            except: pass
+            
+        script_id = 0
+        if job_name.startswith("db_"):
+            try: script_id = int(job_name.split("_")[1])
+            except: pass
+
+        caption = f"🎬 <b>VIDÉO GÉNÉRÉE</b>\n\n📌 <b>DESCRIPTION TIKTOK :</b>\n{description}\n\nID: {job_name}"
+        send_telegram_video_with_validation(str(vid_out), script_id, caption=caption)
+        
     except Exception as e:
-        print(f"FFmpeg failed: {e}")
+        print(f"FFmpeg or Completion Notification failed: {e}")
 
 def format_ass_time(seconds):
     hours = int(seconds // 3600)

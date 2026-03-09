@@ -1470,3 +1470,78 @@ async def get_blog_post_raw(slug: str):
         content=file_path.read_text(encoding="utf-8"),
         media_type="text/plain; charset=utf-8"
     )
+
+# --- TELEGRAM WEBHOOK (Validation Workflow) ---
+
+@app.post("/api/telegram/webhook")
+async def telegram_webhook(request: Request):
+    """
+    Handles callbacks from Telegram Inline Buttons (Approve/Reject).
+    Set this URL as your bot webhook: https://your-domain.com/api/telegram/webhook
+    """
+    try:
+        data = await request.json()
+        print(f"Telegram Webhook received: {data}")
+        
+        callback_query = data.get("callback_query")
+        if not callback_query:
+            return {"status": "ok", "message": "No callback query."}
+            
+        callback_data = callback_query.get("data", "")
+        chat_id = callback_query.get("message", {}).get("chat", {}).get("id")
+        message_id = callback_query.get("message", {}).get("message_id")
+        
+        # 1. Parse the action and id
+        # Expected: tiktok_approve_123 or tiktok_reject_123
+        if "_" not in callback_data:
+            return {"status": "ok"}
+            
+        parts = callback_data.split("_")
+        action = parts[1] # "approve" or "reject"
+        script_id = int(parts[2])
+        
+        db = SessionLocal()
+        script = db.query(ScriptInbox).get(script_id)
+        
+        if not script:
+            # Tell Telegram to close the loading spin with an answerCallbackQuery
+            requests.post(f"https://api.telegram.org/bot{os.getenv('TELEGRAM_TOKEN')}/answerCallbackQuery", 
+                          json={"callback_query_id": callback_query["id"], "text": "Erreur: Script introuvable."})
+            db.close()
+            return {"status": "ok"}
+
+        # 2. Handle Action
+        response_text = ""
+        if action == "approve":
+            from tiktok_automation import upload_to_tiktok
+            from notifications import send_telegram_message
+            
+            # Update status to pending upload
+            script.status = "publishing"
+            db.commit()
+            
+            # Answer callback immediately to avoid timeout
+            requests.post(f"https://api.telegram.org/bot{os.getenv('TELEGRAM_TOKEN')}/answerCallbackQuery", 
+                          json={"callback_query_id": callback_query["id"], "text": "🚀 Lancement de l'upload TikTok..."})
+
+            # Run upload (Blocking call, better in a background task)
+            # For now synchronous, but for prod use BackgroundTasks
+            upload_result = upload_to_tiktok(script_id)
+            response_text = f"✅ <b>TikTok:</b> {upload_result}"
+            send_telegram_message(response_text)
+            
+        elif action == "reject":
+            script.status = "rejected"
+            db.commit()
+            response_text = f"❌ <b>Rejeté:</b> Le script #{script_id} a été mis de côté."
+            requests.post(f"https://api.telegram.org/bot{os.getenv('TELEGRAM_TOKEN')}/answerCallbackQuery", 
+                          json={"callback_query_id": callback_query["id"], "text": "Script rejeté."})
+            from notifications import send_telegram_message
+            send_telegram_message(response_text)
+
+        db.close()
+        return {"status": "ok"}
+        
+    except Exception as e:
+        print(f"Telegram Webhook Error: {e}")
+        return {"status": "error", "message": str(e)}

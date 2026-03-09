@@ -99,11 +99,30 @@ def automate_visual_production(script_id_num: int):
     voice_path = os.path.join(job_dir, "voiceover.wav")
     generate_tts(script.final_script, voice_path)
 
-    # 4. Render Final Video
+    # 4. Generate TikTok Caption (New)
+    try:
+        from agents import create_agents
+        from crewai import Task
+        _, _, _, _, _, _, tiktok_distributor = create_agents()
+        
+        caption_task = Task(
+            description=f"Crée une description TikTok virale pour ce script : {script.final_script}. Ajoute 5 hashtags pertinents.",
+            expected_output="La description TikTok avec hashtags.",
+            agent=tiktok_distributor
+        )
+        tiktok_caption = str(tiktok_distributor.execute_task(caption_task))
+        
+        # Save caption to a local json for render_video.py
+        with open(os.path.join(job_dir, "tiktok_data.json"), "w") as f:
+            json.dump({"caption": tiktok_caption}, f)
+    except Exception as e:
+        print(f"Failed to generate TikTok caption: {e}")
+
+    # 5. Render Final Video
     send_telegram_message("🎬 <b>Assemblage final (FFmpeg)...</b>")
     render_script = os.path.join(os.path.dirname(__file__), "render_video.py")
     try:
-        # This will call render_video.py and send the video via Telegram at the end
+        # This will call render_video.py and send the video via Telegram with buttons
         subprocess.run([sys.executable, render_script, "--job", job_id], check=True)
         
         # Finally mark as approved if everything went well

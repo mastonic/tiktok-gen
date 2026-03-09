@@ -17,3 +17,5 @@ pytrends
 ffmpeg-python
 piper-tts
 fal-client
+tiktok-uploader
+python-telegram-bot

@@ -117,4 +117,17 @@ def create_agents(config=None):
         llm=get_agent_llm('VisualPromptist')
     )
 
-    return trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller
+    tiktok_distributor = Agent(
+        role='TikTokDistributor',
+        goal='Générer une description TikTok virale et des hashtags stratégiques.',
+        backstory=(
+            'Tu es un expert en algorithme TikTok. Ta mission est de créer une "Caption" qui maximise le taux de complétion '
+            'et le partage. Utilise des émojis, un Hook textuel dès la première ligne, et une liste de 5-7 hashtags '
+            '(mélange de niches et de larges).'
+        ),
+        verbose=True,
+        allow_delegation=False,
+        llm=get_agent_llm('TikTokDistributor')
+    )
+
+    return trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, tiktok_distributor
