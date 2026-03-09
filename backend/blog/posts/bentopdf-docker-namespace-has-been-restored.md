@@ -30,7 +30,7 @@ Les alternatives payantes, souvent rigides, ne répondent pas aux exigences vari
 La restauration du namespace Docker de BentoPDF est un tournant pour la communauté open-source. Adoptez cette solution pour transformer vos projets et tirer parti d'outils puissants. Profitez d'une distribution simplifiée et collaborative pour vos innovations.
 
 ## 🎥 Voir aussi
-Découvrez notre dernière vidéo virale du jour sur le dashboard !
+Découvrez nos autres contenus exclusifs et tutoriels sur la page d'accueil !
 
 <!-- AFFILIATE_BENTO_DATA
 ```json

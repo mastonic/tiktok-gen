@@ -129,7 +129,7 @@ class BlogSquad:
         slug = _slugify(concept_title)
 
         video_tag = "[INSERT_VIDEO_PLAYER]" if is_winner else ""
-        see_also = "" if is_winner else "\n\n## 🎥 Voir aussi\nDécouvrez notre dernière vidéo virale du jour sur le dashboard !"
+        see_also = "" if is_winner else "\n\n## 🎥 Voir aussi\nDécouvrez nos autres contenus exclusifs et tutoriels sur la page d'accueil !"
 
         # Template more flexible to allow unique headers while preserving frontmatter
         TEMPLATE_STRUCTURE = f"""---

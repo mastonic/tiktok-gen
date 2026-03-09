@@ -49,7 +49,7 @@ Ne négligez pas la sécurité. Forem offre des protocoles robustes pour protég
 Ne vous laissez pas piéger par les algorithmes des géants du web. Avec Forem, architecturez votre espace où chaque voix a son poids. Prenez le contrôle et faites évoluer votre communauté. L'avenir est à portée de main.
 
 ## 🎥 Voir aussi
-Découvrez notre dernière vidéo virale du jour sur le dashboard !
+Découvrez nos autres contenus exclusifs et tutoriels sur la page d'accueil !
 <!-- AFFILIATE_BENTO_DATA
 ```json
 {

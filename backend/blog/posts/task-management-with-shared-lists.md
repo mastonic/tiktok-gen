@@ -48,7 +48,7 @@ Ne perdez pas de temps avec des interfaces encombrantes. L'application est optim
 Embarquez vers une gestion de tâches sans précédent. Avec cet outil collaboratif, vos projets de groupe seront mieux organisés, plus productifs, et surtout, plus engageants. Libérez le potentiel de votre équipe dès aujourd'hui.
 
 ## 🎥 Voir aussi
-Découvrez notre dernière vidéo virale du jour sur le dashboard !
+Découvrez nos autres contenus exclusifs et tutoriels sur la page d'accueil !
 
 
 <!-- AFFILIATE_BENTO_DATA
