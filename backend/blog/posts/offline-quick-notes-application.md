@@ -12,13 +12,7 @@ tags:
   - "voyage"
   - "capture d'idées"
 ---
-```markdown
----
-title: "Notes en Voyage : L'Application de Prise de Notes Offline Ultime"
-excerpt: "Capturez instantanément vos suggestions et recommandations en voyage avec une application de notes lightweight et entièrement offline."
-cover_image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1200"
-category: "IA Générative"
----
+
 
 # Notes en Voyage : L'Application de Prise de Notes Offline Ultime
 
@@ -56,8 +50,6 @@ Ne laissez pas l'absence d'Internet limiter vos découvertes. Optez pour une app
 
 ## 🎥 Voir aussi
 Découvrez notre dernière vidéo virale du jour sur le dashboard !
-```
-
 <!-- AFFILIATE_BENTO_DATA
 ```json
 {

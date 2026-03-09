@@ -17,35 +17,45 @@ function parseMarkdownFile(rawContent) {
     let body = rawContent.trim();
     let bentoData = null;
 
-    // Supprime d'éventuels backticks de code block au début (si l'IA s'est trompée)
-    body = body.replace(/^```markdown\r?\n/i, '').replace(/\r?\n```$/, '');
-
-    // Extract YAML frontmatter between ---
-    // On utilise un regex plus souple qui accepte des espaces avant le premier ---
+    // --- PHASE 1: Extraction du premier Frontmatter ---
     const fmMatch = body.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
-
     if (fmMatch) {
         const yamlStr = fmMatch[1];
         body = fmMatch[2].trim();
-        // Simple YAML key: "value" parser
         yamlStr.split(/\r?\n/).forEach(line => {
             const kv = line.match(/^([\w-]+):\s*"?([\s\S]*?)"?\s*$/);
             if (kv) frontmatter[kv[1]] = kv[2].replace(/^"(.*)"$/, '$1').trim();
         });
     }
 
-    // Secondary cleanup: if body still starts with YAML-like structure, it's a bug in generation or double FM
-    if (body.startsWith('---')) {
-        const secondMatch = body.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
-        if (secondMatch) body = secondMatch[2].trim();
+    // --- PHASE 2: Nettoyage recursif (IA artifacts / Double FM) ---
+    // On boucle pour enlever les couches successives de ```markdown ou de frontmatter en trop
+    let cleaned = true;
+    while (cleaned) {
+        cleaned = false;
+
+        // Supprime les blocs ```markdown ... ```
+        const codeMatch = body.match(/^```(?:markdown)?\r?\n([\s\S]*?)\r?\n```$/i);
+        if (codeMatch) {
+            body = codeMatch[1].trim();
+            cleaned = true;
+        }
+
+        // Supprime un second frontmatter si l'IA en a regénéré un (fréquent)
+        if (body.startsWith('---')) {
+            const secondFmMatch = body.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+            if (secondFmMatch) {
+                body = secondFmMatch[2].trim();
+                cleaned = true;
+            }
+        }
     }
 
-    // Extract AFFILIATE_BENTO_DATA JSON comment
+    // --- PHASE 3: Extraction des données Bento ---
     const bentoMatch = body.match(/<!--\s*AFFILIATE_BENTO_DATA\s*```json\s*([\s\S]*?)\s*```\s*-->/);
     if (bentoMatch) {
         try {
             bentoData = JSON.parse(bentoMatch[1]);
-            // Remove the comment from the article body
             body = body.replace(bentoMatch[0], '').trim();
         } catch (e) {
             console.warn('Could not parse bento data:', e);

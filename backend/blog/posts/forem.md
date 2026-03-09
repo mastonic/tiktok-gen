@@ -12,13 +12,7 @@ tags:
   - "engagement utilisateur"
   - "personnalisation de plateforme"
 ---
-```markdown
----
-title: "Forem : Créez votre Propre Communauté Numérique Open Source"
-excerpt: "Transformez votre vision en plateforme avec Forem, l’outil open-source pour l’hébergement de communautés de contenu généré par les utilisateurs."
-cover_image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1200"
-category: "IA Générative"
----
+
 
 # Forem : Créez votre Propre Communauté Numérique Open Source
 
@@ -56,8 +50,6 @@ Ne vous laissez pas piéger par les algorithmes des géants du web. Avec Forem, 
 
 ## 🎥 Voir aussi
 Découvrez notre dernière vidéo virale du jour sur le dashboard !
-```
-
 <!-- AFFILIATE_BENTO_DATA
 ```json
 {

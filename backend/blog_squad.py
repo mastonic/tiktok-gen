@@ -211,10 +211,12 @@ category: "{category}"
 
         # Nettoyage de l'output de l'agent (enlever les blocs ```markdown ... ```)
         cleaned = article_markdown.strip()
-        # Supprime ```markdown au début et ``` à la fin
-        cleaned = re.sub(r'^```(?:markdown)?\n', '', cleaned, flags=re.MULTILINE)
-        cleaned = re.sub(r'\n```$', '', cleaned, flags=re.MULTILINE)
-        cleaned = cleaned.strip()
+        
+        # On enlève les blocs de code qui enveloppent tout l'article si présents
+        if cleaned.startswith("```"):
+            cleaned = re.sub(r'^```(?:markdown)?\s*\n', '', cleaned, count=1)
+            cleaned = re.sub(r'\n```$', '', cleaned, count=1)
+            cleaned = cleaned.strip()
 
         # Si l'agent a déjà produit le frontmatter (commence par ---), on respecte son output.
         # Sinon on en génère un minimal.
@@ -236,7 +238,7 @@ tags:
 {tags_yaml}
 ---
 """
-            article_body = fallback_fm + article_markdown.strip()
+            article_body = fallback_fm + "\n" + cleaned
 
         # Appendice JSON — lu par le server-side renderer React pour les BentoBox
         bento_appendix = f"""

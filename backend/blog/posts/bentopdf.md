@@ -12,13 +12,7 @@ tags:
   - "sécurité des données"
   - "formats supportés"
 ---
-```markdown
----
-title: "BentoPDF : L'API PDF qui Révolutionne la Génération Documentaire"
-excerpt: "Explorez comment BentoPDF transforme l'auto-hébergement en standard pour générer des documents à partir de divers formats."
-cover_image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1200"
-category: "IA Générative"
----
+
 
 # BentoPDF : L'API PDF qui Révolutionne la Génération Documentaire
 
@@ -62,8 +56,6 @@ La vitesse de traitement est un atout majeur, garantissant des résultats quasi-
 ### Conclusion et Appel à l'Action 
 
 Ne laissez pas vos documents en retard. Embarquez dans le futur de la génération PDF avec BentoPDF aujourd'hui. Visitez le site pour découvrir comment intégrer cette technologie à votre écosystème digital.
-```
-
 <!-- AFFILIATE_BENTO_DATA
 ```json
 {
