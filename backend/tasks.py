@@ -2,7 +2,7 @@ from crewai import Task
 from agents import ask_human_in_loop
 import datetime
 
-def create_tasks(trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, run_type="matin"):
+def create_tasks(trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, tiktok_distributor, growth_commander, run_type="matin"):
     now = datetime.datetime.now().strftime("%d/%m/%Y à %H:%M")
     focus_topic = "News IA, Outils gratuits, Nouveautés LLMs" if run_type == "matin" else "Tutoriels techniques, Self-hosting, Contours d'abonnements"
     
@@ -30,6 +30,16 @@ def create_tasks(trend_radar, viral_judge, monetization_scorer, script_architect
         agent=viral_judge
     )
 
+    task_growth_strategy = Task(
+        description=(
+            "Analyse le sujet sélectionné et définis le 'HOOK' (l'accroche) le plus violent possible pour TikTok. "
+            "Ta mission est de hacker l'attention en 1.5 seconde. "
+            "Donne des instructions précises à ScriptArchitect pour que le script soit une machine à vues."
+        ),
+        expected_output="Une stratégie de hook (visuel + texte) agressive pour maximiser le watchtime.",
+        agent=growth_commander
+    )
+
     task_scoring = Task(
         description=(
             "À partir des rapports précédents, attribue un score de R.O.I (Retour Sur Investissement) sur 100. "
@@ -41,10 +51,10 @@ def create_tasks(trend_radar, viral_judge, monetization_scorer, script_architect
 
     task_scripting = Task(
         description=(
-            "En utilisant le sujet, la 'Killer Feature' et le contexte de rentabilité, écris un script TikTok narratif en français d'exactement 30 secondes (environ 60-75 mots). "
+            "En utilisant le sujet, la 'Killer Feature' et LA STRATÉGIE DE HOOK de GrowthCommander, écris un script TikTok narratif en français d'exactement 30 secondes (environ 60-75 mots). "
             "Adopte ton ton 'iM' unique : calme, posé, direct, et avec une touche d'ironie hautaine. "
             "Identifie 3 mots-clés dans le texte qui expriment le coeur de la valeur (ex: GRATUIT, LOCAL, INFINI) et mets-les TOUT EN MAJUSCULES. "
-            "La toute dernière ligne de ton script DOIT ÊTRE EXACTEMENT : 'J'ai cassé Internet... encore.'"
+            "La toute dernière ligne de ton script DOIT ÊTRE EXACTEMENT : 'J'ai cassé Internet... encore. Alors abonne-toi et mets un cœur pour ne rien rater !'"
         ),
         expected_output="Un script TikTok complet, avec les 3 mots clés EN MAJUSCULES, et la signature exacte à la fin.",
         agent=script_architect
@@ -63,23 +73,34 @@ def create_tasks(trend_radar, viral_judge, monetization_scorer, script_architect
         agent=visual_promptist
     )
 
+    task_distribution = Task(
+        description=(
+            "Crée la 'Caption' TikTok parfaite (description + hashtags) pour ce script. "
+            "Utilise un Hook textuel en première ligne, des émojis stratégiques, et mélange 5 hashtags de niche et 2 hashtags larges."
+        ),
+        expected_output="Une description TikTok optimisée SEO et viralité avec hashtags.",
+        agent=tiktok_distributor
+    )
+
     task_review = Task(
         description=(
-            "Relis le script fourni par ScriptArchitect ET les prompts de VisualPromptist. Vérifie 4 éléments critiques: "
-            "1. Le script a-t-il exactement la phrase de fin requise ? "
+            "Relis le script, les prompts de visuals et la caption de distribution. Vérifie 4 éléments critiques: "
+            "1. Le script a-t-il exactement la phrase de fin requise avec le CTA 'abonne-toi' ? "
             "2. Y a-t-il bien 3 mots en MAJUSCULES pour le montage vidéo ? "
-            "3. L'explication de rentabilité de MonetizationScorer est-elle bien implicitement présente ? "
+            "3. La caption de TikTokDistributor est-elle percutante ? "
             "4. Y a-t-il exactement 7 prompts visuels en anglais avec le style imposé ? \n\n"
             "RÉCUPÉRATION BLOG: Récupère également la liste des 5 sujets initiaux trouvés par TrendRadar.\n\n"
             "Si tout est validé, approuve le lancement en production finale."
         ),
         expected_output=(
             "Un bloc JSON contenant :\n"
-            "- 'titre', 'script', 'score_roi', 'mots_cles' (string), 'image_prompts' (list), 'statut_validation' (bool)\n"
+            "- 'titre', 'script', 'score_roi', 'mots_cles' (string), 'image_prompts' (list), 'tiktok_caption' (string), 'statut_validation' (bool)\n"
             "- 'top_5_concepts': une liste d'objets [{'titre': ..., 'killerfeature': ...}] issue du scouting initial pour le blog.\n"
             "Tu dois IMPÉRATIVEMENT renvoyer la réponse FORMATÉE EN JSON VALIDE DANS UN BLOC ```json ... ```."
         ),
         agent=quality_controller
     )
+
+    return [task_scout, task_filter, task_growth_strategy, task_scoring, task_scripting, task_visuals, task_distribution, task_review]
 
     return [task_scout, task_filter, task_scoring, task_scripting, task_visuals, task_review]

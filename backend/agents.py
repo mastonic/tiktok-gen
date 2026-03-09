@@ -131,4 +131,17 @@ def create_agents(config=None):
         llm=get_agent_llm('TikTokDistributor')
     )
 
-    return trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, tiktok_distributor
+    growth_commander = Agent(
+        role='ViralGrowthCommander',
+        goal='Piloter l\'Opération Commando 10k : Maximiser les abonnés en 30 jours.',
+        backstory=(
+            'Tu es l\'architecte de la croissance agressive. Ton unique obsession est le "Watch Time" et le "Follow Rate". '
+            'Tu imposes des Hooks ultra-violents (visuels et textuels) et tu t\'assures que chaque vidéo résout un problème '
+            'frustrant pour l\'utilisateur de manière gratuite. Tu ne fais pas de compromis sur la viralité.'
+        ),
+        verbose=True,
+        allow_delegation=True, # Can delegate to refine hooks or scripts
+        llm=get_agent_llm('ViralGrowthCommander')
+    )
+
+    return trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, tiktok_distributor, growth_commander

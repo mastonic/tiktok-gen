@@ -158,16 +158,28 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
         db.close()
         config_dict = {a.role: a.model for a in agent_configs}
         
-        trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller = create_agents(config=config_dict)
+        # 1. Instantiate the 8 agents (including Commander and Distributor)
+        trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, tiktok_distributor, growth_commander = create_agents(config=config_dict)
         
         update_run_progress(run_id, 25, "Planification des tâches")
         save_agent_message(run_id, "Manager", "System", "info", "Calcul du chemin critique et assignation des tâches terminée.")
         print("Creating tasks...")
-        tasks = create_tasks(trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, run_type)
+        # 2. Create the 8 tasks
+        tasks = create_tasks(
+            trend_radar, viral_judge, monetization_scorer, 
+            script_architect, visual_promptist, quality_controller, 
+            tiktok_distributor, growth_commander, 
+            run_type
+        )
         
         print("Instantiating crew...")
+        # 3. Add all agents to the crew
         crew = Crew(
-            agents=[trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller],
+            agents=[
+                trend_radar, viral_judge, monetization_scorer, 
+                script_architect, visual_promptist, quality_controller, 
+                tiktok_distributor, growth_commander
+            ],
             tasks=tasks,
             process=Process.sequential,
             verbose=True
