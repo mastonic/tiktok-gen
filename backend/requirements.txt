@@ -1,3 +1,9 @@
+pydantic>=2.0.0
+apscheduler
+requests
+pytz
+python-multipart
+httpx
 crewai[tools]>=0.28.8
 langchain-google-genai
 fastapi
@@ -11,4 +17,3 @@ pytrends
 ffmpeg-python
 piper-tts
 fal-client
-pydantic
