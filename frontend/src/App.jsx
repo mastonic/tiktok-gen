@@ -15,7 +15,7 @@ import Gallery from './pages/Gallery';
 import Blog from './pages/Blog';
 
 function App() {
-    const [currentPath, setPath] = useState('/overview');
+    const [currentPath, setPath] = useState('/blog');
 
     const renderPage = () => {
         switch (currentPath) {
