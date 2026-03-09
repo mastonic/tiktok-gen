@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ExternalLink, Zap, Mic, Video, Server, Loader2, AlertCircle, Mail, ArrowRight, Calendar, BookOpen, Cpu, Search } from 'lucide-react';
 import AffiliateBento from '../components/AffiliateBento';
 import BlogPost from './BlogPost';
+import About from './About';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5656';
 
@@ -150,6 +151,7 @@ const Blog = () => {
     const [loadingHero, setLoadingHero] = useState(true);
     const [loadingPosts, setLoadingPosts] = useState(true);
     const [activePost, setActivePost] = useState(null);
+    const [view, setView] = useState('home'); // 'home' or 'about'
 
     // Filter states
     const [searchTerm, setSearchTerm] = useState('');
@@ -187,6 +189,11 @@ const Blog = () => {
         return <BlogPost slug={activePost} onBack={() => setActivePost(null)} />;
     }
 
+    // Navigation vers l'About
+    if (view === 'about') {
+        return <About onBack={() => setView('home')} />;
+    }
+
     return (
         <div className="min-h-screen bg-[#050505] text-white overflow-y-auto" style={{ fontFamily: "'Inter', sans-serif" }}>
 
@@ -212,8 +219,18 @@ const Blog = () => {
                         </div>
                     </div>
                     <div className="hidden md:flex gap-8 text-sm font-medium text-gray-400">
-                        <a href="#" className="hover:text-white transition">Home</a>
-                        <a href="#" className="hover:text-white transition">About</a>
+                        <button
+                            onClick={() => setView('home')}
+                            className={`transition ${view === 'home' ? 'text-cyan-400' : 'hover:text-white'}`}
+                        >
+                            Home
+                        </button>
+                        <button
+                            onClick={() => setView('about')}
+                            className={`transition ${view === 'about' ? 'text-cyan-400' : 'hover:text-white'}`}
+                        >
+                            About
+                        </button>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
