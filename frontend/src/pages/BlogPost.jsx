@@ -295,8 +295,13 @@ const BlogPost = ({ slug, onBack }) => {
             </article>
 
             {/* FOOTER */}
-            <footer className="mt-16 py-10 border-t border-white/5 text-center text-gray-600 text-xs tracking-widest uppercase">
-                iM-System © 2026 • Martinique
+            <footer className="mt-16 py-10 border-t border-white/5 text-center">
+                <p className="max-w-2xl mx-auto text-[10px] text-gray-500 mb-6 leading-relaxed normal-case px-4">
+                    Certains liens sur ce site sont des liens d'affiliation. Si vous passez par eux, le Dev Masto reçoit une petite commission qui sert exclusivement à financer les serveurs (et le café pour les nuits blanches). Ça ne vous coûte pas plus cher, et ça soutient l'indépendance du projet.
+                </p>
+                <div className="text-gray-600 text-xs tracking-widest uppercase">
+                    iM-System © 2026 • Martinique
+                </div>
             </footer>
         </div>
     );
