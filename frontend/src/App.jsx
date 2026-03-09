@@ -14,8 +14,14 @@ import Studio from './pages/Studio';
 import Gallery from './pages/Gallery';
 import Blog from './pages/Blog';
 
+import Login from './components/Login';
+
 function App() {
-    const [currentPath, setPath] = useState('/blog');
+    // Check if we are on the /cockpit path (via hash or direct path for SPA support)
+    const isCockpitRoute = window.location.hash === '#cockpit' || window.location.pathname === '/cockpit';
+
+    const [currentPath, setPath] = useState(isCockpitRoute ? '/overview' : '/blog');
+    const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem('im_auth') === 'true');
 
     const renderPage = () => {
         switch (currentPath) {
@@ -42,14 +48,20 @@ function App() {
             case '/settings':
                 return <Settings />;
             case '/blog':
-                return <Blog />;
+                return <Blog onEnterCockpit={() => setPath('/overview')} />;
             default:
                 return <Overview />;
         }
     };
 
+    // Public Blog View (Default)
     if (currentPath === '/blog') {
-        return <Blog />;
+        return <Blog onEnterCockpit={() => setPath('/overview')} />;
+    }
+
+    // Secure Cockpit View
+    if (!isAuthenticated) {
+        return <Login onLogin={() => setIsAuthenticated(true)} />;
     }
 
     return (
