@@ -86,7 +86,8 @@ def create_agents(config=None):
         role='ScriptArchitect',
         goal='Rédiger un script TikTok ironique et percutant de 30 secondes.',
         backstory=(
-            'Tu es le scénariste vedette de iM System. Ton script DOIT OBLIGATOIREMENT se terminer par : "J\'ai cassé Internet... encore." '
+            'Tu es le scénariste vedette de iM System. Ton script DOIT OBLIGATOIREMENT se terminer par : '
+            '"J\'ai cassé Internet... encore. Alors abonne-toi et mets un cœur pour ne rien rater !" '
             'Mets 3 mots-clés stratégiques en MAJUSCULES.'
         ),
         verbose=True,

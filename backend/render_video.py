@@ -72,6 +72,12 @@ def generate_video(job_dir: str):
         except Exception as e:
             print(f"Database fallback failed: {e}")
 
+    # Force CTA keywords for visual impact
+    for cta in ["ABONNE-TOI", "COEUR", "CŒUR", "ABONNE", "SUIS-MOI"]:
+        if cta in final_script.upper():
+            if cta not in [k.upper() for k in keywords]:
+                keywords.append(cta)
+
     print(f"Keywords for highlight: {keywords}")
 
     # Build ASS subtitles
@@ -95,9 +101,12 @@ def generate_video(job_dir: str):
     else:
         cmd.extend(["-map", "0:v", "-map", "1:a"])
 
-    # Apply subtitles and scale to TikTok portrait if needed (assuming input is already 1080x1920)
+    # Apply subtitles and watermark for growth
+    # We add the @crewai972 handle as a discrete watermark in the top right
+    watermark = "drawtext=text='@crewai972':x=W-text_w-20:y=20:fontsize=32:fontcolor=white@0.3:shadowcolor=black@0.2:shadowx=1:shadowy=1"
+    
     cmd.extend([
-        "-vf", f"ass={str(ass_file)}",
+        "-vf", f"{watermark}, ass={str(ass_file)}",
         "-c:v", "libx264",
         "-crf", "18",
         "-preset", "veryfast",
