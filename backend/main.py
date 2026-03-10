@@ -619,7 +619,7 @@ async def get_overview():
 async def get_contents():
     try:
         db = SessionLocal()
-        scripts = db.query(ScriptInbox).all()
+        scripts = db.query(ScriptInbox).order_by(ScriptInbox.id.desc()).all()
         db.close()
         
         db_contents = []
@@ -931,28 +931,26 @@ class FluxPromptRequest(BaseModel):
 @app.post("/api/flux/generate")
 def generate_flux_images(request: FluxPromptRequest):
     """
-    Sends prompts to local FLUX.1 ComfyUI WebSocket/API.
-    Waits for the image to be generated and saves it.
+    Sends prompts to fal.ai (Flux Schnell) for high-quality, cost-optimized generation.
+    BudgetOptimizer: $0.003/img.
     """
     job_dir = f"media/production/{request.job_id}"
     os.makedirs(job_dir, exist_ok=True)
+    
+    from fal_client import generate_flux_image
     
     generated_images = []
     for i, prompt in enumerate(request.prompts):
         filename = f"{job_dir}/img_{i+1:02d}.jpg"
         
-        # Real call to ComfyUI (blocking until done or timeout)
-        success = comfyui_client.generate_and_save_flux(prompt, filename)
+        print(f"🎨 Regenerating image {i+1}/{len(request.prompts)} with Fal.ai...")
+        success = generate_flux_image(prompt, filename)
         
         if success:
             generated_images.append(f"/media/production/{request.job_id}/img_{i+1:02d}.jpg")
         else:
-            # Fallback mock if ComfyUI is unavailable or errors
-            import base64
-            # 1x1 black pixel PNG for fallback display
-            png_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
-            with open(filename, "wb") as f:
-                f.write(base64.b64decode(png_base64))
+            print(f"❌ Failed to generate image {i+1}")
+            # Still append path for the frontend to show whatever is there or error state
             generated_images.append(f"/media/production/{request.job_id}/img_{i+1:02d}.jpg")
 
     return {"status": "success", "images": generated_images, "job_id": request.job_id}

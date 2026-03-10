@@ -22,8 +22,16 @@ const Studio = () => {
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
             const response = await fetch(`${apiUrl}/api/contents`);
             const data = await response.json();
+
+            // Keep scripts with images or video potential
             const validScripts = data.filter(s => s.imagePrompts && s.imagePrompts.length > 0);
-            validScripts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            // Strictly sort by ID (newest first) as requested
+            validScripts.sort((a, b) => {
+                const idA = parseInt(a.id.split('_')[1]) || 0;
+                const idB = parseInt(b.id.split('_')[1]) || 0;
+                return idB - idA;
+            });
 
             setScripts(validScripts);
 
@@ -45,8 +53,11 @@ const Studio = () => {
 
     const loadScriptAssets = (script) => {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+        const timestamp = Date.now();
         if (script.hasImages) {
-            const imgs = script.imagePrompts.map((_, i) => `${apiUrl}/media/production/${script.id}/img_${(i + 1).toString().padStart(2, '0')}.jpg`);
+            const imgs = script.imagePrompts.map((_, i) =>
+                `${apiUrl}/media/production/${script.id}/img_${(i + 1).toString().padStart(2, '0')}.jpg?t=${timestamp}`
+            );
             setGeneratedImages(imgs);
         } else {
             setGeneratedImages([]);
@@ -56,10 +67,10 @@ const Studio = () => {
         if (script.hasAudio) {
             setPlayerProps({
                 clips: script.existingClips && script.existingClips.length > 0
-                    ? script.existingClips.map(c => `${apiUrl}${c}`)
-                    : script.imagePrompts.map((_, i) => `${apiUrl}/media/production/${script.id}/img_${(i + 1).toString().padStart(2, '0')}.jpg`),
-                audioUrl: `${apiUrl}/media/production/${script.id}/voiceover.wav`,
-                subtitles: [] // We'll need a way to fetch these or regenerate them
+                    ? script.existingClips.map(c => `${apiUrl}${c}?t=${timestamp}`)
+                    : script.imagePrompts.map((_, i) => `${apiUrl}/media/production/${script.id}/img_${(i + 1).toString().padStart(2, '0')}.jpg?t=${timestamp}`),
+                audioUrl: `${apiUrl}/media/production/${script.id}/voiceover.wav?t=${timestamp}`,
+                subtitles: []
             });
             setShowPlayer(true);
         } else {
@@ -82,7 +93,8 @@ const Studio = () => {
             });
             const data = await response.json();
             if (data.status === 'success') {
-                setGeneratedImages(data.images.map(img => `${apiUrl}${img}`));
+                const timestamp = Date.now();
+                setGeneratedImages(data.images.map(img => `${apiUrl}${img}?t=${timestamp}`));
                 fetchScripts(); // Refresh to get hasImages:true
             }
         } catch (error) {
