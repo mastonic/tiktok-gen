@@ -15,11 +15,11 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
 
     task_scout = Task(
         description=(
-            f"Fais une recherche exhaustive pour identifier les outils et news 'Killer' correspondant au thème : {focus_topic}. "
-            f"Aujourd'hui nous sommes le {now}. Essaie de trouver des actualités de ces dernières 24-48h. "
-            "Objectif : la pépite gratuite (recherche GitHub, Reddit, flux RSS)."
+            f"Ta mission 'TrendHunter' est d'identifier les 5 sujets IA/Tech les plus chauds des dernières 24h via TikTok Creative Center, Google Trends et Perplexity. "
+            f"Aujourd'hui nous sommes le {now}. Focus : {focus_topic}. "
+            "Identifie les recherches en hausse de >100% et croise-les avec AnswerThePublic pour trouver le Hook parfait."
         ),
-        expected_output="Une liste structurée de 5 sujets avec Nom, URL, et Killer Feature.",
+        expected_output="Top 5 sujets explosifs avec Nom, URL, Killer Feature et Hook stratégique.",
         agent=trend_radar
     )
 

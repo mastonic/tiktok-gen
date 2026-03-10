@@ -1,6 +1,6 @@
 from crewai import Agent, LLM
 from langchain_google_genai import ChatGoogleGenerativeAI
-from custom_tools import feed_parser_tool, duckduckgo_search_tool, trafilatura_scraper, pytrends_tool
+from custom_tools import feed_parser_tool, duckduckgo_search_tool, trafilatura_scraper, pytrends_tool, perplexity_tool
 import os
 import requests
 from dotenv import load_dotenv
@@ -101,16 +101,16 @@ def create_agents(config=None, commando_mode=False):
         return get_llm(m)
 
     trend_radar = Agent(
-        role='TrendRadar',
-        goal='Scanner les outils et news "Killer" que personne n\'a vus venir. Objectif : la pépite gratuite.',
+        role='TrendHunter',
+        goal='Scanner quotidiennement le TikTok Creative Center, Google Trends et Perplexity pour identifier le Top 5 des sujets explosifs (>100% croissance).',
         backstory=(
-            'Tu es le radar de iM-System. Ton obsession est de dénicher des technologies open-source ou gratuites '
-            'qui vont exploser. Tu ignores le "déjà-vu". RÈGLE : Requêtes de 2-3 mots max.'
+            'Tu es le chasseur de tendances de iM-System. Ta mission est de dénicher les 5 pépites IA/Tech les plus chaudes des dernières 24h. '
+            'RÈGLE : Utilise Perplexity pour croiser les données de Reddit et X. Trouve un angle d\'attaque (Hook) violent pour chaque sujet.'
         ),
         verbose=True,
         allow_delegation=False,
         llm=get_agent_llm('TrendRadar'),
-        tools=[feed_parser_tool, duckduckgo_search_tool]
+        tools=[perplexity_tool, pytrends_tool, feed_parser_tool, duckduckgo_search_tool]
     )
 
     viral_judge = Agent(

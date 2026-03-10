@@ -81,3 +81,51 @@ def pytrends_tool(keyword: str) -> str:
         return "No trend data found."
     except Exception as e:
         return f"Error fetching trends: {e}"
+import requests
+import os
+
+@tool("PerplexityTool")
+def perplexity_tool(query: str) -> str:
+    """
+    Searches the real-time web using Perplexity Sonar models.
+    Use this for finding the latest trends, news, or deep-diving into specific topics with citations.
+    Args:
+        query (str): The research question or trend search query.
+    """
+    api_key = os.environ.get("PERPLEXITY_API_KEY")
+    if not api_key:
+        return "Error: PERPLEXITY_API_KEY not found. Please check your .env configuration."
+        
+    url = "https://api.perplexity.ai/chat/completions"
+    payload = {
+        "model": "sonar-reasoning", # Premium model with deep analysis
+        "messages": [
+            {
+                "role": "system",
+                "content": "Tu es un expert en viralité TikTok et en recherche technologique. Fournis des informations sourcées, précises et structurées."
+            },
+            {
+                "role": "user",
+                "content": query
+            }
+        ],
+        "return_citations": True
+    }
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=60)
+        response.raise_for_status()
+        data = response.json()
+        content = data["choices"][0]["message"]["content"]
+        citations = data.get("citations", [])
+        
+        if citations:
+            content += "\n\nSources / Citations :\n" + "\n".join([f"- {c}" for c in citations])
+            
+        return content
+    except Exception as e:
+        return f"Error calling Perplexity: {e}"

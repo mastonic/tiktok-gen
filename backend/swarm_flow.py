@@ -2,6 +2,7 @@ from crewai.flow.flow import Flow, listen, start, router, or_
 from pydantic import BaseModel
 from typing import List, Optional, Union
 import json
+from datetime import datetime
 
 from agents import create_agents
 from tasks import create_tasks
@@ -39,9 +40,15 @@ class ViralFlow(Flow[SwarmState]):
     @listen(initialize)
     def phase_sourcing(self):
         print("📡 Phase 1: Sourcing & Filtering...")
+        now = datetime.now().strftime("%d/%m/%Y")
+        focus_topic = "IA/Tech"
         task_scout = Task(
-            description="Identifier les outils et news IA 'Killer' gratuits.",
-            expected_output="Top 5 sujets avec Nom, URL et Killer Feature.",
+            description=(
+                f"Ta mission 'TrendHunter' est d'identifier les 5 sujets IA/Tech les plus chauds des dernières 24h via TikTok Creative Center, Google Trends et Perplexity. "
+                f"Aujourd'hui nous sommes le {now}. Focus : {focus_topic}. "
+                "Identifie les recherches en hausse de >100% et croise-les avec AnswerThePublic pour trouver le Hook parfait."
+            ),
+            expected_output="Top 5 sujets explosifs avec Nom, URL, Killer Feature et Hook stratégique.",
             agent=self.trend_radar
         )
         task_filter = Task(
