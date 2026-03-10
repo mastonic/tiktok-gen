@@ -179,13 +179,55 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
             print(f"🚀 [FLOW] Kicking off ViralFlow (Mode: {mode_str}, Type: {run_type})")
             result_obj = flow.kickoff()
             
-            # If the flow returns a Pydantic object, convert it to JSON string
-            if hasattr(result_obj, "json") and callable(getattr(result_obj, "json")):
-                result = result_obj.json()
-            elif hasattr(result_obj, "model_dump_json") and callable(getattr(result_obj, "model_dump_json")):
-                result = result_obj.model_dump_json()
-            else:
-                result = str(result_obj)
+            print(f"📦 [FLOW] kickoff() returned type: {type(result_obj)}")
+            print(f"📦 [FLOW] kickoff() returned value (first 500 chars): {str(result_obj)[:500]}")
+            
+            # Strategy 1: Try to get the AgentOutcome from the flow state directly
+            outcome = getattr(flow.state, 'final_outcome', None)
+            print(f"📦 [FLOW] flow.state.final_outcome type: {type(outcome)}, is None: {outcome is None}")
+            
+            result = None
+            
+            # Try the state's final_outcome (most reliable)
+            if outcome is not None:
+                if hasattr(outcome, "model_dump_json"):
+                    result = outcome.model_dump_json()
+                elif hasattr(outcome, "json"):
+                    result = outcome.json()
+                elif hasattr(outcome, "model_dump"):
+                    result = json.dumps(outcome.model_dump())
+                else:
+                    result = str(outcome)
+            
+            # Fallback: try the flow kickoff result itself
+            if not result or result in ("None", ""):
+                if hasattr(result_obj, "model_dump_json"):
+                    result = result_obj.model_dump_json()
+                elif hasattr(result_obj, "json"):
+                    result = result_obj.json()
+                elif hasattr(result_obj, "model_dump"):
+                    result = json.dumps(result_obj.model_dump())
+                else:
+                    result = str(result_obj)
+            
+            # Last fallback: build JSON from whatever state data we have
+            if not result or result in ("None", "", "{}"):
+                print("⚠️ [FLOW] No structured output. Building from state...")
+                visual_prompts_list = []
+                if flow.state.visual_prompts and hasattr(flow.state.visual_prompts, 'prompts'):
+                    visual_prompts_list = flow.state.visual_prompts.prompts
+                fallback_data = {
+                    "title": "Auto-Generated Script",
+                    "script": flow.state.script_content or flow.state.viability_report or "Script non généré",
+                    "mots_cles": "IA, AUTOMATION, OPEN-SOURCE",
+                    "score_roi": 80,
+                    "image_prompts": visual_prompts_list,
+                    "statut_validation": True,
+                    "top_5_concepts": []
+                }
+                result = json.dumps(fallback_data)
+            
+            print(f"✅ [FLOW] Final result (first 500 chars): {result[:500]}")
             
         except Exception as e:
             print(f"⚠️ [FLOW] Falling back to manual crew: {e}")

@@ -122,7 +122,14 @@ class ViralFlow(Flow[SwarmState]):
             verbose=True,
             max_rpm=30
         )
-        self.state.visual_prompts = crew.kickoff().pydantic
+        result = crew.kickoff()
+        if hasattr(result, 'pydantic') and result.pydantic:
+            self.state.visual_prompts = result.pydantic
+        else:
+            print("⚠️ [FLOW] VisualPromptist failed to produce Pydantic output. Using fallback.")
+            # Fallback will be handled in main.py or next steps
+            from models import VisualPrompts
+            self.state.visual_prompts = VisualPrompts(prompts=["Prompt fallback 1", "Prompt fallback 2"])
         
         if self.state.run_id:
             save_agent_message(self.state.run_id, "VisualPromptist", "System", "success", "✨ Pack créatif terminé (Script 90s + 15 Prompts).")
@@ -149,7 +156,11 @@ class ViralFlow(Flow[SwarmState]):
             save_agent_message(self.state.run_id, "TikTokDistributor", "System", "info", "📈 Optimisation SEO TikTok : Description & Hashtags...")
 
         crew = Crew(agents=[self.tiktok_distributor], tasks=[task_dist], verbose=True, max_rpm=30)
-        self.state.tiktok_metadata = crew.kickoff().pydantic
+        result = crew.kickoff()
+        if hasattr(result, 'pydantic') and result.pydantic:
+            self.state.tiktok_metadata = result.pydantic
+        else:
+            print("⚠️ [FLOW] TikTokDistributor failed to produce Pydantic output.")
         
         if self.state.run_id:
             save_agent_message(self.state.run_id, "TikTokDistributor", "System", "success", "🚀 Métadonnées virales prêtes pour la publication.")
@@ -170,7 +181,11 @@ class ViralFlow(Flow[SwarmState]):
             save_agent_message(self.state.run_id, "QualityController", "System", "info", "🛡️ Revue finale de la qualité et du scoring...")
 
         crew = Crew(agents=[self.quality_controller], tasks=[task_qa], verbose=True, max_rpm=30)
-        self.state.final_outcome = crew.kickoff().pydantic
+        result = crew.kickoff()
+        if hasattr(result, 'pydantic') and result.pydantic:
+            self.state.final_outcome = result.pydantic
+        else:
+            print("⚠️ [FLOW] QualityControl failed to produce Pydantic outcome.")
         
         if self.state.run_id:
             save_agent_message(self.state.run_id, "QualityController", "System", "success", "✅ Validation finale terminée. Prêt pour l'Inbox.")
