@@ -702,11 +702,23 @@ async def move_content(item_id: str, payload: dict):
             db_id = int(item_id.replace("db_", ""))
             script = db.query(ScriptInbox).filter(ScriptInbox.id == db_id).first()
             if script:
+                old_status = script.status
                 # Map column to status
                 if new_col == "Scheduled": script.status = "approved"
                 elif new_col == "Posted": script.status = "posted"
                 elif new_col == "Review": script.status = "pending_review"
+                elif new_col == "Script": script.status = "pending_review"
+                
                 db.commit()
+                
+                # TRIGGER: If moved to Scheduled and was not approved before, launch production
+                if script.status == "approved" and old_status != "approved":
+                    import threading
+                    print(f"🚀 Manual Move to Scheduled: Launching visual production for script {script.id}")
+                    send_telegram_message(f"⚙️ <b>Pipeline</b>\nScript '{script.title}' déplacé vers PRODUCTION (Scheduled).")
+                    prod_thread = threading.Thread(target=automate_visual_production, args=(script.id,))
+                    prod_thread.start()
+                
                 return {"status": "success"}
         return {"status": "error", "message": "Item not found or not moveable"}
     finally:
