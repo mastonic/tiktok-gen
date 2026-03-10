@@ -5,18 +5,16 @@ import { GripVertical, AlertTriangle, Trash2, RotateCcw, Clock, Play, CheckCircl
 const Pipeline = () => {
     const [contents, setContents] = useState([]);
     const [selectedItem, setSelectedItem] = useState(null);
-    const columns = ['Review', 'Waiting', 'Scheduled', 'Posted'];
+    const columns = ['Waiting', 'Scheduled', 'Posted'];
 
     const colNames = {
-        'Review': 'En Relecture',
         'Waiting': 'Attente Production',
         'Scheduled': 'En Production',
         'Posted': 'Publié'
     };
 
     const colIcons = {
-        'Review': <Clock className="w-4 h-4 text-amber-400" />,
-        'Waiting': <Badge variant="outline" className="text-[10px] border-cyan-700 text-cyan-400">WAIT</Badge>,
+        'Waiting': <Clock className="w-4 h-4 text-amber-400" />,
         'Scheduled': <Play className="w-4 h-4 text-emerald-400" />,
         'Posted': <CheckCircle className="w-4 h-4 text-blue-400" />
     };
@@ -129,7 +127,7 @@ const Pipeline = () => {
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, col)}
-                        className="bg-navy-800/60 rounded-xl border border-gray-800 flex flex-col min-w-[300px] max-w-[300px] h-[calc(100vh-12rem)] transition-colors duration-200"
+                        className="bg-navy-800/60 rounded-xl border border-gray-800 flex flex-col min-w-[320px] max-w-[320px] h-[calc(100vh-12rem)] transition-colors duration-200"
                     >
                         <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-navy-900/50 rounded-t-xl shadow-md">
                             <div className="flex items-center gap-2">
@@ -152,11 +150,11 @@ const Pipeline = () => {
                                     <div className="flex justify-between items-start mb-2">
                                         <h4 className="font-medium text-white text-xs leading-tight pr-2">{content.title}</h4>
                                         <div className="flex items-center gap-1">
-                                            {col === 'Review' && (
+                                            {col === 'Waiting' && (
                                                 <button
                                                     onClick={(e) => handleRelaunch(e, content.id)}
-                                                    className="p-1 text-gray-600 hover:text-cyan-400 opacity-0 group-hover:opacity-100 transition-all"
-                                                    title="Relancer en relecture"
+                                                    className="p-1 text-gray-600 hover:text-cyan-400 opacity-0 group-hover:opacity-100 transition-all font-bold"
+                                                    title="Relancer en relecture agent"
                                                 >
                                                     <RotateCcw className="w-3.5 h-3.5" />
                                                 </button>

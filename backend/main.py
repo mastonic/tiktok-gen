@@ -624,11 +624,12 @@ async def get_contents():
         
         db_contents = []
         for s in scripts:
-            col = "Review"
+            col = None # Don't show by default
             if s.status == "approved": col = "Waiting"
             elif s.status == "producing": col = "Scheduled"
             elif s.status == "posted": col = "Posted"
-            elif s.status == "pending_review": col = "Review"
+            
+            if not col: continue # Skip items in pending_review, they stay in Approvals menu
             
             try:
                 image_prompts = json.loads(s.image_prompts) if s.image_prompts else []
