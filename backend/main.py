@@ -155,73 +155,85 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
         
         db = SessionLocal()
         agent_configs = db.query(AgentConfig).all()
+        conf = db.query(SystemConfig).first()
         db.close()
         config_dict = {a.role: a.model for a in agent_configs}
         
-        # 1. Instantiate agents (conditional Commando Mode)
+        # 1. Prepare configuration and state
         commando_enabled = conf.commando_mode if conf else False
+        mode_str = "commando" if commando_enabled else "standard"
         
-        agents_out = create_agents(config=config_dict, commando_mode=commando_enabled)
+        # 2. Execute via Flow (or fallback if Flow is not supported)
+        update_run_progress(run_id, 25, "Initialisation du Flow Viral")
+        save_agent_message(run_id, "Manager", "System", "info", f"Démarrage Flow en mode {mode_str}.")
         
-        # Unpack based on mode
-        if commando_enabled:
-            trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, tiktok_distributor, growth_commander = agents_out
-            agents_list = [trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, tiktok_distributor, growth_commander]
-        else:
-            trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller = agents_out
-            agents_list = [trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller]
+        try:
+            from swarm_flow import ViralFlow, SwarmState
+            
+            flow = ViralFlow()
+            flow.state.mode = mode_str
+            flow.state.run_type = run_type
+            flow.state.agent_config = config_dict
+            flow.state.run_id = run_id
+            
+            print(f"🚀 [FLOW] Kicking off ViralFlow (Mode: {mode_str}, Type: {run_type})")
+            result_obj = flow.kickoff()
+            
+            # If the flow returns a Pydantic object, convert it to JSON string
+            if hasattr(result_obj, "json") and callable(getattr(result_obj, "json")):
+                result = result_obj.json()
+            elif hasattr(result_obj, "model_dump_json") and callable(getattr(result_obj, "model_dump_json")):
+                result = result_obj.model_dump_json()
+            else:
+                result = str(result_obj)
+            
+        except Exception as e:
+            print(f"⚠️ [FLOW] Falling back to manual crew: {e}")
+            agents_out = create_agents(config=config_dict, commando_mode=commando_enabled)
+            agents_list = list(agents_out)
+            tasks = create_tasks(*agents_out, run_type=run_type, commando_mode=commando_enabled)
+            
+            crew = Crew(
+                agents=agents_list,
+                tasks=tasks,
+                process=Process.sequential,
+                verbose=True,
+                max_rpm=30
+            )
+            result = str(crew.kickoff())
 
-        update_run_progress(run_id, 25, "Planification des tâches")
-        save_agent_message(run_id, "Manager", "System", "info", "Calcul du chemin critique et assignation des tâches terminée.")
-        print(f"Creating tasks (Commando: {commando_enabled})...")
-        
-        # 2. Create tasks based on mode
-        tasks = create_tasks(
-            *agents_out, 
-            run_type=run_type, 
-            commando_mode=commando_enabled
-        )
-        
-        print("Instantiating crew...")
-        # 3. Add all agents to the crew
-        crew = Crew(
-            agents=agents_list,
-            tasks=tasks,
-            process=Process.sequential,
-            verbose=True
-        )
-        
-        update_run_progress(run_id, 40, "Recherche de tendances & Scoring")
-        save_agent_message(run_id, "Swarm", "ViralJudge", "vote", "Analyse comparative des tendances détectées en cours.")
-        print("Kicking off crew...")
-        result = str(crew.kickoff())
         update_run_progress(run_id, 85, "Optimisation du script final")
-        send_telegram_message(f"✅ <b>Script généré</b>\nAnalyse et scoring terminé par ViralJudge.")
+        send_telegram_message(f"✅ <b>Script généré</b>\nAnalyse et scoring terminé par le Swarm.")
         save_agent_message(run_id, "QualityController", "System", "info", "Script généré, revue de qualité par le Swarm effectuée.")
-        print(f"Crew execution completed.")
+        print(f"Execution completed.")
         
         # Parse outcome and save to DB
         try:
             json_str = result
-            match = re.search(r'```(?:json)?\s*(.*?)\s*```', result, re.IGNORECASE | re.DOTALL)
+            # More robust JSON extraction
+            match = re.search(r'(\{[\s\S]*\})', result)
             if match:
                 json_str = match.group(1)
             
             data = json.loads(json_str)
             db = SessionLocal()
-            # Keywords come as a list or a string "A, B, C"
-            kw_raw = data.get("mots_cles", [])
+            
+            # Map both French and English keys from Pydantic / Agents
+            title = data.get("title") or data.get("titre") or "Automated Script"
+            script_body = data.get("script", result)
+            viral_score = data.get("score_roi", data.get("viral_score", 85))
+            
+            kw_raw = data.get("keywords") or data.get("mots_cles", [])
             kw_str = kw_raw if isinstance(kw_raw, str) else ", ".join(kw_raw)
             
-            # We force status to pending_review so it shows up in Approvals, 
-            # even if agent says it's validated, to give human final say.
+            # We force status to pending_review so it shows up in Approvals
             final_status = "pending_review" 
             
             new_script = ScriptInbox(
-                title=data.get("titre", "Automated Script"),
+                title=title,
                 run_type=run_type,
-                final_script=data.get("script", result),
-                viral_score=data.get("score_roi", 85),
+                final_script=script_body,
+                viral_score=viral_score,
                 money_score=90,
                 keywords=kw_str,
                 image_prompts=json.dumps(data.get("image_prompts", [])),
@@ -263,8 +275,8 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
             except Exception as blog_e:
                 print(f"⚠️ Manual/Auto BlogSquad trigger skipped: {blog_e}")
 
-            # 2. Visual Production Automation: Only for scheduled or designated runs (matin/soir)
-            if run_type in ["matin", "soir"]:
+            # 2. Visual Production Automation: Only for scheduled or designated runs (matin/soir/atypique)
+            if run_type in ["matin", "soir", "apres-midi"]:
                 send_telegram_message(f"⚙️ <b>Automatisation Activée</b>\nLancement immédiat du pipeline visuel Fal.ai (Flux + Kling)...")
                 # Hand over to production flow in background
                 prod_thread = threading.Thread(target=automate_visual_production, args=(new_script.id,))
@@ -646,16 +658,54 @@ async def get_contents():
                 "finalScore": 0,
                 "costEstimate": cost_val,
                 "column": "Script",
-                "assignedAgent": "Swarm",
-                "riskScore": 5,
-                "created_at": run.time,
-                "date": run.created_at.strftime("%d/%m") if run.created_at else None
+                "assignedAgent": "Swarm"
             })
         
         return db_contents
     except Exception as e:
         print(f"Error in get_contents: {traceback.format_exc()}")
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.post("/api/contents/{item_id}/move")
+async def move_content(item_id: str, payload: dict):
+    new_col = payload.get("column")
+    db = SessionLocal()
+    try:
+        if item_id.startswith("db_"):
+            db_id = int(item_id.replace("db_", ""))
+            script = db.query(ScriptInbox).filter(ScriptInbox.id == db_id).first()
+            if script:
+                # Map column to status
+                if new_col == "Scheduled": script.status = "approved"
+                elif new_col == "Posted": script.status = "posted"
+                elif new_col == "Review": script.status = "pending_review"
+                db.commit()
+                return {"status": "success"}
+        return {"status": "error", "message": "Item not found or not moveable"}
+    finally:
+        db.close()
+
+@app.delete("/api/contents/{item_id}")
+async def delete_content(item_id: str):
+    db = SessionLocal()
+    try:
+        if item_id.startswith("db_"):
+            db_id = int(item_id.replace("db_", ""))
+            script = db.query(ScriptInbox).filter(ScriptInbox.id == db_id).first()
+            if script:
+                db.delete(script)
+                db.commit()
+                return {"status": "success"}
+        elif item_id.startswith("run_"):
+            run_id = item_id.replace("run_", "")
+            run = db.query(RunHistory).filter(RunHistory.run_id == run_id).first()
+            if run:
+                db.delete(run)
+                db.commit()
+                return {"status": "success"}
+        return {"status": "error", "message": "Item not found"}
+    finally:
+        db.close()
 
 @app.get("/api/approvals")
 async def get_approvals():
@@ -1252,26 +1302,60 @@ async def finalize_script(payload: FinalizeScriptPayload):
     return {"status": "success", "message": "Script saved to Inbox"}
 
 # --- Scheduler Setup ---
+from pytz import timezone as pytz_timezone
 
-scheduler = BackgroundScheduler()
+# Force the timezone to Europe/Paris to match the user's local time (+01:00)
+# and avoid discrepancies with server local time (AST).
+paris_tz = pytz_timezone('Europe/Paris')
+scheduler = BackgroundScheduler(timezone=paris_tz)
 
 def scheduled_job():
-    now = datetime.now()
-    run_type = "matin" if now.hour < 12 else "soir"
-    print(f"⏰ [SCHEDULER] Triggering {run_type} run at {now.strftime('%H:%M:%S')}")
+    now = datetime.now(paris_tz)
+    # Determine run type: 8h=matin, 16h=apres-midi, 20h=soir
+    if now.hour < 12:
+        run_type = "matin"
+    elif now.hour < 18:
+        run_type = "apres-midi"
+    else:
+        run_type = "soir"
+        
+    print(f"⏰ [SCHEDULER] Triggering {run_type} run at {now.strftime('%H:%M:%S')} ({paris_tz})")
     
-    send_telegram_message(f"⏰ <b>iM-System | Mission Programmée</b>\nDémarrage automatique du run de {run_type} (8h/20h).")
+    # Create Run History record
+    run_id = f"cron_{run_type}_{uuid.uuid4().hex[:6]}"
+    db = SessionLocal()
+    try:
+        new_run = RunHistory(
+            run_id=run_id,
+            name=f"iM System {run_type.capitalize()} (Auto)",
+            time=now.strftime("%I:%M %p"),
+            schedule=run_type,
+            status="running",
+            progress_percent=5,
+            current_step="Démarrage Automatique",
+            cost="0.00",
+            duration="--"
+        )
+        db.add(new_run)
+        db.commit()
+        print(f"✅ [SCHEDULER] Registered {run_id} in RunHistory")
+    except Exception as e:
+        print(f"❌ [SCHEDULER] Error creating RunHistory: {e}")
+    finally:
+        db.close()
+
+    send_telegram_message(f"⏰ <b>iM-System | Mission Programmée</b>\nDémarrage automatique du run de {run_type} ({now.hour}h Paris).")
     
-    # We can't easily use background_tasks here, so we call run_crew_sync directly in a separate thread
-    # or just start a thread manually. 
     import threading
-    t = threading.Thread(target=run_crew_sync, args=(run_type,))
+    t = threading.Thread(target=run_crew_sync, args=(run_type, run_id))
     t.start()
 
-# Schedule for 08:00 and 20:00
+# Schedule for 08:00, 16:00, and 20:00 (Paris Time)
 scheduler.add_job(scheduled_job, 'cron', hour=8, minute=0)
+scheduler.add_job(scheduled_job, 'cron', hour=16, minute=0)
 scheduler.add_job(scheduled_job, 'cron', hour=20, minute=0)
 scheduler.start()
+print("🚀 [SCHEDULER] Background scheduler started (Timezone: Europe/Paris) at 08h, 16h, 20h.")
 # --- AFFILIATE LINKS API ---
 
 @app.get("/api/affiliates")
@@ -1328,7 +1412,7 @@ async def get_latest_blog():
 async def get_blog_data(script_id: int):
     """Returns the data needed for the Public Blog page for a given script."""
     db = SessionLocal()
-    script = db.query(ScriptInbox).get(script_id)
+    script = db.get(ScriptInbox, script_id)
     if not script:
         db.close()
         raise HTTPException(status_code=404, detail="Script not found")
@@ -1521,7 +1605,7 @@ async def telegram_webhook(request: Request):
         script_id = int(parts[2])
         
         db = SessionLocal()
-        script = db.query(ScriptInbox).get(script_id)
+        script = db.get(ScriptInbox, script_id)
         
         if not script:
             # Tell Telegram to close the loading spin with an answerCallbackQuery

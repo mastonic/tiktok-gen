@@ -17,7 +17,12 @@ def get_llm(model_name="openai/gpt-4o-mini"):
         print(f"WARNING: OPENAI_API_KEY not found in environment, falling back to gemini")
         return ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=os.environ.get("GEMINI_API_KEY"))
     
-    return LLM(model=model_name, api_key=api_key)
+    return LLM(
+        model=model_name,
+        api_key=api_key,
+        max_retries=5,
+        timeout=120,
+    )
 
 def ask_human_in_loop(agent_name: str, context: str, question: str) -> str:
     """
@@ -49,10 +54,10 @@ def create_agents(config=None, commando_mode=False):
 
     trend_radar = Agent(
         role='TrendRadar',
-        goal='Scanner les flux RSS et GitHub pour trouver des sujets TikTok sur le self-hosting et l\'IA.',
+        goal='Scanner les outils et news "Killer" que personne n\'a vus venir. Objectif : la pépite gratuite.',
         backstory=(
-            'Tu es un expert en sourcing Open Source. Tu cherches des "Killer Features" gratuites. '
-            'RÈGLE : Requêtes de 2-3 mots max.'
+            'Tu es le radar de iM-System. Ton obsession est de dénicher des technologies open-source ou gratuites '
+            'qui vont exploser. Tu ignores le "déjà-vu". RÈGLE : Requêtes de 2-3 mots max.'
         ),
         verbose=True,
         allow_delegation=False,
@@ -62,10 +67,10 @@ def create_agents(config=None, commando_mode=False):
 
     viral_judge = Agent(
         role='ViralJudge',
-        goal='Valider la gratuité du sujet et évaluer le potentiel viral.',
+        goal='Vérifier la gratuité absolue et simule l\'intérêt du public.',
         backstory=(
-            'Tu es un analyste de tendances. Tu dois absolument t\'assurer que le sujet est gratuit. '
-            'SI LE PRIX EST FLOU, écris simplement "Needs_Human_Verification".'
+            'Tu es le filtre impitoyable. RÈGLE : Tu as l\'ordre de rejeter immédiatement (kill switch) '
+            'tout sujet "mou" ou qui n\'est pas 100% gratuit. Tu protèges l\'audience contre le contenu médiocre.'
         ),
         verbose=True,
         allow_delegation=False,
@@ -75,22 +80,25 @@ def create_agents(config=None, commando_mode=False):
 
     monetization_scorer = Agent(
         role='MonetizationScorer',
-        goal='Attribuer un score de rentabilité ROI (/100) pour chaque concept.',
-        backstory='Tu es un consultant en rentabilité. Calcule le score toi-même sans déléguer.',
+        goal='Calculer l\'économie réelle réalisée par le spectateur.',
+        backstory=(
+            'Tu es un expert en ROI (Retour Sur Investissement). Tu justifies la valeur de l\'outil en '
+            'calculant combien d\'euros par mois l\'utilisateur économise en évitant un abonnement payant.'
+        ),
         verbose=True,
         allow_delegation=False,
         llm=get_agent_llm('MonetizationScorer')
     )
 
     # Note: If commando_mode is ON, ScriptArchitect uses a harder CTA
-    cta_text = '"J\'ai cassé Internet... encore. Alors abonne-toi et mets un cœur pour ne rien rater !"' if commando_mode else '"J\'ai cassé Internet... encore."'
+    cta_text = 'CTA final obligatoire : "Abonne-toi et mets un cœur pour ne rien rater !"' if commando_mode else 'Signature habituelle : "J\'ai cassé Internet... encore."'
 
     script_architect = Agent(
         role='ScriptArchitect',
-        goal='Rédiger un script TikTok ironique et percutant de 30 secondes.',
+        goal='Rédiger un script TikTok narratif LONG (1m30+) en suivant strictement les ordres du Commander.',
         backstory=(
-            f'Tu es le scénariste vedette de iM System. Ton script DOIT OBLIGATOIREMENT se terminer par : {cta_text} '
-            'Mets 3 mots-clés stratégiques en MAJUSCULES.'
+            f'Tu transformes une stratégie en narration captivante et détaillée. Ton script doit être une machine à vues de 90s minimum. '
+            f'Règle absolue : {cta_text}. Utilise un ton calme mais ironique. Développe chaque point technique.'
         ),
         verbose=True,
         allow_delegation=False,
@@ -99,12 +107,10 @@ def create_agents(config=None, commando_mode=False):
 
     visual_promptist = Agent(
         role='VisualPromptist',
-        goal='Créer exactement 7 prompts d\'images cohérents pour FLUX qui racontent une histoire visuelle.',
+        goal='Créer exactement 15 prompts ultra-réalistes en anglais pour le générateur FLUX.',
         backstory=(
-            'Tu es un directeur artistique de haut vol. Ta mission est de traduire le script en une suite logique de 7 images ultra-réalistes. '
-            'Chaque prompt doit suivre scrupuleusement ce template : '
-            '"Raw cinematic shot, 35mm film grain, hyper-realistic, [TON THÈME ICI, décrit de manière sobre], natural environmental lighting, soft bokeh background, highly detailed textures (skin pores, fabric weave), shot on Arri Alexa, color graded, shallow depth of field, 8k resolution, photorealistic masterpiece, authentic look." '
-            'RÈGLE D\'OR : Les 7 images doivent être visuellement cohérentes entre elles pour former une narration fluide (Storytelling visuel).'
+            'Tu es un directeur artistique de haut vol. Tu garantis une narration visuelle parfaite pour une vidéo longue. '
+            'Tes prompts doivent être cinématiques et cohérents pour que les 15 images racontent une histoire complète de 90s.'
         ),
         verbose=True,
         allow_delegation=False,
@@ -113,8 +119,11 @@ def create_agents(config=None, commando_mode=False):
 
     quality_controller = Agent(
         role='QualityController',
-        goal='Vérifier la cohérence globale du script et des prompts visuels.',
-        backstory='Tu es le garant final. Tu vérifies le respect des contraintes et tu valides.',
+        goal='Vérifier la signature finale et forcer les mots-clés d\'impact en MAJUSCULES.',
+        backstory=(
+            'Tu es le garant de la perfection. Tu valides la cohérence des 7 images, la force de la caption '
+            'et tu t\'assures que les 3 mots-clés stratégiques sont bien présents en MAJUSCULES.'
+        ),
         verbose=True,
         allow_delegation=False,
         llm=get_agent_llm('QualityController')
@@ -125,11 +134,10 @@ def create_agents(config=None, commando_mode=False):
 
     tiktok_distributor = Agent(
         role='TikTokDistributor',
-        goal='Générer une description TikTok virale et des hashtags stratégiques.',
+        goal='Générer une description (caption) optimisée pour l\'algorithme et les hashtags stratégiques.',
         backstory=(
-            'Tu es un expert en algorithme TikTok. Ta mission est de créer une "Caption" qui maximise le taux de complétion '
-            'et le partage. Utilise des émojis, un Hook textuel dès la première ligne, et une liste de 5-7 hashtags '
-            '(mélange de niches et de larges).'
+            'Tu maîtrises l\'enrobage et les métadonnées. Ta mission est de forcer la distribution TikTok '
+            'en utilisant des émojis, un Hook textuel dès la première ligne et des hashtags viraux.'
         ),
         verbose=True,
         allow_delegation=False,
@@ -138,14 +146,13 @@ def create_agents(config=None, commando_mode=False):
 
     growth_commander = Agent(
         role='ViralGrowthCommander',
-        goal='Piloter l\'Opération Commando 10k : Maximiser les abonnés en 30 jours.',
+        goal='Piloter l\'Opération Commando 10k : Mission unique - Hacker l\'attention.',
         backstory=(
-            'Tu es l\'architecte de la croissance agressive. Ton unique obsession est le "Watch Time" et le "Follow Rate". '
-            'Tu imposes des Hooks ultra-violents (visuels et textuels) et tu t\'assures que chaque vidéo résout un problème '
-            'frustrant pour l\'utilisateur de manière gratuite. Tu ne fais pas de compromis sur la viralité.'
+            'Tu es le chef de l\'opération. Tu dictes le "Hook" (l\'accroche des 2 premières secondes) '
+            'le plus violent possible pour booster le Watch Time, AVANT que le script ne soit écrit.'
         ),
         verbose=True,
-        allow_delegation=True, # Can delegate to refine hooks or scripts
+        allow_delegation=True,
         llm=get_agent_llm('ViralGrowthCommander')
     )
 

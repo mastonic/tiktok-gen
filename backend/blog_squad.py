@@ -44,7 +44,7 @@ class BentoBoxData(BaseModel):
 
 def _get_llm(model: str = "openai/gpt-4o-mini") -> LLM:
     api_key = os.environ.get("OPENAI_API_KEY")
-    return LLM(model=model, api_key=api_key)
+    return LLM(model=model, api_key=api_key, max_retries=5, timeout=120)
 
 
 def _slugify(text: str) -> str:
@@ -146,6 +146,10 @@ category: "{category}"
 {video_tag}
 
 [CONSTRUIS ICI TON ARTICLE : MANIFESTE, GUIDE OU ÉTUDE DE CAS]
+
+## 🛠️ Guide Technique & Installation
+[Fournis ici les étapes claires pour installer, configurer ou utiliser l'outil (Docker, commandes terminal, ou création de compte).]
+
 [UTILISE DES H2 ET H3 UNIQUES ET DES PARAGRAPHES COURTS]
 [INCLUE IMPÉRATIVEMENT UN TABLEAU DE COMPARAISON OU UNE LISTE TECHNIQUE]
 
@@ -275,7 +279,8 @@ tags:
                     agents=[self.content_transmuter, self.affiliate_strategist],
                     tasks=[task_write, task_monetize],
                     process=Process.sequential,
-                    verbose=True
+                    verbose=True,
+                    max_rpm=30
                 )
 
                 output = crew.kickoff()
