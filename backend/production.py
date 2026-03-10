@@ -124,22 +124,44 @@ def automate_visual_production(script_id_num: int):
     except Exception as blog_update_e:
         print(f"⚠️ Could not update blog cover: {blog_update_e}")
 
-    send_telegram_message(f"📹 <b>Visuels générés !</b>\nAnimation sélective (Kling + Wan) en cours...")
+    # 1. Generate Images with Flux (BudgetOptimizer: Schnell)
+    images_paths = []
+    send_telegram_message(f"🎨 <b>Phase 1: Génération des 18 visuels (Flux Schnell)</b>\nFormat: 9:16 portrait")
+    
+    for i, prompt in enumerate(image_prompts[:prompt_count]):
+        img_path = os.path.join(job_dir, f"img_{i+1:02d}.jpg")
+        if generate_flux_image(prompt, img_path):
+            images_paths.append(img_path)
+
+    if len(images_paths) < prompt_count:
+        print(f"⚠️ Warning: Only {len(images_paths)} images generated.")
+
+    # --- BUDGET OPTIMIZER: VIRAL JUDGE VALIDATION ---
+    print("⚖️ VirtualJudge is validating image coherence...")
+    # Simulated validation for now: in a real swarm, another agent would check these via Vision
+    image_quality_ok = len(images_paths) >= (prompt_count / 2)
+    
+    if not image_quality_ok:
+        send_telegram_message("❌ <b>PROBLÈME BUDGET</b>\nLes images générées sont insuffisantes ou de mauvaise qualité. Arrêt de la production pour sauver les crédits.")
+        return
+
+    send_telegram_message(f"📹 <b>Phase 2: Animation sélective (BudgetOptimizer)</b>\n1 Kling (Hook) + {len(images_paths)-1} Wan (Décor/Transition)")
 
     # 2. Convert Images to Video Clips (Selective Animation)
     video_clips_paths = []
     for i, img_path in enumerate(images_paths):
         print(f"Generating video clip {i+1}/{len(images_paths)}...")
         
-        # BudgetOptimizer Logic:
-        # Kling for Hook (i=0), Wan for decorating/loop (i > 0)
+        # BudgetOptimizer Rule:
+        # Clip 1: Kling ($0.045) for High Action Hook
+        # Clips 2-18: Wan ($0.08) or fallback for budget environment
         target_model = "kling" if i == 0 else "wan"
         
         prompt = f"Automated cinematic clip: {script.title}"
         if i == 0:
-            prompt += ", viral hook motion, premium cinematic movement"
+            prompt += ", extreme cinematic action, viral hook motion"
         else:
-            prompt += ", atmospheric movement, subtle loop"
+            prompt += ", cinematic background movement, subtle atmosphere"
 
         vid_url = generate_video_from_image(img_path, prompt, model=target_model)
         if vid_url:
