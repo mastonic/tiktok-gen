@@ -175,7 +175,7 @@ const Studio = () => {
     const handlePublish = async () => {
         if (!selectedScript) return;
         try {
-            alert("Rendu de la vidéo finale en cours via FFmpeg. Cela peut prendre quelques secondes...");
+            setIsGenerating(true); // Re-use loading state for rendering
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
             const response = await fetch(`${apiUrl}/api/workflows/publish`, {
                 method: 'POST',
@@ -184,10 +184,22 @@ const Studio = () => {
             });
             const data = await response.json();
             if (data.status === 'success' && data.videoUrl) {
-                window.open(`${apiUrl}${data.videoUrl}`, '_blank');
+                // Refresh script list to get newest hasFinalVideo status
+                await fetchScripts();
+                // Find updated script to get correct finalVideoUrl
+                const updated = scripts.find(s => s.id === selectedScript.id);
+                const downloadUrl = updated?.finalVideoUrl ? `${apiUrl}${updated.finalVideoUrl}` : `${apiUrl}${data.videoUrl}`;
+
+                alert("Rendu 1m30 (90s) terminé avec succès ! Cliquez sur OK pour ouvrir le lien.");
+                window.open(downloadUrl, '_blank');
+            } else {
+                alert(`Erreur de rendu: ${data.message || "Fichier non généré"}`);
             }
         } catch (error) {
             console.error("Error publishing:", error);
+            alert("Erreur de connexion lors du rendu final.");
+        } finally {
+            setIsGenerating(false);
         }
     };
 

@@ -46,7 +46,55 @@ def ask_human_in_loop(agent_name: str, context: str, question: str) -> str:
     except Exception as e:
         return f"Failed to reach Human: {e}"
 
+def create_studio_agents(config=None):
+    def get_agent_llm(role):
+        m = config.get(role, "openai/gpt-4o-mini") if config else "openai/gpt-4o-mini"
+        return get_llm(m)
+
+    voice_master = Agent(
+        role='VoiceMaster',
+        goal='Configurer la génération vocale via fal-ai/f5-tts pour des vidéos de 90s.',
+        backstory=(
+            'Tu es l\'expert en synthèse vocale. RÈGLE : Utilise le modèle fal-ai/f5-tts '
+            'avec une voix masculine profonde (documentaire). Vitesse règlée à 1.1. '
+            'Tu DOIS générer l\'audio ET les timestamps mot par mot.'
+        ),
+        verbose=True,
+        allow_delegation=False,
+        llm=get_agent_llm('VoiceMaster')
+    )
+
+    cap_gen = Agent(
+        role='CapGen',
+        goal='Synchroniser les sous-titres dynamiques avec Whisper (openai/whisper-large-v3).',
+        backstory=(
+            'Tu es le maître du titrage. RÈGLE : Utilise whisper-large-v3 pour la transcription. '
+            'Style : Police grasse, JAUNE (#FFFF00), Bordure Noire 2px. Animation Pop-up. '
+            'Position Y=70%. Maximum 3 mots à l\'écran.'
+        ),
+        verbose=True,
+        allow_delegation=False,
+        llm=get_agent_llm('CapGen')
+    )
+
+    viral_editor = Agent(
+        role='ViralEditor',
+        goal='Générer la musique (MusicGen) et orchestrer le montage final de 90s.',
+        backstory=(
+            'Tu es le monteur vedette. RÈGLE : La vidéo DOIT durer exactement 90s (synchro sur l\'audio). '
+            'Applique la règle de durée : audio_duration / nombre_images. '
+            'Génère une musique Cinematic Suspense à -18db.'
+        ),
+        verbose=True,
+        allow_delegation=False,
+        llm=get_agent_llm('ViralEditor')
+    )
+
+    return voice_master, cap_gen, viral_editor
+
 def create_agents(config=None, commando_mode=False):
+    # Existing creation logic preserved but updated roles as requested
+
     # config is a dict: { 'TrendRadar': 'openai/gpt-4o', ... }
     def get_agent_llm(role):
         m = config.get(role, "openai/gpt-4o-mini") if config else "openai/gpt-4o-mini"

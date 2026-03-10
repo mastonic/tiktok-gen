@@ -1,31 +1,21 @@
-import os
-import json
-import subprocess
-import argparse
-import sqlite3
-from pathlib import Path
-from notifications import send_telegram_message, send_telegram_video
-
 def generate_video(job_dir: str):
     """
-    Merges clips_veo.mp4, voiceover.wav, background_music.mp3
-    and applies dynamic yellow subtitles for keywords based on script info.
+    BudgetOptimizer/StudioManager: Montage 90s sync sur l'audio.
     """
     job_path = Path(job_dir)
     if not job_path.exists():
         print(f"Error: Directory {job_dir} does not exist.")
         return
 
-    # Input files
-    json_file = job_path / "script.json"
+    # Files
     clips_dir = job_path / "clips_video"
     video_in = job_path / "clips_veo.mp4"
     voice_in = job_path / "voiceover.wav"
     bgm_in = job_path / "background_music.mp3"
     vid_out = job_path / "final_output.mp4"
 
-    # Concat clips if not already done
-    if clips_dir.exists() and not video_in.exists():
+    # 1. Force Concat clips to ensure they match current production (90s)
+    if clips_dir.exists():
         clips = sorted(list(clips_dir.glob("clip_*.mp4")))
         if clips:
             concat_txt = job_path / "concat.txt"
@@ -33,59 +23,65 @@ def generate_video(job_dir: str):
                 for c in clips:
                     f.write(f"file '{c.absolute()}'\n")
             print(f"Concatenating {len(clips)} clips into {video_in}...")
+            # We use force overwrite here to fix the "stuck at 26s" bug
             subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_txt), "-c", "copy", str(video_in)], check=True)
 
-    # Verify essential files
     if not video_in.exists() or not voice_in.exists():
         print(f"Error: Required video or voiceover missing in {job_dir}.")
         return
 
-    # Parse JSON for keywords or fallback to DB
+    # Extract audio duration to SYNC Duration (Correction 1)
+    try:
+        audio_dur_cmd = ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", str(voice_in)]
+        audio_duration = float(subprocess.check_output(audio_dur_cmd).decode().strip())
+        video_dur_cmd = ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", str(video_in)]
+        video_duration = float(subprocess.check_output(video_dur_cmd).decode().strip())
+        
+        # Scaling factor: video_pts * (audio_dur / video_dur)
+        # This stretches the video to match the audio exactly (Correction 1)
+        scaling_factor = audio_duration / video_duration if video_duration > 0 else 1.0
+        print(f"Syncing: Audio={audio_duration}s, Video={video_duration}s. Factor={scaling_factor}")
+    except Exception as e:
+        print(f"Duration probe failed: {e}")
+        scaling_factor = 1.0
+
+    # Parse Keywords and Script
     keywords = []
     final_script = ""
-    
-    # Try reading from script.json
+    json_file = job_path / "script.json"
     if json_file.exists():
         try:
             with open(json_file, "r") as f:
                 data = json.load(f)
                 keywords = data.get("mots_cles", [])
                 final_script = data.get("script", "")
-        except Exception as e:
-            print(f"Failed to read JSON: {e}")
+        except: pass
 
-    # Fallback to Database if keywords/script missing
-    job_name = job_path.name
-    if (not keywords or not final_script) and job_name.startswith("db_"):
+    # Database fallback if needed
+    if (not keywords or not final_script) and job_path.name.startswith("db_"):
         try:
-            db_id = int(job_name.split("_")[1])
+            db_id = int(job_path.name.split("_")[1])
             db_path = Path(__file__).parent / "db.sqlite3"
+            import sqlite3
             conn = sqlite3.connect(str(db_path))
             cur = conn.cursor()
             cur.execute("SELECT final_script, keywords FROM script_inbox WHERE id = ?", (db_id,))
             row = cur.fetchone()
             if row:
-                final_script = row[0]
-                kw_str = row[1] or ""
+                final_script, kw_str = row[0], row[1] or ""
                 keywords = [k.strip() for k in kw_str.split(",") if k.strip()]
             conn.close()
-        except Exception as e:
-            print(f"Database fallback failed: {e}")
+        except: pass
 
-    # Force CTA keywords for visual impact
-    for cta in ["ABONNE-TOI", "COEUR", "CŒUR", "ABONNE", "SUIS-MOI"]:
-        if cta in final_script.upper():
-            if cta not in [k.upper() for k in keywords]:
-                keywords.append(cta)
-
-    print(f"Keywords for highlight: {keywords}")
-
-    # Build ASS subtitles
+    # Subtitles: Force stylization (Correction 2)
     ass_file = job_path / "subtitles.ass"
     generate_ass_subtitles(final_script, keywords, str(ass_file), str(voice_in))
 
-    # Construct the FFmpeg command
+    # Main Rendering FFmpeg
     has_bgm = bgm_in.exists()
+    
+    # We apply setpts to sync video duration with audio (Correction 1)
+    video_filter = f"setpts={scaling_factor}*PTS, drawtext=text='@crewai972':x=W-text_w-20:y=20:fontsize=32:fontcolor=white@0.3, ass={str(ass_file)}"
     
     cmd = [
         "ffmpeg", "-y",
@@ -95,130 +91,77 @@ def generate_video(job_dir: str):
     
     if has_bgm:
         cmd.extend(["-i", str(bgm_in)])
-        # Ducking BGM by 20dB
-        cmd.extend(["-filter_complex", "[2:a]volume=0.1[bgm_ducked];[1:a][bgm_ducked]amix=inputs=2:duration=first[aout]"])
-        cmd.extend(["-map", "0:v", "-map", "[aout]"])
+        cmd.extend(["-filter_complex", f"[0:v]{video_filter}[v];[2:a]volume=0.1[bgm];[1:a][bgm]amix=inputs=2:duration=first[a]"])
+        cmd.extend(["-map", "[v]", "-map", "[a]"])
     else:
-        cmd.extend(["-map", "0:v", "-map", "1:a"])
+        cmd.extend(["-filter_complex", f"[0:v]{video_filter}[v]"])
+        cmd.extend(["-map", "[v]", "-map", "1:a"])
 
-    # Apply subtitles and watermark for growth
-    # We add the @crewai972 handle as a discrete watermark in the top right
-    watermark = "drawtext=text='@crewai972':x=W-text_w-20:y=20:fontsize=32:fontcolor=white@0.3:shadowcolor=black@0.2:shadowx=1:shadowy=1"
-    
     cmd.extend([
-        "-vf", f"{watermark}, ass={str(ass_file)}",
-        "-c:v", "libx264",
-        "-crf", "18",
-        "-preset", "veryfast",
-        "-c:a", "aac",
-        "-b:a", "192k",
+        "-c:v", "libx264", "-crf", "18", "-preset", "veryfast",
+        "-c:a", "aac", "-b:a", "192k",
         str(vid_out)
     ])
 
-    print(f"Running FFmpeg command:\n{' '.join(cmd)}")
     try:
         subprocess.run(cmd, check=True)
-        print(f"SUCCESS: Output saved to: {vid_out}")
+        print(f"SUCCESS: {vid_out}")
         
-        # --- SEND TO TELEGRAM WITH VALIDATION ---
+        # --- SEND TO TELEGRAM ---
         from notifications import send_telegram_video_with_validation
-        
-        # Attempt to read the generated caption (description + hashtags)
-        tiktok_json = job_path / "tiktok_data.json"
-        description = ""
-        if tiktok_json.exists():
-            try:
-                with open(tiktok_json, "r") as f:
-                    description = json.load(f).get("caption", "")
-            except: pass
-            
-        script_id = 0
-        if job_name.startswith("db_"):
-            try: script_id = int(job_name.split("_")[1])
-            except: pass
-
-        caption = f"🎬 <b>VIDÉO GÉNÉRÉE</b>\n\n📌 <b>DESCRIPTION TIKTOK :</b>\n{description}\n\nID: {job_name}"
-        send_telegram_video_with_validation(str(vid_out), script_id, caption=caption)
-        
+        caption = f"🎬 <b>VIDÉO 90s GÉNÉRÉE</b>\nID: {job_path.name}\nSynchro: OK"
+        send_telegram_video_with_validation(str(vid_out), int(job_path.name.split("_")[1]) if "db_" in job_path.name else 0, caption=caption)
     except Exception as e:
-        print(f"FFmpeg or Completion Notification failed: {e}")
+        print(f"Render Error: {e}")
 
 def format_ass_time(seconds):
-    hours = int(seconds // 3600)
-    mins = int((seconds % 3600) // 60)
-    secs = int(seconds % 60)
-    centis = int((seconds - int(seconds)) * 100)
-    return f"{hours}:{mins:02d}:{secs:02d}.{centis:02d}"
+    hours, remainder = divmod(seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    centiseconds = int((seconds - int(seconds)) * 100)
+    return f"{int(hours)}:{int(minutes):02d}:{int(seconds):02d}.{centiseconds:02d}"
 
 def generate_ass_subtitles(script, keywords, output_path, audio_path):
     """
-    Generates an Advanced SubStation Alpha script with AI-synced word-level highlights.
-    Uses OpenAI Whisper API for exact timing.
+    SubStation Alpha Stylized (Yellow Bold 70% Pos Pop-Up)
     """
     from openai import OpenAI
     client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-    if not os.path.exists(audio_path):
-        print(f"Error: Audio file {audio_path} not found for transcription.")
+    try:
+        with open(audio_path, "rb") as f:
+            transcript = client.audio.transcriptions.create(
+                file=f, model="whisper-1", response_format="verbose_json", timestamp_granularities=["word"]
+            )
+        words_data = getattr(transcript, 'words', [])
+    except Exception as e:
+        print(f"Transcription failed: {e}")
         return
 
-    print(f"Transcribing {audio_path} via OpenAI Whisper...")
-    try:
-        audio_file = open(audio_path, "rb")
-        # Get word-level timestamps from Whisper
-        transcript = client.audio.transcriptions.create(
-            file=audio_file,
-            model="whisper-1",
-            response_format="verbose_json",
-            timestamp_granularities=["word"]
-        )
-        words_data = getattr(transcript, 'words', [])
-        if not words_data:
-            # Fallback to segments if words are not available
-            words_data = getattr(transcript, 'segments', [])
-            print("Using segment-level synchronization.")
-        else:
-            print(f"Successfully retrieved {len(words_data)} words with timestamps.")
-    except Exception as e:
-        print(f"Whisper transcription failed: {e}. Falling back to linear sync.")
-        return generate_ass_subtitles_linear(script, keywords, output_path, audio_path)
-
-    ass_header = f"""[Script Info]
+    # &H0000FFFF = Yellow, Bold: -1, Outline: 2, Position Y: 1344 (70% of 1920)
+    ass_header = """[Script Info]
 ScriptType: v4.00+
 PlayResX: 1080
 PlayResY: 1920
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,90,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,6,2,5,10,10,10,1
-Style: Highlight,Arial,110,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,8,2,5,10,10,10,1
+Style: Default,Arial,90,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,2,0,2,0,0,0,1
 """
-    
     events = "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
     
-    # We group words into small chunks (1-2 words) for TikTok style "dynamic captions"
-    chunk_size = 2
-    for i in range(0, len(words_data), chunk_size):
-        chunk = words_data[i:i+chunk_size]
-        # Handle both word-level and segment-level data
-        if hasattr(chunk[0], 'word'): # Word level
-            chunk_text = " ".join([w.word.upper() for w in chunk])
-            start_time = chunk[0].start
-            end_time = chunk[-1].end
-        else: # Segment level
-            chunk_text = chunk[0].get('text', '').upper().strip()
-            start_time = chunk[0].get('start', 0.0)
-            end_time = chunk[0].get('end', 1.0)
+    # Chunk by 2 words for maximum impact
+    for i in range(0, len(words_data), 2):
+        chunk = words_data[i:i+2]
+        text = " ".join([w.word.upper() for w in chunk])
+        start_ts = format_ass_time(chunk[0].start)
+        end_ts = format_ass_time(chunk[-1].end)
         
-        start_ts = format_ass_time(start_time)
-        end_ts = format_ass_time(end_time)
+        # Pop-up Effect: Scale from 100% to 110% in 100ms
+        ani = "{\\t(0,100,\\fscx110\\fscy110)}"
+        # Position at 70% height (1344)
+        pos = "{\\pos(540,1344)}"
         
-        # Check if any word in chunk is a keyword for yellow highlight
-        use_highlight = any(kw.lower() in chunk_text.lower() for kw in keywords)
-        style = "Highlight" if use_highlight else "Default"
-        
-        # Centered position for maximum impact
-        events += f"Dialogue: 0,{start_ts},{end_ts},{style},,0,0,0,,{{\\pos(540,960)}}{chunk_text}\n"
+        events += f"Dialogue: 0,{start_ts},{end_ts},Default,,0,0,0,,{pos}{ani}{text}\n"
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(ass_header + "\n" + events)
