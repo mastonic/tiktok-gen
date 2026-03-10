@@ -249,27 +249,32 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
         save_agent_message(run_id, "QualityController", "System", "info", "Script généré, revue de qualité par le Swarm effectuée.")
         print(f"Execution completed.")
         
-        # Parse outcome and save to DB
+        # --- NEW ROBUST PARSING & AUTOMATION TRIGGER ---
+        data = {}
         try:
             json_str = result
-            # More robust JSON extraction
             match = re.search(r'(\{[\s\S]*\})', result)
             if match:
                 json_str = match.group(1)
-            
             data = json.loads(json_str)
-            db = SessionLocal()
-            
-            # Map both French and English keys from Pydantic / Agents
-            title = data.get("title") or data.get("titre") or "Automated Script"
+            print(f"✅ Successfully parsed result as JSON.")
+        except Exception as parse_e:
+            print(f"⚠️ Could not parse final output as JSON: {parse_e}. Using raw strings.")
+            data = {
+                "title": f"Raw Output - {run_type}",
+                "script": result,
+                "viral_score": 70,
+                "keywords": "AI, Viral, Tech"
+            }
+
+        # 1. Save to Database (Inbox)
+        db = SessionLocal()
+        try:
+            title = data.get("title") or data.get("titre") or f"Script {run_type}"
             script_body = data.get("script", result)
-            viral_score = data.get("score_roi", data.get("viral_score", 85))
-            
-            kw_raw = data.get("keywords") or data.get("mots_cles", [])
+            viral_score = data.get("score_roi") or data.get("viral_score", 85)
+            kw_raw = data.get("keywords") or data.get("mots_cles", "AI, Automation")
             kw_str = kw_raw if isinstance(kw_raw, str) else ", ".join(kw_raw)
-            
-            # We force status to pending_review so it shows up in Approvals
-            final_status = "pending_review" 
             
             new_script = ScriptInbox(
                 title=title,
@@ -279,7 +284,7 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
                 money_score=90,
                 keywords=kw_str,
                 image_prompts=json.dumps(data.get("image_prompts", [])),
-                status=final_status
+                status="pending_review"
             )
             db.add(new_script)
             
@@ -287,43 +292,28 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
             db.add(SystemAlert(type="info", message=f"Nouveau script généré : {new_script.title}"))
             
             db.commit()
-            print("Successfully saved Script to Inbox and created Alert.")
+            db.refresh(new_script) # Refresh to get the ID
+            print(f"💾 Script saved to Inbox (ID: {new_script.id}).")
             
             # Send Telegram notification with script preview
             script_preview = data.get("script", result)[:300] + "..."
             send_telegram_message(f"📝 <b>Nouveau Script : {new_script.title}</b>\n\n{script_preview}\n\n<i>Lancement de la production visuelle (Images/Vidéo)...</i>")
             
-            # --- AUTOMATION: Trigger BlogSquad & Visual Production ---
+            # 2. Trigger Automation (IMMEDIATELY AFTER SAVING)
             import threading
             
-            # 1. BlogSquad Automation: Refresh the blog with Top 5 latest scripts
-            try:
-                # Use the top_5_concepts from the agent's output if available, 
-                # otherwise fallback to DB (for safety)
-                blog_concepts = data.get("top_5_concepts", [])
-                
-                if not blog_concepts:
-                    db_blog = SessionLocal()
-                    latest_scripts = db_blog.query(ScriptInbox).order_by(ScriptInbox.created_at.desc()).limit(5).all()
-                    db_blog.close()
-                    if latest_scripts:
-                        blog_concepts = [{"titre": s.title, "killerfeature": s.keywords or s.title} for s in latest_scripts]
-                
-                if blog_concepts:
-                    # We trigger the background runner (_run_blog_squad_sync is defined at line 1329)
-                    blog_thread = threading.Thread(target=_run_blog_squad_sync, args=(blog_concepts,))
-                    blog_thread.start()
-                    print(f"✅ BlogSquad auto-triggered for {len(blog_concepts)} scripts (including bonus ones).")
-            except Exception as blog_e:
-                print(f"⚠️ Manual/Auto BlogSquad trigger skipped: {blog_e}")
-
-            # 2. Visual Production Automation: Only for scheduled or designated runs (matin/soir/atypique)
-            if run_type in ["matin", "soir", "apres-midi"]:
-                send_telegram_message(f"⚙️ <b>Automatisation Activée</b>\nLancement immédiat du pipeline visuel Fal.ai (Flux + Kling)...")
-                # Hand over to production flow in background
+            # BlogSquad
+            blog_concepts = data.get("top_5_concepts", [])
+            blog_thread = threading.Thread(target=_run_blog_squad_sync, args=(blog_concepts,))
+            blog_thread.start()
+            
+            # Visual Production
+            if run_type in ["matin", "soir", "apres-midi", "atypique", "run"]:
+                print(f"🎬 Launching Visual Production for script {new_script.id}")
+                send_telegram_message(f"⚙️ <b>Automatisation</b>\nLancement visuel pour : {new_script.title}")
                 prod_thread = threading.Thread(target=automate_visual_production, args=(new_script.id,))
                 prod_thread.start()
-            
+                
             if run_id:
                 run_rec = db.query(RunHistory).filter(RunHistory.run_id == run_id).first()
                 if run_rec:
@@ -332,24 +322,19 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
                     run_rec.current_step = "Terminé"
                     run_rec.cost = "0.05"
                     db.commit()
+        except Exception as db_e:
+            print(f"❌ Error in Post-Processing: {db_e}")
+            # Fallback for run history update if DB save failed
+            if run_id:
+                run_rec = db.query(RunHistory).filter(RunHistory.run_id == run_id).first()
+                if run_rec:
+                    run_rec.status = "completed"
+                    run_rec.progress_percent = 100
+                    run_rec.current_step = "Terminé (Erreur Post-Traitement)"
+                    run_rec.cost = "0.05"
+                    db.commit()
+        finally:
             db.close()
-        except Exception as parse_e:
-            print(f"Could not parse final output as JSON: {parse_e}")
-            db = SessionLocal()
-            db.add(ScriptInbox(title=f"Raw Output - {run_type}", run_type=run_type, final_script=result, status="pending_review", viral_score=0, money_score=0))
-            db.commit()
-            db.close()
-            print("Saved raw result fallback to Inbox.")
-            if 'db' in locals():
-                if run_id:
-                    run_rec = db.query(RunHistory).filter(RunHistory.run_id == run_id).first()
-                    if run_rec:
-                        run_rec.status = "completed"
-                        run_rec.progress_percent = 100
-                        run_rec.current_step = "Terminé (Fallback)"
-                        run_rec.cost = "0.05"
-                        db.commit()
-                db.close()
             
         return result
     except Exception as e:
