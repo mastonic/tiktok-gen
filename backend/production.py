@@ -45,9 +45,11 @@ def automate_visual_production(script_id_num: int):
     except:
         image_prompts = []
 
-    # Smart Loop logic: if only 2 prompts are present, we use the new workflow logic
-    is_smart_loop = len(image_prompts) == 2 or (script.final_script and len(script.final_script.split()) < 50)
-    
+    # Standard mode is now 1m30 (90s)
+    is_smart_loop = False
+    target_duration = 90
+    prompt_count = 18
+
     # --- FALLBACK: Generate prompts if they are missing ---
     if not image_prompts or len(image_prompts) < 1:
         print(f"⚠️ No image prompts found for script {script.id}. Generating fallbacks...")
@@ -58,9 +60,8 @@ def automate_visual_production(script_id_num: int):
             # VisualPromptist is usually the 5th agent in the standard list
             visual_promptist = agents[4] 
             
-            prompt_count = 2 if is_smart_loop else 15
             prompt_task = Task(
-                description=f"Le script suivant est pour un SMART LOOP de 8s. Crée exactement {prompt_count} prompts cinématiques en ANGLAIS pour FLUX qui illustrent ce script : {script.final_script[:1000]}",
+                description=f"Le script suivant est pour un format LONG de 90s. Crée exactement {prompt_count} prompts cinématiques en ANGLAIS pour FLUX qui illustrent ce script : {script.final_script[:1000]}",
                 expected_output=f"Exactly {prompt_count} cinematic prompts in a list format.",
                 agent=visual_promptist
             )
@@ -80,11 +81,11 @@ def automate_visual_production(script_id_num: int):
         print("No image prompts found and fallback generation failed.")
         return
 
-    send_telegram_message(f"🎨 <b>Production visuelle en cours [{script.title}]</b>\n\nOptimisation : {'Smart Loop 8s' if is_smart_loop else 'Standard'}\nGénération de {len(image_prompts)} images avec Flux Schnell...")
+    send_telegram_message(f"🎨 <b>Production visuelle en cours [{script.title}]</b>\n\nFormat : Long (90s minimum)\nGénération de {len(image_prompts)} images avec Flux Schnell...")
 
     # 1. Generate Images with Flux
     images_paths = []
-    for i, prompt in enumerate(image_prompts[:(2 if is_smart_loop else 15)]):
+    for i, prompt in enumerate(image_prompts[:prompt_count]):
         img_path = os.path.join(job_dir, f"img_{i+1:02d}.jpg")
         print(f"Generating image {i+1}/{len(image_prompts)}...")
         if generate_flux_image(prompt, img_path):

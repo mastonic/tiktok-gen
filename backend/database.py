@@ -315,15 +315,15 @@ def seed_agents():
             "role": "ScriptArchitect", 
             "name": "Chloé (ScriptArchitect)", 
             "model": "openai/gpt-4o-mini",
-            "goal": "Rédiger un script TikTok ironique de 8 secondes pour une boucle parfaite (Smart Loop).",
-            "backstory": "Tu es Chloé. Ta mission est de rédiger un script ultra-court (8-10s) pour assurer une rétention maximale. Hook violent dès la 1ère seconde."
+            "goal": "Rédiger un script TikTok narratif LONG (1m30 minimum) ultra-captivant.",
+            "backstory": "Tu es Chloé. Ta mission est de rédiger un script détaillé de 90 secondes minimum. Développe chaque point technique pour maximiser le Watch Time."
         },
         {
             "role": "VisualPromptist", 
             "name": "Gabriel (VisualPromptist)", 
             "model": "openai/gpt-4o-mini",
-            "goal": "Générer exactement 2 prompts cinématiques en anglais pour Flux Schnell (BudgetOptimizer).",
-            "backstory": "Tu es Gabriel. RÈGLE : Utilise exclusivement fal-ai/flux/schnell. Tu crées 2 images : une pour le Hook (Kling) et une pour la boucle (Wan/Hunyuan)."
+            "goal": "Générer exactement 18 prompts cinématiques en anglais pour Flux Schnell.",
+            "backstory": "Tu es Gabriel. RÈGLE : Tu DOIS créer exactement 18 prompts pour couvrir les 90 secondes de vidéo (1 clip de 5s par prompt)."
         },
         {
             "role": "QualityController", 
