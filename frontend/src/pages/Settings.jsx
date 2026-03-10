@@ -56,14 +56,20 @@ const Settings = () => {
         fetchAffiliates();
     }, []);
 
+    const [saveSuccess, setSaveSuccess] = useState(false);
     const handleSave = async () => {
         setIsSaving(true);
+        setSaveSuccess(false);
         try {
-            await fetch(`${apiUrl}/api/system/config`, {
+            const response = await fetch(`${apiUrl}/api/system/config`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(config)
             });
+            if (response.ok) {
+                setSaveSuccess(true);
+                setTimeout(() => setSaveSuccess(false), 3000);
+            }
         } catch (error) {
             console.error("Failed to save settings:", error);
             alert("Erreur lors de la sauvegarde.");
@@ -123,12 +129,12 @@ const Settings = () => {
                 </div>
                 <Button
                     variant="primary"
-                    className="flex items-center gap-2 shadow-lg shadow-cyan-900/20 px-6"
+                    className={`flex items-center gap-2 shadow-lg px-6 transition-all duration-300 ${saveSuccess ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20' : 'shadow-cyan-900/20'}`}
                     onClick={handleSave}
                     disabled={isSaving}
                 >
-                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {isSaving ? "Saving..." : "Save Changes"}
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : saveSuccess ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                    {isSaving ? "Saving..." : saveSuccess ? "Enregistré !" : "Save Changes"}
                 </Button>
             </header>
 

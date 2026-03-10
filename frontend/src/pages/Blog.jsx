@@ -177,8 +177,13 @@ const Blog = ({ onReadArticle, onEnterCockpit }) => {
     const tags = ['All', ...new Set(posts.flatMap(p => p.tags || []).filter(Boolean))];
 
     const filteredPosts = posts.filter(post => {
-        const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+        const term = searchTerm.toLowerCase().trim();
+        const matchesSearch = !term ||
+            (post.title || '').toLowerCase().includes(term) ||
+            (post.excerpt || '').toLowerCase().includes(term) ||
+            (post.category || '').toLowerCase().includes(term) ||
+            (post.tags || []).some(t => t.toLowerCase().includes(term));
+
         const matchesCategory = selectedCategory === 'All' || post.category === selectedCategory;
         const matchesTag = selectedTag === 'All' || (post.tags && post.tags.includes(selectedTag));
         return matchesSearch && matchesCategory && matchesTag;
@@ -200,41 +205,64 @@ const Blog = ({ onReadArticle, onEnterCockpit }) => {
             {/* HEADER */}
             <header className="border-b border-white/5 bg-black/50 backdrop-blur-xl sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <div className="text-2xl font-black tracking-tighter italic">
+                    <div className="text-2xl font-black tracking-tighter italic shrink-0">
                         iM-<span className="text-cyan-400">System</span>
                         <span className="ml-2 text-xs font-semibold text-gray-600 bg-white/5 px-2 py-0.5 rounded-full border border-white/8 align-middle normal-case not-italic">BLOG</span>
                     </div>
-                    <div className="hidden md:flex flex-1 justify-center max-w-md mx-8 px-4">
-                        <div className="relative w-full">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+
+                    {/* Search Input - Desktop & Tablet */}
+                    <div className="hidden sm:flex flex-1 justify-center max-w-md mx-8 px-4">
+                        <div className="relative w-full group">
+                            <button
+                                onClick={() => document.getElementById('blog-search')?.focus()}
+                                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-cyan-400 transition-colors"
+                            >
                                 <Search className="w-4 h-4" />
-                            </span>
+                            </button>
                             <input
+                                id="blog-search"
                                 type="text"
                                 placeholder="Rechercher un article..."
-                                className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-cyan-400 transition-colors"
+                                className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-cyan-400/50 focus:bg-white/10 transition-all"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                     </div>
-                    <div className="hidden md:flex gap-8 text-sm font-medium text-gray-400">
-                        <button
-                            onClick={() => setView('home')}
-                            className={`transition ${view === 'home' ? 'text-cyan-400' : 'hover:text-white'}`}
-                        >
-                            Home
-                        </button>
-                        <button
-                            onClick={() => setView('about')}
-                            className={`transition ${view === 'about' ? 'text-cyan-400' : 'hover:text-white'}`}
-                        >
-                            About
-                        </button>
+
+                    <div className="flex items-center gap-6">
+                        <nav className="hidden md:flex gap-6 text-sm font-medium text-gray-400">
+                            <button
+                                onClick={() => setView('home')}
+                                className={`transition ${view === 'home' ? 'text-cyan-400' : 'hover:text-white'}`}
+                            >
+                                Home
+                            </button>
+                            <button
+                                onClick={() => setView('about')}
+                                className={`transition ${view === 'about' ? 'text-cyan-400' : 'hover:text-white'}`}
+                            >
+                                About
+                            </button>
+                        </nav>
+                        <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/5 border border-emerald-500/10 rounded-full">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/80">Live</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        <span className="text-xs text-gray-500">Live</span>
+                </div>
+
+                {/* Mobile Search Bar - Visible only on small screens */}
+                <div className="sm:hidden px-6 pb-4">
+                    <div className="relative w-full">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+                        <input
+                            type="text"
+                            placeholder="Rechercher..."
+                            className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-cyan-400 transition-colors"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
                     </div>
                 </div>
             </header>

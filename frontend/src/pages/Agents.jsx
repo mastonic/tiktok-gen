@@ -142,7 +142,9 @@ const Agents = () => {
             'MonetizationScorer': { goal: 'Attribuer un score de rentabilité ROI.', backstory: 'Consultant en rentabilité focalisé sur le profit.' },
             'ScriptArchitect': { goal: 'Rédiger des scripts TikTok percutants.', backstory: 'Scénariste vedette ironique.' },
             'VisualPromptist': { goal: 'Créer des prompts d\'images pour FLUX.', backstory: 'Directeur artistique de haut vol.' },
-            'QualityController': { goal: 'Vérifier la cohérence globale.', backstory: 'Garant final de la qualité iM System.' }
+            'QualityController': { goal: 'Vérifier la cohérence globale.', backstory: 'Garant final de la qualité iM System.' },
+            'TikTokDistributor': { goal: 'Optimiser la distribution et les hashtags.', backstory: 'Expert en algorithmes sociaux.' },
+            'ViralGrowthCommander': { goal: 'Piloter l\'attention et le watch-time.', backstory: 'Chef d\'orchestre de la croissance virale.' }
         };
         return details[role] || { goal: 'Mission autonome.', backstory: 'Agent intelligent de la flotte.' };
     };
@@ -180,8 +182,8 @@ const Agents = () => {
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="bg-navy-900/80 p-2 rounded border border-gray-800/50">
                                     <div className="text-[10px] text-gray-500 font-mono mb-1 uppercase tracking-wide">Status</div>
-                                    <div className={`text-[10px] font-bold uppercase ${agent.status === 'Executing' ? 'text-cyan-400 animate-pulse' : 'text-emerald-500'}`}>
-                                        {agent.status || 'Idle'}
+                                    <div className={`text-[10px] font-bold uppercase ${!agent.is_active ? 'text-gray-600' : agent.status === 'Executing' ? 'text-cyan-400 animate-pulse' : 'text-emerald-500'}`}>
+                                        {!agent.is_active ? 'Offline' : (agent.status || 'Idle')}
                                     </div>
                                 </div>
                                 <div className="bg-navy-900/80 p-2 rounded border border-gray-800/50">
