@@ -24,7 +24,7 @@ const Studio = () => {
             const data = await response.json();
 
             // Keep scripts with images or video potential
-            const validScripts = data.filter(s => s.imagePrompts && s.imagePrompts.length > 0);
+            const validScripts = data; // Already filtered by status column in backend API
 
             // Strictly sort by ID (newest first) as requested
             validScripts.sort((a, b) => {

@@ -73,7 +73,15 @@ def automate_visual_production(script_id_num: int):
             
             if fallback_prompts:
                 image_prompts = fallback_prompts
-                print(f"✅ Generated {len(image_prompts)} fallback image prompts.")
+                print(f"✅ Generated {len(image_prompts)} fallback image prompts. Updating DB for Studio visibility...")
+                
+                # Update script record in DB (Correction: persistence for Studio visibility)
+                db = SessionLocal()
+                s = db.get(ScriptInbox, script_id_num)
+                if s:
+                    s.image_prompts = json.dumps(image_prompts)
+                    db.commit()
+                db.close()
         except Exception as gen_e:
             print(f"❌ Failed to generate fallback prompts: {gen_e}")
 
@@ -81,27 +89,23 @@ def automate_visual_production(script_id_num: int):
         print("No image prompts found and fallback generation failed.")
         return
 
-    send_telegram_message(f"🎨 <b>Production visuelle en cours [{script.title}]</b>\n\nFormat : Long (90s minimum)\nGénération de {len(image_prompts)} images avec Flux Schnell...")
-
-    # 1. Generate Images with Flux
+    # 1. Generate Images with Flux (BudgetOptimizer: Schnell)
     images_paths = []
+    send_telegram_message(f"🎨 <b>Production visuelle en cours [{script.title}]</b>\n\nFormat : Long (90s minimum)\nPhase 1: Génération des {len(image_prompts)} visuels (Flux Schnell)\nFormat: 9:16 portrait")
+    
     for i, prompt in enumerate(image_prompts[:prompt_count]):
         img_path = os.path.join(job_dir, f"img_{i+1:02d}.jpg")
         print(f"Generating image {i+1}/{len(image_prompts)}...")
         if generate_flux_image(prompt, img_path):
             images_paths.append(img_path)
-            # Update progress could be sent to frontend if needed
-    
-    if not images_paths:
-        send_telegram_message("❌ Échec de la génération des images Flux.1.")
-        return
+
+    if len(images_paths) < (prompt_count / 2):
+        print(f"⚠️ Warning: Only {len(images_paths)} images generated.")
 
     # --- NEW: Inject first image into Blog Post ---
     try:
-        # 1. First image path relative to root
         first_img_rel = f"/media/production/db_{script.id}/img_01.jpg"
         
-        # 2. Find blog post file
         def slugify(text: str) -> str:
             slug = text.lower().strip()
             slug = re.sub(r"[^a-z0-9\s-]", "", slug)
@@ -113,7 +117,6 @@ def automate_visual_production(script_id_num: int):
         
         if blog_file.exists():
             content = blog_file.read_text(encoding="utf-8")
-            # Replace placeholder unsplash URL with the local AI image URL
             new_content = re.sub(
                 r'cover_image:\s*"https://images\.unsplash\.com/.*?"',
                 f'cover_image: "http://localhost:5656{first_img_rel}"',
@@ -123,18 +126,6 @@ def automate_visual_production(script_id_num: int):
             print(f"✅ Blog cover updated with AI image: {blog_slug}")
     except Exception as blog_update_e:
         print(f"⚠️ Could not update blog cover: {blog_update_e}")
-
-    # 1. Generate Images with Flux (BudgetOptimizer: Schnell)
-    images_paths = []
-    send_telegram_message(f"🎨 <b>Phase 1: Génération des 18 visuels (Flux Schnell)</b>\nFormat: 9:16 portrait")
-    
-    for i, prompt in enumerate(image_prompts[:prompt_count]):
-        img_path = os.path.join(job_dir, f"img_{i+1:02d}.jpg")
-        if generate_flux_image(prompt, img_path):
-            images_paths.append(img_path)
-
-    if len(images_paths) < prompt_count:
-        print(f"⚠️ Warning: Only {len(images_paths)} images generated.")
 
     # --- BUDGET OPTIMIZER: VIRAL JUDGE VALIDATION ---
     print("⚖️ VirtualJudge is validating image coherence...")

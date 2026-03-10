@@ -260,8 +260,13 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
             print(f"✅ Successfully parsed result as JSON.")
         except Exception as parse_e:
             print(f"⚠️ Could not parse final output as JSON: {parse_e}. Using raw strings.")
+            # Extract a title from the first line or first sentence
+            fallback_title = result.split('\n')[0].strip('# ').strip()[:100]
+            if not fallback_title or len(fallback_title) < 5:
+                fallback_title = f"Sujet : {run_type.capitalize()} {time.strftime('%H:%M')}"
+            
             data = {
-                "title": f"Raw Output - {run_type}",
+                "title": fallback_title,
                 "script": result,
                 "viral_score": 70,
                 "keywords": "AI, Viral, Tech"
@@ -632,8 +637,10 @@ async def get_contents():
             if not col: continue # Skip items in pending_review, they stay in Approvals menu
             
             try:
+                # Ensure we always return at least an empty list for prompts
                 image_prompts = json.loads(s.image_prompts) if s.image_prompts else []
-            except:
+            except Exception as e:
+                print(f"Error parsing prompts for {s.id}: {e}")
                 image_prompts = []
 
             # Check for existing assets to persist state in Studio
