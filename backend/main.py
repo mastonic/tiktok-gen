@@ -563,6 +563,21 @@ async def get_messages(content_id: str = None):
 async def get_log_history():
     return {"logs": log_capture.history}
 
+@app.post("/api/contents/{item_id}/relaunch")
+async def relaunch_content(item_id: str):
+    db = SessionLocal()
+    try:
+        if item_id.startswith("db_"):
+            db_id = int(item_id.replace("db_", ""))
+            script = db.query(ScriptInbox).filter(ScriptInbox.id == db_id).first()
+            if script:
+                script.status = "pending_review"
+                db.commit()
+                return {"status": "success", "message": "Script renvoyé en relecture."}
+        return {"status": "error", "message": "Item not found"}
+    finally:
+        db.close()
+
 @app.get("/api/overview")
 async def get_overview():
     try:
@@ -610,7 +625,8 @@ async def get_contents():
         db_contents = []
         for s in scripts:
             col = "Review"
-            if s.status == "approved": col = "Scheduled"
+            if s.status == "approved": col = "Waiting"
+            elif s.status == "producing": col = "Scheduled"
             elif s.status == "posted": col = "Posted"
             elif s.status == "pending_review": col = "Review"
             
@@ -704,18 +720,18 @@ async def move_content(item_id: str, payload: dict):
             if script:
                 old_status = script.status
                 # Map column to status
-                if new_col == "Scheduled": script.status = "approved"
+                if new_col == "Waiting": script.status = "approved"
+                elif new_col == "Scheduled": script.status = "producing"
                 elif new_col == "Posted": script.status = "posted"
                 elif new_col == "Review": script.status = "pending_review"
-                elif new_col == "Script": script.status = "pending_review"
                 
                 db.commit()
                 
-                # TRIGGER: If moved to Scheduled and was not approved before, launch production
-                if script.status == "approved" and old_status != "approved":
+                # TRIGGER: If moved to Scheduled (now mapped to 'producing')
+                if script.status == "producing" and old_status != "producing":
                     import threading
                     print(f"🚀 Manual Move to Scheduled: Launching visual production for script {script.id}")
-                    send_telegram_message(f"⚙️ <b>Pipeline</b>\nScript '{script.title}' déplacé vers PRODUCTION (Scheduled).")
+                    send_telegram_message(f"⚙️ <b>Pipeline</b>\nScript '{script.title}' lancé en PRODUCTION.")
                     prod_thread = threading.Thread(target=automate_visual_production, args=(script.id,))
                     prod_thread.start()
                 

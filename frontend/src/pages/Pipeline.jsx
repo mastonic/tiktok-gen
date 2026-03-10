@@ -1,11 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { Badge, Card } from '../components/ui';
-import { GripVertical, AlertTriangle, Trash2 } from 'lucide-react';
+import { GripVertical, AlertTriangle, Trash2, RotateCcw, Clock, Play, CheckCircle } from 'lucide-react';
 
 const Pipeline = () => {
     const [contents, setContents] = useState([]);
     const [selectedItem, setSelectedItem] = useState(null);
-    const columns = ['Review', 'Scheduled', 'Posted'];
+    const columns = ['Review', 'Waiting', 'Scheduled', 'Posted'];
+
+    const colNames = {
+        'Review': 'En Relecture',
+        'Waiting': 'Attente Production',
+        'Scheduled': 'En Production',
+        'Posted': 'Publié'
+    };
+
+    const colIcons = {
+        'Review': <Clock className="w-4 h-4 text-amber-400" />,
+        'Waiting': <Badge variant="outline" className="text-[10px] border-cyan-700 text-cyan-400">WAIT</Badge>,
+        'Scheduled': <Play className="w-4 h-4 text-emerald-400" />,
+        'Posted': <CheckCircle className="w-4 h-4 text-blue-400" />
+    };
 
     useEffect(() => {
         const fetchContents = async () => {
@@ -13,7 +27,6 @@ const Pipeline = () => {
                 const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
                 const response = await fetch(`${apiUrl}/api/contents`);
                 const data = await response.json();
-                // Filter out running items for pipeline view if needed, or keep them
                 setContents(data);
             } catch (error) {
                 console.error("Failed to fetch contents:", error);
@@ -35,6 +48,24 @@ const Pipeline = () => {
             }
         } catch (error) {
             console.error("Delete failed:", error);
+        }
+    };
+
+    const handleRelaunch = async (e, itemId) => {
+        e.stopPropagation();
+        if (!window.confirm("Relancer cet élément en relecture agent ?")) return;
+        try {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const res = await fetch(`${apiUrl}/api/contents/${itemId}/relaunch`, { method: 'POST' });
+            if (res.ok) {
+                // Refresh to sync state
+                const response = await fetch(`${apiUrl}/api/contents`);
+                const data = await response.json();
+                setContents(data);
+                alert("Script renvoyé dans le menu Approvals.");
+            }
+        } catch (error) {
+            console.error("Relaunch failed:", error);
         }
     };
 
@@ -86,23 +117,26 @@ const Pipeline = () => {
 
     return (
         <div className="h-full flex flex-col">
-            <header className="mb-8">
+            <header className="mb-8 p-1">
                 <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Production Pipeline</h1>
                 <p className="text-gray-400">Manage viral production flow with drag & drop efficiency.</p>
             </header>
 
-            <div className="flex-1 flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+            <div className="flex-1 flex gap-4 overflow-x-auto pb-6 custom-scrollbar">
                 {columns.map(col => (
                     <div
                         key={col}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, col)}
-                        className="bg-navy-800/60 rounded-xl border border-gray-800 flex flex-col min-w-[320px] max-w-[320px] h-[calc(100vh-12rem)] transition-colors duration-200"
+                        className="bg-navy-800/60 rounded-xl border border-gray-800 flex flex-col min-w-[300px] max-w-[300px] h-[calc(100vh-12rem)] transition-colors duration-200"
                     >
                         <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-navy-900/50 rounded-t-xl shadow-md">
-                            <h3 className="font-semibold text-gray-200">{col}</h3>
-                            <Badge variant="cyber" className="px-2">{contents.filter(c => c.column === col).length}</Badge>
+                            <div className="flex items-center gap-2">
+                                {colIcons[col]}
+                                <h3 className="font-semibold text-gray-200 text-sm tracking-wide">{colNames[col]}</h3>
+                            </div>
+                            <Badge variant="cyber" className="px-2 text-[10px]">{contents.filter(c => c.column === col).length}</Badge>
                         </div>
 
                         <div className="flex-1 p-3 overflow-y-auto custom-scrollbar space-y-3">
@@ -116,8 +150,17 @@ const Pipeline = () => {
                                     className="glass-card p-4 group cursor-pointer hover:bg-navy-800/80 transition-all border-l-4 border-l-cyan-500 active:scale-[0.98] select-none"
                                 >
                                     <div className="flex justify-between items-start mb-2">
-                                        <h4 className="font-medium text-white text-sm leading-tight pr-2">{content.title}</h4>
+                                        <h4 className="font-medium text-white text-xs leading-tight pr-2">{content.title}</h4>
                                         <div className="flex items-center gap-1">
+                                            {col === 'Review' && (
+                                                <button
+                                                    onClick={(e) => handleRelaunch(e, content.id)}
+                                                    className="p-1 text-gray-600 hover:text-cyan-400 opacity-0 group-hover:opacity-100 transition-all"
+                                                    title="Relancer en relecture"
+                                                >
+                                                    <RotateCcw className="w-3.5 h-3.5" />
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={(e) => handleDelete(e, content.id)}
                                                 className="p-1 text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
