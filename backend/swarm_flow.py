@@ -80,7 +80,10 @@ class ViralFlow(Flow[SwarmState]):
 
         now = datetime.now().strftime("%d/%m/%Y")
         # Dynamic focus based on run_type
-        focus_topic = "News IA, Outils gratuits, Nouveautés LLMs" if self.state.run_type == "matin" else "Tutoriels techniques, Self-hosting, Contours d'abonnements"
+        if self.state.run_type == "matin":
+            focus_topic = "News IA, Outils gratuits, Nouveautés LLMs"
+        else:
+            focus_topic = "Tutoriels techniques IA, Automatisation, Nouveaux agents IA Open-Source"
         
         task_scout = Task(
             description=(

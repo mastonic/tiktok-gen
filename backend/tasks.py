@@ -7,7 +7,10 @@ from database import SessionLocal, ScriptInbox
 
 def create_tasks(*args, run_type="matin", commando_mode=False):
     now = datetime.datetime.now().strftime("%d/%m/%Y à %H:%M")
-    focus_topic = "News IA, Outils gratuits, Nouveautés LLMs" if run_type == "matin" else "Tutoriels techniques, Self-hosting, Contours d'abonnements"
+    if run_type == "matin":
+        focus_topic = "News IA, Outils gratuits, Nouveautés LLMs"
+    else:
+        focus_topic = "Tutoriels techniques IA, Automatisation, Nouveaux agents IA Open-Source"
     
     # 💥 Machine à Cash : Prevent Topic Loops 💥
     recent_titles = []

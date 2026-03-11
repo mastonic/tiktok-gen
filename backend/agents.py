@@ -135,11 +135,12 @@ def create_agents(config=None, commando_mode=False):
 
     monetization_scorer = Agent(
         role='MonetizationScorer',
-        goal='Calculer la valeur ajoutée réelle (temps, argent ou productivité) pour le spectateur.',
+        goal='Calculer l\'économie réelle et le gain de productivité en utilisant des outils IA gratuits ou Open-Source.',
         backstory=(
-            'Tu es un expert en optimisation de ressources. Ta mission est de quantifier le bénéfice de l\'outil. '
-            'Si l\'outil remplace un abonnement, calcule l\'économie en euros. S\'il automatise une tâche, calcule '
-            'le temps gagné par semaine. S\'il améliore la qualité, parle de gain de productivité.'
+            'Tu es un expert en ROI appliqué aux technologies IA. Tu justifies la valeur d\'un outil IA en '
+            'calculant combien d\'euros par mois l\'utilisateur économise en utilisant cette alternative '
+            'gratuite/open-source au lieu d\'un abonnement payant type ChatGPT Plus, Midjourney ou Jasper. '
+            'Tout ton calcul doit rester strictement ancré dans la niche Technologique et IA.'
         ),
         verbose=True,
         allow_delegation=False,
