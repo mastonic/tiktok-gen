@@ -7,8 +7,7 @@ import {
     DollarSign,
     TrendingUp,
     AlertTriangle,
-    Play,
-    Eye
+    Play
 } from 'lucide-react';
 
 const Overview = () => {
@@ -216,7 +215,7 @@ const Overview = () => {
                                 <div className="flex-1 overflow-hidden">
                                     <div className="text-sm font-medium text-white truncate">{video.title}</div>
                                     <div className="flex items-center gap-2 text-[10px] text-gray-500">
-                                        <Eye className="w-3 h-3" /> {video.views} vues • {video.date}
+                                        <Play className="w-3 h-3" /> {video.views} vues • {video.date}
                                     </div>
                                 </div>
                                 <a href={video.url} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-pink-600/20 text-pink-500 transition-colors">

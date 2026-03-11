@@ -1670,7 +1670,11 @@ async def get_latest_blog():
     if not script:
         raise HTTPException(status_code=404, detail="No scripts yet")
     from fastapi.responses import RedirectResponse
-    return RedirectResponse(url=f"/api/blog/{script.id}")
+    # Ensure CORS is applied even on redirects
+    return RedirectResponse(
+        url=f"/api/blog/{script.id}",
+        headers={"Access-Control-Allow-Origin": "*"}
+    )
 
 @app.get("/api/blog/{script_id}")
 async def get_blog_data(script_id: int):
