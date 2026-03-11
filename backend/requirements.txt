@@ -1,12 +1,7 @@
-pydantic>=2.0.0
+pydantic>=2.10.0
 openai
 edge-tts
 moviepy
-scipy
-torch
-torchaudio
-transformers
-parler-tts
 tiktok-uploader
 python-telegram-bot
 pytz
@@ -23,7 +18,6 @@ duckduckgo-search
 trafilatura
 pytrends
 ffmpeg-python
-piper-tts
 fal-client
 apscheduler
 requests

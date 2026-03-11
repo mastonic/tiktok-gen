@@ -49,11 +49,15 @@ def generate_tts(text: str, output_path: str, mode: str = "f5-tts") -> bool:
     if mode == "parler-tts":
         try:
             print(f"🎙️ [VoiceMaster] Attempting local generation via Parler-TTS...")
-            # Required: pip install parler-tts transformers torch
-            from parler_tts import ParlerTTSForConditionalGeneration
-            from transformers import AutoTokenizer
-            import torch
-            import scipy.io.wavfile as wavfile
+            # Lazy imports for VPS compatibility
+            try:
+                from parler_tts import ParlerTTSForConditionalGeneration
+                from transformers import AutoTokenizer
+                import torch
+                import scipy.io.wavfile as wavfile
+            except ImportError:
+                print("⚠️ parler-tts or dependencies not installed. Falling back to Edge-TTS.")
+                return generate_tts(text, output_path, mode="edge-tts")
 
             device = "cuda:0" if torch.cuda.is_available() else "cpu"
             model = ParlerTTSForConditionalGeneration.from_pretrained("google/parler-tts-mini-v1").to(device)
@@ -69,7 +73,8 @@ def generate_tts(text: str, output_path: str, mode: str = "f5-tts") -> bool:
             print(f"✅ VoiceMaster (Parler-TTS Local) generated: {output_path}")
             return True
         except Exception as e:
-            print(f"❌ Parler-TTS Local failed: {e}")
+            print(f"❌ Parler-TTS Local failed: {e}. Falling back to Edge-TTS...")
+            return generate_tts(text, output_path, mode="edge-tts")
 
     # Robust Fallback: Edge-TTS
     try:
