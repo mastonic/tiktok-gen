@@ -141,21 +141,23 @@ class ViralFlow(Flow[SwarmState]):
         print("✍️ Producing Script, Tech Utility and Visuals...")
         task_utility = Task(
             description=(
-                "Analyse la puissance technique de l'outil et le gain de productivité concret. "
-                "INTERDICTION de parler d'argent ou d'abonnement. Concentre-toi sur l'innovation logicielle."
+                "Analyse en profondeur la technologie : architecture, avantages tech, points négatifs et axes d'amélioration. "
+                "Rassemble des éléments pour une histoire ou une expérience utilisateur marquante avec cet outil. "
+                "INTERDICTION de parler d'argent ou d'abonnement."
             ),
-            expected_output="Score d'utilité technique sur 100 et explication de la performance.",
+            expected_output="Analyse technique complète (Avantages, Inconvénients, Storytelling technique).",
             agent=self.tech_utility_expert
         )
         
-        cta = "Abonne-toi et mets un cœur pour ne rien rater !" if self.state.mode == "commando" else "J'ai cassé Internet... encore."
+        cta = "Abonnez-vous et like ! J'ai cassé internet Encore."
         task_script = Task(
             description=(
                 f"Rédiger un script TikTok narratif d'EXACTEMENT 90 à 100 secondes (Signature: {cta}). "
+                "Structure obligatoire : 1. Hook. 2. Storytelling technique/histoire vécue. 3. Avantages, Inconvénients et détails techniques réels. "
                 "Le script doit être technique, fascinant et ultra-captivant. "
-                "INTERDICTION FORMELLE de parler d'économie numérique ou de gestion de budget."
+                "INTERDICTION FORMELLE de parler d'économie numérique, de budget ou d'argent."
             ),
-            expected_output="Script TikTok technique détaillé d'exactement 90-100 secondes.",
+            expected_output="Script TikTok technique détaillé d'exactement 90-100 secondes avec le CTA demandé.",
             agent=self.script_architect,
             context=[task_utility]
         )

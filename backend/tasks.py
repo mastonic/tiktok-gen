@@ -68,23 +68,25 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
 
     task_scoring = Task(
         description=(
-            "Analyse la puissance technique de l'outil et le gain de productivité concret pour l'utilisateur. "
-            "INTERDICTION de parler d'argent ou d'abonnement. Ton angle doit être 100% technique."
+            "Analyse en profondeur la technologie : architecture, avantages tech, points négatifs et axes d'amélioration. "
+            "Rassemble des éléments pour une histoire ou une expérience utilisateur marquante avec cet outil. "
+            "INTERDICTION de parler d'argent ou d'abonnement."
         ),
-        expected_output="Score d'utilité sur 100 et explication courte de la performance technique.",
+        expected_output="Analyse technique complète (Avantages, Inconvénients, Storytelling technique).",
         agent=tech_utility_expert
     )
     tasks.append(task_scoring)
 
-    # Dynamic CTA based on mode
-    cta = "Abonne-toi et mets un cœur pour ne rien rater !" if commando_mode else "J'ai cassé Internet... encore."
+    # Exact CTA restricted by user
+    cta = "Abonnez-vous et like ! J'ai cassé internet Encore."
     task_scripting = Task(
         description=(
-            "Rédige un script TikTok narratif d'EXACTEMENT 90 à 100 secondes en suivant strictement le Hook du Commander (si présent). "
-            "Le script doit être long, détaillé et captivant. "
-            f"Signature obligatoire : {cta}. Utilise 3 mots-clés stratégiques en MAJUSCULES."
+            "Rédige un script TikTok narratif d'EXACTEMENT 90 à 100 secondes. "
+            "Structure obligatoire : 1. Hook. 2. Storytelling technique/histoire vécue. 3. Avantages, Inconvénients et détails techniques réels. "
+            f"Signature FINALE IMPÉRATIVE : {cta}. "
+            "INTERDICTION FORMELLE de parler d'argent."
         ),
-        expected_output="Un script TikTok long d'exactement 90-100 secondes avec signature et mots-clés.",
+        expected_output="Un script TikTok technique et narratif long avec le CTA demandé.",
         agent=script_architect
     )
     tasks.append(task_scripting)

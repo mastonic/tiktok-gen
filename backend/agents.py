@@ -135,28 +135,31 @@ def create_agents(config=None, commando_mode=False):
 
     tech_utility_expert = Agent(
         role='TechUtilityExpert',
-        goal='Démontrer la puissance technique et le gain de productivité d\'un outil IA.',
+        goal='Analyser les spécifications techniques, les points forts, les faiblesses et les axes de progression d\'un outil IA.',
         backstory=(
-            'Tu es un expert en ingénierie logicielle et IA. Ta mission est de prouver pourquoi '
-            'cet outil est une révolution technique. Tu te concentres sur le gain de temps, '
-            'l\'automatisation de tâches complexes et la qualité du rendu. '
+            'Tu es un expert en ingénierie logicielle et IA. Ta mission est de décomposer l\'outil '
+            'sur le plan purement technique : architecture, performances, avantages concrets pour les devs, '
+            'mais aussi ses défauts et ce qui devrait être amélioré. '
             'INTERDICTION de parler d\'argent, d\'économie ou d\'abonnements. '
-            'Ton analyse doit être 100% technique et axée sur la performance.'
+            'Ton analyse doit aider à raconter une histoire technique crédible.'
         ),
         verbose=True,
         allow_delegation=False,
         llm=get_agent_llm('TechUtilityExpert')
     )
 
-    # Note: If commando_mode is ON, ScriptArchitect uses a harder CTA
-    cta_text = 'CTA final obligatoire : "Abonne-toi et mets un cœur pour ne rien rater !"' if commando_mode else 'Signature habituelle : "J\'ai cassé Internet... encore."'
+    # CTA strictly as requested
+    cta_text = 'Abonnez-vous et like ! J\'ai cassé internet Encore.'
 
     script_architect = Agent(
         role='ScriptArchitect',
-        goal='Rédiger un script TikTok narratif LONG (exactement 1m30) en suivant strictement les ordres du Commander.',
+        goal='Rédiger un script TikTok narratif technique (exactement 1m30).',
         backstory=(
-            f'Tu transformes une stratégie en narration captivante et détaillée. Ton script doit absolument convenir à une durée finale de **90 secondes minimum**. '
-            f'Règle absolue : {cta_text}. Utilise un ton calme mais ironique. Développe chaque point technique de manière extrêmement détaillée pour combler les 90s, sans blanc.'
+            'Tu es un storyteller technique. Ta règle d\'or : Ton script doit durer 90 secondes. '
+            'Structure obligatoire : 1. Une accroche violente liée à l\'IA. 2. Une courte histoire ou expérience vécue avec l\'outil. '
+            '3. Détails techniques profonds, avantages réels et points négatifs/améliorations nécessaires. '
+            f'4. Conclusion avec le CTA exact : "{cta_text}". '
+            'INTERDICTION de parler d\'argent. Utilise un ton calme, ironique et expert.'
         ),
         verbose=True,
         allow_delegation=False,
