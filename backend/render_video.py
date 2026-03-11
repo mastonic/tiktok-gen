@@ -31,7 +31,7 @@ def generate_video(job_dir: str):
                 if not norm_c.exists() or norm_c.stat().st_size == 0:
                     subprocess.run([
                         "ffmpeg", "-y", "-i", str(c),
-                        "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1",
+                        "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black,setsar=1",
                         "-an", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "18",
                         str(norm_c)
                     ], check=True)
