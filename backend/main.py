@@ -145,7 +145,11 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
         # 0. Sync Database API Keys to Environment
         if conf:
             if conf.openai_key: os.environ["OPENAI_API_KEY"] = conf.openai_key.strip()
-            if conf.gemini_key: os.environ["GEMINI_API_KEY"] = conf.gemini_key.strip()
+            if conf.gemini_key: 
+                g_key = conf.gemini_key.strip()
+                os.environ["GEMINI_API_KEY"] = g_key
+                os.environ["GOOGLE_API_KEY"] = g_key # Mirror for some libraries
+                print(f"🔑 [SYNC] Gemini key synced: {g_key[:6]}...{g_key[-4:]}")
             if conf.fal_key: os.environ["FAL_KEY"] = conf.fal_key.strip()
             if conf.perplexity_key: os.environ["PERPLEXITY_API_KEY"] = conf.perplexity_key.strip()
             if conf.elevenlabs_key: os.environ["ELEVENLABS_KEY"] = conf.elevenlabs_key.strip()
