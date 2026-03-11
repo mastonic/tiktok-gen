@@ -160,6 +160,11 @@ class ViralFlow(Flow[SwarmState]):
             max_rpm=30
         )
         result = crew.kickoff()
+        
+        # Save intermediate outputs to state to prevent QualityController hallucination
+        self.state.roi_report = getattr(task_roi.output, 'raw', str(task_roi.output)) if task_roi.output else ""
+        self.state.script_content = getattr(task_script.output, 'raw', str(task_script.output)) if task_script.output else ""
+        
         if hasattr(result, 'pydantic') and result.pydantic:
             self.state.visual_prompts = result.pydantic
         else:
@@ -209,8 +214,16 @@ class ViralFlow(Flow[SwarmState]):
     def phase_quality_control(self):
         if self._check_cancelled(): return "FLOW_STOPPED"
         print("🛡️ Final Phase: Quality Controller review...")
+        
+        # Assemble context so QualityController doesn't hallucinate
+        context_data = f"""
+Voici le contenu généré par tes collègues. Tu DOIS assembler ce contenu EXACTEMENT sans en inventer un nouveau.
+- Outils trouvés (Viability) : {self.state.viability_report[:1000] if self.state.viability_report else 'Aucun'}
+- Script final (NE PAS MODIFIER) : {self.state.script_content[:3000] if self.state.script_content else 'Aucun'}
+- Prompts d'images générés (DOIVENT RESTER EXACTEMENT CES PROMPTS, y en a {len(self.state.visual_prompts.prompts) if self.state.visual_prompts else 0}) : {self.state.visual_prompts.prompts if self.state.visual_prompts else 'Aucun'}
+"""
         task_qa = Task(
-            description="Revue finale et assemblage JSON AgentOutcome.",
+            description=f"Revue finale et assemblage JSON AgentOutcome. {context_data}",
             expected_output="Final AgentOutcome validated.",
             agent=self.quality_controller,
             output_pydantic=AgentOutcome
