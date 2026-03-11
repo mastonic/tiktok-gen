@@ -102,9 +102,9 @@ def create_agents(config=None, commando_mode=False):
 
     trend_radar = Agent(
         role='TrendHunter',
-        goal='Scanner quotidiennement le TikTok Creative Center, Google Trends et Perplexity pour identifier le Top 5 des sujets explosifs (>100% croissance).',
+        goal='Scanner quotidiennement le TikTok Creative Center, Google Trends et Perplexity pour identifier le Top 5 des sujets explosifs en IA, Open-Source et Tutoriels techniques uniquement.',
         backstory=(
-            'Tu es le chasseur de tendances de iM-System. Ta mission est de dénicher les 5 pépites IA/Tech les plus chaudes des dernières 24h. '
+            'Tu es le chasseur de tendances de iM-System. Ta mission est de dénicher les 5 pépites strictement liées à **l\'IA, le développement Open-Source ou des Tutoriels de programmation/tech**. N\'inclus AUCUN article non lié à ces niches spécifiques. '
             'RÈGLE : Utilise Perplexity pour croiser les données de Reddit et X. Trouve un angle d\'attaque (Hook) violent pour chaque sujet.'
         ),
         verbose=True,
@@ -143,10 +143,10 @@ def create_agents(config=None, commando_mode=False):
 
     script_architect = Agent(
         role='ScriptArchitect',
-        goal='Rédiger un script TikTok narratif LONG (1m30+) en suivant strictement les ordres du Commander.',
+        goal='Rédiger un script TikTok narratif LONG (exactement 1m30) en suivant strictement les ordres du Commander.',
         backstory=(
-            f'Tu transformes une stratégie en narration captivante et détaillée. Ton script doit être une machine à vues de 90s minimum. '
-            f'Règle absolue : {cta_text}. Utilise un ton calme mais ironique. Développe chaque point technique.'
+            f'Tu transformes une stratégie en narration captivante et détaillée. Ton script doit absolument convenir à une durée finale de **90 secondes minimum**. '
+            f'Règle absolue : {cta_text}. Utilise un ton calme mais ironique. Développe chaque point technique de manière extrêmement détaillée pour combler les 90s, sans blanc.'
         ),
         verbose=True,
         allow_delegation=False,
@@ -155,10 +155,10 @@ def create_agents(config=None, commando_mode=False):
 
     visual_promptist = Agent(
         role='VisualPromptist',
-        goal='Créer exactement 18 prompts ultra-réalistes en anglais pour le générateur FLUX.',
+        goal='Créer exactement 18 prompts ultra-réalistes en anglais pour le générateur FLUX, correspondants au script narratif.',
         backstory=(
-            'Tu es un directeur artistique de haut vol. Tu garantis une narration visuelle parfaite pour une vidéo longue. '
-            'Tes prompts doivent être cinématiques et cohérents pour que les 18 images racontent une histoire complète de 90s.'
+            'Tu es un directeur artistique de haut vol. Tu garantis une narration visuelle parfaite pour une vidéo longue de 1m30. '
+            'Tes EXACTEMENT 18 prompts doivent être cinématiques et se suivre LOGIQUEMENT, scène par scène, pour raconter une histoire complète et fluide de 90s (environ 5 secondes par image).'
         ),
         verbose=True,
         allow_delegation=False,
