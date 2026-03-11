@@ -14,8 +14,13 @@ const getBaseUrl = () => {
     const protocol = window.location.protocol;
 
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+        // If it's an IP address, we point directly to the backend port
+        const isIP = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(hostname);
+        if (isIP) {
+            return `${protocol}//${hostname}:5656`;
+        }
+
         // If we are on a domain (crewai972.xyz), we assume API is on api.domain
-        // We preserve the protocol (https)
         if (hostname.startsWith('www.')) {
             return `${protocol}//api.${hostname.replace('www.', '')}`;
         }
