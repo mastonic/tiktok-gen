@@ -1631,7 +1631,8 @@ async def get_blog_data(script_id: int):
     video_path = f"/media/production/db_{script.id}/final_output.mp4"
     # Fallback image from the production folder if video is missing
     fallback_img = f"/media/production/db_{script.id}/img_01.jpg"
-    if not os.path.exists(os.path.join(BASE_DIR, "media", "production", f"db_{script.id}", "img_01.jpg")):
+    base_dir_local = os.path.dirname(os.path.abspath(__file__))
+    if not os.path.exists(os.path.join(base_dir_local, "media", "production", f"db_{script.id}", "img_01.jpg")):
         fallback_img = script.cover_image or "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1200"
         if fallback_img and fallback_img.startswith("http://localhost:5656"):
             fallback_img = fallback_img.replace("http://localhost:5656", "")
