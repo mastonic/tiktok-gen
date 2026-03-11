@@ -81,7 +81,12 @@ GEMINI_API_KEY=$GEMINI_API_KEY
 FAL_KEY=$FAL_KEY
 EOT
 
-# 9. Relance
+# 9. Initialisation Traefik
+mkdir -p letsencrypt
+touch letsencrypt/acme.json
+chmod 600 letsencrypt/acme.json
+
+# 10. Relance
 echo "🏗️  Nettoyage et Relance..."
 docker compose down || true
 # Force removal of frontend/backend images to ensure fresh build
@@ -89,6 +94,6 @@ docker rmi im-system-frontend im-system-backend || true
 docker compose up --build -d
 
 echo "----------------------------------------------------------------"
-echo "✅ DÉPLOYÉ SUR : http://$FRONTEND_DOMAIN:3000"
+echo "✅ DÉPLOYÉ SUR : https://$FRONTEND_DOMAIN"
 echo "📡 API SUR : $VITE_API_URL"
 echo "----------------------------------------------------------------"
