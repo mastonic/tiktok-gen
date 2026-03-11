@@ -14,13 +14,15 @@ const getBaseUrl = () => {
     const protocol = window.location.protocol;
 
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-        // If it's an IP address, we point directly to the backend port
         const isIP = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(hostname);
-        if (isIP) {
+
+        // If it's an IP OR if we are on a port-based setup (no reverse proxy)
+        // We force port 5656 for the API
+        if (isIP || window.location.port === '3000') {
             return `${protocol}//${hostname}:5656`;
         }
 
-        // If we are on a domain (crewai972.xyz), we assume API is on api.domain
+        // Production with Traefik/Reverse Proxy (api.domain.com)
         if (hostname.startsWith('www.')) {
             return `${protocol}//api.${hostname.replace('www.', '')}`;
         }
