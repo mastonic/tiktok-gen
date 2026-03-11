@@ -25,6 +25,10 @@ export default {
             },
             fontFamily: {
                 sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            },
+            boxShadow: {
+                'glow': '0 0 15px rgba(6, 182, 212, 0.4)',
+                'glow-hover': '0 0 20px rgba(6, 182, 212, 0.6)',
             }
         },
     },
