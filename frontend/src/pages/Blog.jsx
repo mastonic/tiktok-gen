@@ -241,18 +241,18 @@ const Blog = ({ onReadArticle, onEnterCockpit }) => {
                                 onClick={() => setView('home')}
                                 className={`transition ${view === 'home' ? 'text-cyan-400' : 'hover:text-white'}`}
                             >
-                                Home
+                                Accueil
                             </button>
                             <button
                                 onClick={() => setView('about')}
                                 className={`transition ${view === 'about' ? 'text-cyan-400' : 'hover:text-white'}`}
                             >
-                                About
+                                À Propos
                             </button>
                         </nav>
                         <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/5 border border-emerald-500/10 rounded-full">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/80">Live</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/80">Direct</span>
                         </div>
                     </div>
                 </div>
@@ -284,7 +284,7 @@ const Blog = ({ onReadArticle, onEnterCockpit }) => {
                 ) : (
                     <div className="text-center py-20 text-gray-600">
                         <AlertCircle className="w-10 h-10 mx-auto mb-3 text-gray-700" />
-                        Lance un Run pour voir ta première vidéo ici.
+                        Lancez un cycle pour voir votre première vidéo ici.
                     </div>
                 )}
 

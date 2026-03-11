@@ -558,7 +558,8 @@ async def get_trends():
                 "viralScore": s.viral_score or 85,
                 "moneyScore": s.money_score or 90,
                 "finalScore": 88,
-                "status": (s.status or "pending").replace("_", " ").title()
+                "status": s.status or "pending",
+                "tiktok_url": s.tiktok_url
             })
         except:
             continue
@@ -645,6 +646,22 @@ async def get_overview():
         
         profit_score = sum(s.money_score or 0 for s in scripts) / max(len(scripts), 1)
 
+        # Get recently linked videos
+        recent_linked = db.query(ScriptInbox).filter(ScriptInbox.tiktok_url != None).order_by(ScriptInbox.id.desc()).limit(5).all()
+        recent_linked_data = [
+            {
+                "id": f"db_{s.id}",
+                "title": s.title,
+                "views": s.views or 0,
+                "date": s.created_at.strftime("%d/%m") if s.created_at else "-",
+                "url": s.tiktok_url
+            } for s in recent_linked
+        ]
+
+        db.close()
+        
+        profit_score = sum(s.money_score or 0 for s in scripts) / max(len(scripts), 1)
+
         return {
             "activeAgents": "5/5",
             "videosToday": f"{videos}/{max(videos, 2)}",
@@ -652,7 +669,8 @@ async def get_overview():
             "estProfitScore": f"{profit_score:.1f}",
             "budgetRemaining": f"${max(0.0, daily_cap - today_spend):.2f}",
             "isRunning": is_running,
-            "lastRunId": last_run_id
+            "lastRunId": last_run_id,
+            "recentLinked": recent_linked_data
         }
     except Exception as e:
         print(f"Error in get_overview: {traceback.format_exc()}")
@@ -1037,12 +1055,25 @@ async def get_metrics():
 
         # Generate chart data from last 7 days of posted content
         chart_data = []
-        days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        days_en = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        days_fr = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
         # Simplified: group by day of week
-        for day in days:
+        for i, day in enumerate(days_en):
             morning_pts = sum(s.views or 0 for s in posted_scripts if s.run_type == "matin" and s.created_at.strftime("%a") == day)
             evening_pts = sum(s.views or 0 for s in posted_scripts if s.run_type == "soir" and s.created_at.strftime("%a") == day)
-            chart_data.append({"name": day, "morning": morning_pts, "evening": evening_pts})
+            chart_data.append({"name": days_fr[i], "morning": morning_pts, "evening": evening_pts})
+
+        # Get detailed video performance list
+        recent_videos = [
+            {
+                "id": f"db_{s.id}",
+                "title": s.title,
+                "views": format_num(s.views or 0),
+                "likes": format_num(s.likes or 0),
+                "retention": s.retention_rate or 0,
+                "url": s.tiktok_url
+            } for s in posted_scripts if s.tiktok_url
+        ]
 
         return {
             "kpis": {
@@ -1052,6 +1083,7 @@ async def get_metrics():
                 "followers": f"+{total_likes // 10}" if total_likes > 0 else "0"
             },
             "chartData": chart_data,
+            "recentVideos": recent_videos,
             "recommendations": [
                 {
                     "id": r.id,

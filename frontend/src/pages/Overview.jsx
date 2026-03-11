@@ -89,12 +89,12 @@ const Overview = () => {
         <div className="space-y-6">
             <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Overview Dashboard</h1>
+                    <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Tableau de Bord</h1>
                     <div className="flex items-center gap-2">
-                        <p className="text-gray-400 text-sm">System status and top level metrics for today.</p>
+                        <p className="text-gray-400 text-sm">État du système et indicateurs clés pour aujourd'hui.</p>
                         {config.commando_mode && (
                             <Badge variant="danger" className="animate-pulse bg-red-500/20 text-red-500 border border-red-500/50 flex items-center gap-1">
-                                <TrendingUp className="w-3 h-3" /> COMMANDO 10K ACTIVE
+                                <TrendingUp className="w-3 h-3" /> COMMANDO 10K ACTIF
                             </Badge>
                         )}
                     </div>
@@ -137,43 +137,61 @@ const Overview = () => {
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-                <KPI title="Active Agents" value={overviewData.activeAgents} icon={Bot} color="text-cyan-400" />
-                <KPI title="Videos Today" value={overviewData.videosToday} icon={Video} color="text-emerald-400" target="target: 2" />
-                <KPI title="AI Cost Today" value={overviewData.aiCostToday} icon={DollarSign} color="text-amber-400" />
-                <KPI title="Est. Profit Score" value={overviewData.estProfitScore} icon={TrendingUp} color="text-purple-400" />
-                <KPI title="Budget Remaining" value={overviewData.budgetRemaining} icon={DollarSign} color="text-blue-400" />
+                <KPI title="Agents Actifs" value={overviewData.activeAgents} icon={Bot} color="text-cyan-400" />
+                <KPI title="Vidéos Aujourd'hui" value={overviewData.videosToday} icon={Video} color="text-emerald-400" target="Objectif: 2" />
+                <KPI title="Coût IA Aujourd'hui" value={overviewData.aiCostToday} icon={DollarSign} color="text-amber-400" />
+                <KPI title="Score Profit Est." value={overviewData.estProfitScore} icon={TrendingUp} color="text-purple-400" />
+                <KPI title="Budget Restant" value={overviewData.budgetRemaining} icon={DollarSign} color="text-blue-400" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Main Section */}
                 <Card className="lg:col-span-2">
-                    <h3 className="text-xl font-semibold text-white mb-4 border-b border-gray-700/50 pb-2">Top Trending Topics</h3>
+                    <h3 className="text-xl font-semibold text-white mb-4 border-b border-gray-700/50 pb-2">Sujets Tendances</h3>
                     <div className="overflow-x-auto custom-scrollbar">
-                        <table className="w-full text-left border-collapse min-w-[600px]">
+                        <table className="w-full text-left border-collapse min-w-[500px]">
                             <thead>
                                 <tr className="text-gray-400 text-sm border-b border-gray-800">
-                                    <th className="py-3 px-4 font-medium">Topic</th>
-                                    <th className="py-3 px-4 font-medium text-center">ViralScore</th>
-                                    <th className="py-3 px-4 font-medium text-center">MoneyScore</th>
-                                    <th className="py-3 px-4 font-medium text-center">FinalScore</th>
-                                    <th className="py-3 px-4 font-medium text-right">Status</th>
+                                    <th className="py-3 px-4 font-medium">Sujet</th>
+                                    <th className="py-3 px-4 font-medium text-center">ScoreViral</th>
+                                    <th className="py-3 px-4 font-medium text-center">ScoreFinal</th>
+                                    <th className="py-3 px-4 font-medium text-right">Statut</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {trends.map(trend => (
+                                {trends.slice(0, 10).map(trend => (
                                     <tr key={trend.id} className="border-b border-gray-800/50 hover:bg-white/5 transition-colors">
-                                        <td className="py-3 px-4 font-medium text-gray-200">{trend.title}</td>
+                                        <td className="py-3 px-4 font-medium text-gray-200">
+                                            {trend.title}
+                                            {trend.status === 'posted' && !trend.tiktok_url && (
+                                                <div className="text-[9px] text-pink-500 mt-1 flex items-center gap-1">
+                                                    <TrendingUp className="w-2 h-2" /> EN ATTENTE DE LIEN
+                                                </div>
+                                            )}
+                                        </td>
                                         <td className="py-3 px-4 text-center text-cyan-400">{trend.viralScore}</td>
-                                        <td className="py-3 px-4 text-center text-emerald-400">{trend.moneyScore}</td>
                                         <td className="py-3 px-4 text-center font-bold text-white">{trend.finalScore}</td>
                                         <td className="py-3 px-4 text-right">
-                                            <Badge variant={
-                                                trend.status === 'approved' ? 'success' :
-                                                    trend.status === 'rejected' ? 'danger' :
-                                                        trend.status === 'review' ? 'warning' : 'info'
-                                            }>
-                                                {trend.status}
-                                            </Badge>
+                                            <div className="flex flex-col items-end gap-1">
+                                                <Badge variant={
+                                                    trend.status === 'approved' ? 'success' :
+                                                        trend.status === 'rejected' ? 'danger' :
+                                                            trend.status === 'review' ? 'warning' : 'info'
+                                                }>
+                                                    {trend.status === 'approved' ? 'approuvé' :
+                                                     trend.status === 'rejected' ? 'rejeté' :
+                                                     trend.status === 'producing' ? 'en production' :
+                                                     trend.status === 'posted' ? 'publié' : trend.status}
+                                                </Badge>
+                                                {trend.status === 'posted' && !trend.tiktok_url && (
+                                                    <button 
+                                                        onClick={() => window.location.href='/gallery'} 
+                                                        className="text-[9px] font-bold text-pink-500 hover:text-pink-400 border border-pink-500/30 px-2 py-0.5 rounded mt-1 transition-all"
+                                                    >
+                                                        LIER TIKTOK
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -182,17 +200,32 @@ const Overview = () => {
                     </div>
                 </Card>
 
-                {/* Alerts Section */}
-                <Card className="border border-red-900/30">
+                {/* Recently Linked Videos Section */}
+                <Card className="border border-cyan-900/30">
                     <h3 className="text-xl font-semibold text-white mb-4 border-b border-gray-700/50 pb-2 flex items-center gap-2">
-                        <AlertTriangle className="text-amber-400 h-5 w-5" />
-                        System Alerts
+                        <TrendingUp className="text-[#FF007F] h-5 w-5" />
+                        Récemment Liés
                     </h3>
-                    <div className="space-y-3">
-                        {alerts.length > 0 ? alerts.map(alert => (
-                            <AlertItem key={alert.id} type={alert.type} msg={alert.msg} time={alert.time} />
+                    <div className="space-y-4">
+                        {overviewData?.recentLinked?.length > 0 ? overviewData.recentLinked.map(video => (
+                            <div key={video.id} className="flex items-center gap-3 p-3 rounded-lg bg-navy-900/50 border border-gray-800 group hover:border-pink-500/30 transition-all">
+                                <div className="w-10 h-10 rounded bg-pink-600/20 flex items-center justify-center text-pink-500 font-bold text-xs ring-1 ring-pink-500/20">
+                                    TT
+                                </div>
+                                <div className="flex-1 overflow-hidden">
+                                    <div className="text-sm font-medium text-white truncate">{video.title}</div>
+                                    <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                                        <Eye className="w-3 h-3" /> {video.views} vues • {video.date}
+                                    </div>
+                                </div>
+                                <a href={video.url} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-pink-600/20 text-pink-500 transition-colors">
+                                    <Play className="w-4 h-4" />
+                                </a>
+                            </div>
                         )) : (
-                            <div className="text-gray-500 text-sm text-center py-4 italic">No recent alerts.</div>
+                            <div className="text-gray-500 text-sm text-center py-8 italic">
+                                Aucune vidéo liée récemment.<br/>Liez-les dans la Galerie pour voir les stats.
+                            </div>
                         )}
                     </div>
                 </Card>
@@ -223,7 +256,6 @@ const AlertItem = ({ type, msg, time }) => {
         info: 'border-blue-500/30 text-blue-200 bg-blue-500/10',
         danger: 'border-red-500/30 text-red-200 bg-red-500/10 success border-emerald-500/30 text-emerald-200 bg-emerald-500/10'
     };
-    // Add fallback for 'info' color if not defined
     const colorClass = colors[type] || 'border-gray-500/30 text-gray-200 bg-gray-500/10';
 
     return (

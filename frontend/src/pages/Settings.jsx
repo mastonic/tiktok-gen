@@ -5,7 +5,7 @@ import { Save, Shield, Bell, Key, Database, Globe, Loader2, AlertCircle, Triangl
 
 const Settings = () => {
     const [config, setConfig] = useState({
-        system_name: "Mission Control",
+        system_name: "Centre de Commande",
         environment: "Production (Live)",
         strict_mode: true,
         debug_logging: false,
@@ -25,7 +25,7 @@ const Settings = () => {
         commando_mode: false
     });
     const [isSaving, setIsSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState("General");
+    const [activeTab, setActiveTab] = useState("Général");
     const [isLoading, setIsLoading] = useState(true);
     const [affiliates, setAffiliates] = useState([]);
     const [newAffiliate, setNewAffiliate] = useState({ name: '', category: '', description: '', cta: 'Tester Gratuitement', link: '', gradient: 'from-cyan-400 to-emerald-400', reconciliation_keywords: '' });
@@ -102,7 +102,7 @@ const Settings = () => {
     };
 
     const handlePurge = async () => {
-        if (!confirm("⚠️ DANGER : Est-tu sûr de vouloir purger TOUT le pipeline (Scripts + Historique) ? Cette action est irréversible.")) return;
+        if (!confirm("⚠️ DANGER : Es-tu sûr de vouloir purger TOUT le pipeline (Scripts + Historique) ? Cette action est irréversible.")) return;
 
         try {
             const response = await fetch(`${apiUrl}/api/system/purge-pipeline`, { method: 'POST' });
@@ -126,8 +126,8 @@ const Settings = () => {
         <div className="space-y-6">
             <header className="mb-8 flex justify-between items-end">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight mb-1">System Settings</h1>
-                    <p className="text-gray-400">Manage global configuration, security, and integrations.</p>
+                    <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Paramètres Système</h1>
+                    <p className="text-gray-400">Gérez la configuration globale, la sécurité et les intégrations.</p>
                 </div>
                 <Button
                     variant="primary"
@@ -136,31 +136,31 @@ const Settings = () => {
                     disabled={isSaving}
                 >
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : saveSuccess ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                    {isSaving ? "Saving..." : saveSuccess ? "Enregistré !" : "Save Changes"}
+                    {isSaving ? "Sauvegarde..." : saveSuccess ? "Enregistré !" : "Enregistrer"}
                 </Button>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <nav className="md:col-span-1 space-y-2">
-                    <SettingNav icon={Globe} title="General" active={activeTab === "General"} onClick={() => setActiveTab("General")} />
-                    <SettingNav icon={Shield} title="Security & Access" active={activeTab === "Security"} onClick={() => setActiveTab("Security")} />
-                    <SettingNav icon={Key} title="API Keys" active={activeTab === "API Keys"} onClick={() => setActiveTab("API Keys")} />
-                    <SettingNav icon={Database} title="Data Management" active={activeTab === "Data"} onClick={() => setActiveTab("Data")} />
+                    <SettingNav icon={Globe} title="Général" active={activeTab === "Général"} onClick={() => setActiveTab("Général")} />
+                    <SettingNav icon={Shield} title="Sécurité & Accès" active={activeTab === "Sécurité"} onClick={() => setActiveTab("Sécurité")} />
+                    <SettingNav icon={Key} title="Clés API" active={activeTab === "Clés API"} onClick={() => setActiveTab("Clés API")} />
+                    <SettingNav icon={Database} title="Données" active={activeTab === "Données"} onClick={() => setActiveTab("Données")} />
                     <SettingNav icon={Bell} title="Notifications" active={activeTab === "Notifications"} onClick={() => setActiveTab("Notifications")} />
-                    <SettingNav icon={DollarSign} title="Monétisation" active={activeTab === "Monetisation"} onClick={() => setActiveTab("Monetisation")} />
+                    <SettingNav icon={DollarSign} title="Monétisation" active={activeTab === "Monétisation"} onClick={() => setActiveTab("Monétisation")} />
                 </nav>
 
                 <Card className="md:col-span-3 space-y-8 bg-navy-900/40 backdrop-blur-sm border-gray-800">
-                    {activeTab === "General" && (
+                    {(activeTab === "Général" || activeTab === "General") && (
                         <div className="space-y-8 animate-in fade-in duration-300">
                             <section className="space-y-6">
                                 <h3 className="text-lg font-semibold text-white border-b border-gray-800 pb-4 flex items-center gap-2">
                                     <Globe className="w-5 h-5 text-cyan-400" />
-                                    Instance Profile
+                                    Profil de l'Instance
                                 </h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">System Name</label>
+                                        <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">Nom du Système</label>
                                         <input
                                             type="text"
                                             value={config.system_name || ''}
@@ -169,7 +169,7 @@ const Settings = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">Environment</label>
+                                        <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">Environnement</label>
                                         <select
                                             value={config.environment || 'Production (Live)'}
                                             onChange={(e) => setConfig({ ...config, environment: e.target.value })}
@@ -186,18 +186,18 @@ const Settings = () => {
                             <section className="space-y-6">
                                 <h3 className="text-lg font-semibold text-white border-b border-gray-800 pb-4 flex items-center gap-2">
                                     <Shield className="w-5 h-5 text-emerald-400" />
-                                    Global Constraints
+                                    Contraintes Globales
                                 </h3>
                                 <div className="space-y-4">
                                     <ToggleSetting
-                                        title="Enforce Strict Mode"
-                                        description="Require human approval for all content segments before final assembly."
+                                        title="Mode Strict"
+                                        description="Exiger une approbation humaine pour tous les segments de contenu avant l'assemblage final."
                                         active={config.strict_mode}
                                         onClick={() => setConfig({ ...config, strict_mode: !config.strict_mode })}
                                     />
                                     <ToggleSetting
-                                        title="Debug Logging"
-                                        description="Persist verbose Swarm Chat logs and internal agent traces."
+                                        title="Journalisation de Débogage"
+                                        description="Conserver les journaux détaillés du Swarm Chat et les traces internes des agents."
                                         active={config.debug_logging}
                                         onClick={() => setConfig({ ...config, debug_logging: !config.debug_logging })}
                                     />
@@ -212,15 +212,15 @@ const Settings = () => {
                         </div>
                     )}
 
-                    {activeTab === "Security" && (
+                    {(activeTab === "Sécurité" || activeTab === "Security") && (
                         <section className="space-y-6 animate-in fade-in duration-300">
                             <h3 className="text-lg font-semibold text-white border-b border-gray-800 pb-4 flex items-center gap-2">
                                 <Shield className="w-5 h-5 text-cyan-400" />
-                                Security & Access Control
+                                Sécurité & Contrôle d'Accès
                             </h3>
                             <div className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">Master Access Token</label>
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">Jeton d'Accès Maître (Master Token)</label>
                                     <input
                                         type="password"
                                         value={config.access_token || ''}
@@ -229,44 +229,44 @@ const Settings = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">Allowed IP Patterns</label>
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">Modèles d'IP Autorisées</label>
                                     <input
                                         type="text"
                                         value={config.allowed_ips || ''}
                                         onChange={(e) => setConfig({ ...config, allowed_ips: e.target.value })}
                                         className="w-full bg-navy-900 border border-gray-700/50 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 transition-all font-medium"
-                                        placeholder="Comma separated IPs or * for any"
+                                        placeholder="IP séparées par des virgules ou * pour toutes"
                                     />
                                 </div>
                             </div>
                         </section>
                     )}
 
-                    {activeTab === "API Keys" && (
+                    {(activeTab === "Clés API" || activeTab === "API Keys") && (
                         <section className="space-y-6 animate-in fade-in duration-300">
                             <h3 className="text-lg font-semibold text-white border-b border-gray-800 pb-4 flex items-center gap-2">
                                 <Key className="w-5 h-5 text-amber-400" />
-                                Integrated LLM & Media Services
+                                Services LLM & Média Intégrés
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <ApiKeyInput label="OpenAI API Key" value={config.openai_key} onChange={(val) => setConfig({ ...config, openai_key: val })} />
-                                <ApiKeyInput label="Gemini API Key" value={config.gemini_key} onChange={(val) => setConfig({ ...config, gemini_key: val })} />
-                                <ApiKeyInput label="Fal.ai Key" value={config.fal_key} onChange={(val) => setConfig({ ...config, fal_key: val })} />
-                                <ApiKeyInput label="ElevenLabs Key" value={config.elevenlabs_key} onChange={(val) => setConfig({ ...config, elevenlabs_key: val })} />
-                                <ApiKeyInput label="Perplexity Key" value={config.perplexity_key} onChange={(val) => setConfig({ ...config, perplexity_key: val })} />
+                                <ApiKeyInput label="Clé API OpenAI" value={config.openai_key} onChange={(val) => setConfig({ ...config, openai_key: val })} />
+                                <ApiKeyInput label="Clé API Gemini" value={config.gemini_key} onChange={(val) => setConfig({ ...config, gemini_key: val })} />
+                                <ApiKeyInput label="Clé Fal.ai" value={config.fal_key} onChange={(val) => setConfig({ ...config, fal_key: val })} />
+                                <ApiKeyInput label="Clé ElevenLabs" value={config.elevenlabs_key} onChange={(val) => setConfig({ ...config, elevenlabs_key: val })} />
+                                <ApiKeyInput label="Clé Perplexity" value={config.perplexity_key} onChange={(val) => setConfig({ ...config, perplexity_key: val })} />
                             </div>
                         </section>
                     )}
 
-                    {activeTab === "Data" && (
+                    {(activeTab === "Données" || activeTab === "Data") && (
                         <div className="space-y-8 animate-in fade-in duration-300">
                             <section className="space-y-6">
                                 <h3 className="text-lg font-semibold text-white border-b border-gray-800 pb-4 flex items-center gap-2">
                                     <Database className="w-5 h-5 text-indigo-400" />
-                                    Data Lifecycles
+                                    Cycles de Vie des Données
                                 </h3>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">Auto-Cleanup Threshold (Days)</label>
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">Seuil de Nettoyage Auto (Jours)</label>
                                     <input
                                         type="number"
                                         value={config.auto_cleanup_days || 30}
@@ -279,15 +279,15 @@ const Settings = () => {
                             <section className="space-y-6">
                                 <h3 className="text-lg font-semibold text-red-500 border-b border-gray-800 pb-4 flex items-center gap-2">
                                     <TriangleAlert className="w-5 h-5" />
-                                    Danger Zone
+                                    Zone de Danger
                                 </h3>
                                 <div className="p-6 rounded-xl border border-red-900/40 bg-red-950/20 flex flex-col md:flex-row justify-between items-center gap-6">
                                     <div>
-                                        <div className="font-bold text-red-400 mb-1">Purge Pipeline Infrastructure</div>
-                                        <div className="text-xs text-gray-500 leading-relaxed">This will delete all current Inbox scripts and run history. Agent configurations and models will be preserved.</div>
+                                        <div className="font-bold text-red-400 mb-1">Purger l'Infrastructure du Pipeline</div>
+                                        <div className="text-xs text-gray-500 leading-relaxed">Cela supprimera tous les scripts actuels et l'historique des exécutions. Les configurations d'agents et les modèles seront préservés.</div>
                                     </div>
                                     <Button variant="danger" className="text-sm font-bold min-w-[160px] h-11 shadow-xl shadow-red-950/40" onClick={handlePurge}>
-                                        Purge All Data
+                                        Purger les Données
                                     </Button>
                                 </div>
                             </section>
@@ -298,17 +298,17 @@ const Settings = () => {
                         <section className="space-y-6 animate-in fade-in duration-300">
                             <h3 className="text-lg font-semibold text-white border-b border-gray-800 pb-4 flex items-center gap-2">
                                 <Bell className="w-5 h-5 text-fuchsia-400" />
-                                Alert Channels
+                                Canaux d'Alerte
                             </h3>
                             <div className="space-y-6">
                                 <ToggleSetting
-                                    title="System Alerts"
-                                    description="Enable push notifications for critical errors and quota limits."
+                                    title="Alertes Système"
+                                    description="Activer les notifications push pour les erreurs critiques et les limites de quota."
                                     active={config.enable_alerts}
                                     onClick={() => setConfig({ ...config, enable_alerts: !config.enable_alerts })}
                                 />
                                 <div className="space-y-2">
-                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">Discord Webhook URL</label>
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">URL du Webhook Discord</label>
                                     <input
                                         type="text"
                                         value={config.discord_webhook || ''}
@@ -318,7 +318,7 @@ const Settings = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">Telegram Bot Token</label>
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">Jeton du Bot Telegram</label>
                                     <input
                                         type="password"
                                         value={config.telegram_token || ''}
@@ -328,7 +328,7 @@ const Settings = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">Telegram Chat ID</label>
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest">ID de Chat Telegram</label>
                                     <input
                                         type="text"
                                         value={config.telegram_chat_id || ''}
@@ -341,7 +341,7 @@ const Settings = () => {
                         </section>
                     )}
 
-                    {activeTab === "Monetisation" && (
+                    {(activeTab === "Monétisation" || activeTab === "Monetisation") && (
                         <section className="space-y-6 animate-in fade-in duration-300">
                             <h3 className="text-lg font-semibold text-white border-b border-gray-800 pb-4 flex items-center gap-2">
                                 <DollarSign className="w-5 h-5 text-emerald-400" />

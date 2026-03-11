@@ -296,9 +296,9 @@ const Studio = () => {
                                         {script.date || (script.created_at ? new Date(script.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : 'Date inconnue')}
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        {script.hasImages && <Badge variant="success" className="text-[8px] h-3">IMG</Badge>}
-                                        {script.hasAudio && <Badge variant="warning" className="text-[8px] h-3">VOICE</Badge>}
-                                        {script.hasVideos && <Badge variant="info" className="text-[8px] h-3">VIDEO</Badge>}
+                                        {script.hasImages && <Badge variant="success" className="text-[8px] h-3">IMAGE</Badge>}
+                                        {script.hasAudio && <Badge variant="warning" className="text-[8px] h-3">VOIX</Badge>}
+                                        {script.hasVideos && <Badge variant="info" className="text-[8px] h-3">VIDÉO</Badge>}
                                     </div>
                                 </div>
                             </button>
@@ -352,7 +352,7 @@ const Studio = () => {
                                         className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 text-white rounded-lg text-xs font-semibold transition-all shadow-lg"
                                     >
                                         <PlayCircle className="h-4 w-4" />
-                                        <span className="whitespace-nowrap">Preview</span>
+                                        <span className="whitespace-nowrap">Aperçu</span>
                                     </button>
                                 </div>
                             </div>
@@ -445,7 +445,7 @@ const Studio = () => {
                                             ) : (
                                                 <div className="w-full h-full flex flex-col items-center justify-center text-gray-600 gap-2 p-4 text-center">
                                                     <Image className="h-8 w-8 opacity-20" />
-                                                    <span className="text-[10px]">Scene {i + 1} en attente</span>
+                                                    <span className="text-[10px]">Scène {i + 1} en attente</span>
                                                 </div>
                                             )}
                                         </div>
@@ -453,7 +453,7 @@ const Studio = () => {
                                             <p className="text-[10px] text-gray-200 line-clamp-3 leading-relaxed">{prompt}</p>
                                         </div>
                                         <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded text-[10px] text-white border border-white/10 font-black">
-                                            SCENE {i + 1}
+                                            SCÈNE {i + 1}
                                         </div>
                                         <div className="absolute top-2 right-2">
                                             {generatedImages[i] && <CheckCircle2 className="h-4 w-4 text-green-500 drop-shadow-md" />}

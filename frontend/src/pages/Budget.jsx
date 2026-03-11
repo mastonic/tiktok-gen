@@ -91,12 +91,12 @@ const Budget = () => {
         <div className="space-y-6">
             <header className="mb-8 flex justify-between items-end">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Budget & Models</h1>
-                    <p className="text-gray-400">Control spending limits and LLM routing behaviors.</p>
+                    <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Budget & Modèles</h1>
+                    <p className="text-gray-400">Contrôlez les limites de dépenses et les comportements de routage LLM.</p>
                 </div>
                 <div className="flex gap-4">
                     <div className="flex items-center gap-2 bg-navy-800 border border-gray-700 rounded-xl px-4 py-2">
-                        <span className="text-sm text-gray-400 font-semibold uppercase tracking-wider">Daily Cap</span>
+                        <span className="text-sm text-gray-400 font-semibold uppercase tracking-wider">Limite Jour</span>
                         <span className="text-xl font-bold text-white">${parseFloat(config.daily_cap).toFixed(2)}</span>
                     </div>
                 </div>
@@ -107,13 +107,13 @@ const Budget = () => {
                 <Card className="lg:col-span-1 border-t-4 border-t-cyan-500 flex flex-col gap-6 bg-navy-900/40 backdrop-blur-sm">
                     <h3 className="text-xl font-semibold text-white flex items-center gap-2 border-b border-gray-800 pb-4">
                         <Wallet className="w-5 h-5 text-cyan-400" />
-                        Limits & Failsafes
+                        Limites & Sécurités
                     </h3>
 
                     <div className="space-y-6">
                         <div>
                             <div className="flex justify-between text-sm mb-2">
-                                <span className="text-gray-400 font-medium">Daily Consumption</span>
+                                <span className="text-gray-400 font-medium">Consommation du jour</span>
                                 <span className={`${spendPercent > 80 ? 'text-amber-400' : 'text-emerald-400'} font-bold`}>
                                     ${parseFloat(config.today_spend).toFixed(2)} / ${parseFloat(config.daily_cap).toFixed(2)}
                                 </span>
@@ -130,12 +130,12 @@ const Budget = () => {
                             <div className="flex justify-between items-center mb-3">
                                 <div className="text-sm text-gray-200 font-semibold flex items-center gap-2">
                                     <TrendingDown className="w-4 h-4 text-amber-500" />
-                                    Auto-stop mechanism
+                                    Mécanisme d'Auto-stop
                                 </div>
                                 <Toggle active={config.auto_stop} onClick={handleToggleAutoStop} />
                             </div>
                             <p className="text-xs text-gray-500 leading-relaxed">
-                                The hybrid engine will automatically halt all agent operations and pause current pipeline if daily cap is reached to prevent budget overflow.
+                                Le moteur hybride arrêtera automatiquement toutes les opérations des agents et mettra en pause le pipeline si la limite journalière est atteinte.
                             </p>
                         </div>
                     </div>
@@ -147,7 +147,7 @@ const Budget = () => {
                             onClick={() => setIsEditModalOpen(true)}
                         >
                             <Settings2 className="w-4 h-4 mr-2" />
-                            Adjust Limit
+                            Ajuster la Limite
                         </Button>
                         <Button
                             variant={config.is_active ? "danger" : "success"}
@@ -165,15 +165,15 @@ const Budget = () => {
 
                     <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2 relative z-10">
                         <Settings2 className="w-5 h-5 text-emerald-400" />
-                        LLM Routing Matrix
-                        <span className="ml-auto text-[10px] font-mono text-gray-500 uppercase tracking-widest border border-gray-800 px-2 py-0.5 rounded">Real-time Routing</span>
+                        Matrice de Routage LLM
+                        <span className="ml-auto text-[10px] font-mono text-gray-500 uppercase tracking-widest border border-gray-800 px-2 py-0.5 rounded">Routage Temps-Réel</span>
                     </h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
                         {routes.map((route, i) => (
                             <RouteItem
                                 key={i}
-                                task={route.task}
+                                task={translateTask(route.task)}
                                 model={route.model}
                                 provider={route.provider}
                                 cost={route.cost}
@@ -191,13 +191,13 @@ const Budget = () => {
                     <Card className="w-full max-w-md border-gray-700 shadow-2xl animate-in zoom-in duration-200">
                         <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
                             <DollarSign className="w-5 h-5 text-emerald-400" />
-                            Adjust Daily Cap
+                            Ajuster Limite Journalière
                         </h2>
-                        <p className="text-sm text-gray-400 mb-6 font-medium italic">Configure the safety threshold for LLM consumption.</p>
+                        <p className="text-sm text-gray-400 mb-6 font-medium italic">Configurez le seuil de sécurité pour la consommation LLM.</p>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-xs font-mono text-gray-500 uppercase tracking-wider mb-2">Max Spent per Day ($)</label>
+                                <label className="block text-xs font-mono text-gray-500 uppercase tracking-wider mb-2">Max dépensé par jour ($)</label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <DollarSign className="h-4 h-4 text-gray-400" />
@@ -214,7 +214,7 @@ const Budget = () => {
 
                             <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
                                 <p className="text-[10px] text-emerald-400 leading-relaxed font-medium">
-                                    TIP: A cap of $15.00 is usually enough for ~300 high-quality script generations with Gemini Flash.
+                                    ASTUCE : Une limite de $15.00 est généralement suffisante pour ~300 générations de scripts de haute qualité avec Gemini Flash.
                                 </p>
                             </div>
                         </div>
@@ -226,14 +226,14 @@ const Budget = () => {
                                 onClick={() => setIsEditModalOpen(false)}
                                 disabled={isSaving}
                             >
-                                Cancel
+                                Annuler
                             </Button>
                             <Button
                                 className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-navy-950 font-bold h-12"
                                 onClick={handleSaveConfig}
                                 loading={isSaving}
                             >
-                                Save Changes
+                                Enregistrer
                             </Button>
                         </div>
                     </Card>
@@ -243,8 +243,21 @@ const Budget = () => {
     );
 };
 
-const Toggle = ({ active }) => (
-    <div className={`w-10 h-5 rounded-full p-0.5 transition-colors duration-300 cursor-pointer ${active ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]' : 'bg-gray-700'}`}>
+const translateTask = (task) => {
+    const tasks = {
+        'Research': 'Recherche',
+        'Filtering': 'Filtrage',
+        'Scoring': 'Notation',
+        'Scripting': 'Rédaction Script',
+        'Visuals': 'Visuels',
+        'Assembly': 'Assemblage',
+        'Review': 'Revue Finale'
+    };
+    return tasks[task] || task;
+};
+
+const Toggle = ({ active, onClick }) => (
+    <div onClick={onClick} className={`w-10 h-5 rounded-full p-0.5 transition-colors duration-300 cursor-pointer ${active ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]' : 'bg-gray-700'}`}>
         <div className={`w-4 h-4 rounded-full bg-white transition-transform duration-300 ${active ? 'translate-x-5' : 'translate-x-0'}`}></div>
     </div>
 );

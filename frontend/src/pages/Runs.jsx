@@ -62,8 +62,8 @@ const Runs = ({ setPath }) => {
             <header className="mb-8">
                 <div className="flex justify-between items-end">
                     <div>
-                        <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Execution Cycles</h1>
-                        <p className="text-gray-400">Monitor automated morning and evening system runs.</p>
+                        <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Cycles d'Exécution</h1>
+                        <p className="text-gray-400">Surveillez les lancements automatiques du système (matin et soir).</p>
                     </div>
                     <div className="flex gap-3">
                         <Button
@@ -129,7 +129,7 @@ const Runs = ({ setPath }) => {
                             <span className="text-white">6 Agents Spécialisés</span>
                         </div>
                         <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-400 text-xs">Cout Estimé</span>
+                            <span className="text-gray-400 text-xs">Coût Estimé</span>
                             <span className="text-amber-400">~$0.05 / run</span>
                         </div>
                     </div>
@@ -141,10 +141,10 @@ const Runs = ({ setPath }) => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="text-gray-400 text-sm bg-navy-900/80">
-                                <th className="py-4 px-6 font-medium">Run ID</th>
-                                <th className="py-4 px-6 font-medium">Schedule</th>
-                                <th className="py-4 px-6 font-medium">Status</th>
-                                <th className="py-4 px-6 font-medium text-right">Metrics</th>
+                                <th className="py-4 px-6 font-medium">ID Run</th>
+                                <th className="py-4 px-6 font-medium">Planification</th>
+                                <th className="py-4 px-6 font-medium">Statut</th>
+                                <th className="py-4 px-6 font-medium text-right">Métriques</th>
                                 <th className="py-4 px-6 font-medium text-center">Action</th>
                             </tr>
                         </thead>
@@ -174,7 +174,7 @@ const Runs = ({ setPath }) => {
                                             <div className="flex flex-col gap-2">
                                                 <Badge variant={run.status === 'completed' ? 'success' : 'cyber'} className="flex inline-flex items-center gap-1.5 px-3 py-1 w-fit">
                                                     {run.status === 'running' && <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>}
-                                                    {run.status.toUpperCase()}
+                                                    {run.status === 'completed' ? 'TERMINÉ' : run.status === 'running' ? 'EN COURS' : run.status.toUpperCase()}
                                                 </Badge>
                                                 {run.status === 'running' && (
                                                     <div className="flex flex-col gap-1">
@@ -209,7 +209,7 @@ const Runs = ({ setPath }) => {
                                                 </Button>
                                             ) : (
                                                 <Button variant="secondary" className="px-3 py-1 text-xs opacity-0 group-hover:opacity-100 flex items-center gap-2 mx-auto">
-                                                    <RotateCcw className="w-3 h-3" /> Retry
+                                                    <RotateCcw className="w-3 h-3" /> Relancer
                                                 </Button>
                                             )}
                                         </td>
@@ -223,33 +223,33 @@ const Runs = ({ setPath }) => {
                                                     {/* Timeline */}
                                                     <div className="flex-1">
                                                         <div className="flex justify-between items-center mb-6">
-                                                            <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Swarm Execution Pipeline</h4>
+                                                            <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Pipeline d'Exécution du Swarm</h4>
                                                             {run.status === 'running' && (
                                                                 <Badge variant="outline" className="text-cyan-400 border-cyan-500/30 bg-cyan-500/5">
-                                                                    STEP: {run.current_step} ({run.progress_percent}%)
+                                                                    ÉTAPE: {run.current_step} ({run.progress_percent}%)
                                                                 </Badge>
                                                             )}
                                                         </div>
 
                                                         <div className="relative border-l-2 border-gray-700 ml-4 space-y-6">
-                                                            <TimelineStep title="Trend Analysis & Setup" time="00:00" duration="1m 30s" active={run.status === 'running'} status="done" />
-                                                            <TimelineStep title="Viral & Monetization Scoring" time="01:30" duration="2m 10s" active={run.status === 'running'} status="done" />
-                                                            <TimelineStep title="Script Generation & Optimization" time="03:40" duration="3m 45s" active={run.status === 'running'} status={run.status === 'completed' ? 'done' : 'current'} error={false} />
-                                                            <TimelineStep title="Video Directors API calls" time="07:25" duration="Pending" active={run.status === 'running'} status={run.status === 'completed' ? 'done' : 'pending'} />
-                                                            <TimelineStep title="Review & Publish" time="--" duration="--" active={run.status === 'running'} status={run.status === 'completed' ? 'done' : 'pending'} />
+                                                            <TimelineStep title="Analyse des Tendances & Setup" time="00:00" duration="1m 30s" active={run.status === 'running'} status="done" />
+                                                            <TimelineStep title="Scoring Viral & Monétisation" time="01:30" duration="2m 10s" active={run.status === 'running'} status="done" />
+                                                            <TimelineStep title="Génération & Optimisation des Scripts" time="03:40" duration="3m 45s" active={run.status === 'running'} status={run.status === 'completed' ? 'done' : 'current'} error={false} />
+                                                            <TimelineStep title="Appels API Directeurs Vidéo" time="07:25" duration="En attente" active={run.status === 'running'} status={run.status === 'completed' ? 'done' : 'pending'} />
+                                                            <TimelineStep title="Revue & Publication" time="--" duration="--" active={run.status === 'running'} status={run.status === 'completed' ? 'done' : 'pending'} />
                                                         </div>
                                                     </div>
 
                                                     <div className="w-full lg:w-72 space-y-4">
                                                         <div className="glass-panel p-4 rounded-xl border-dashed">
-                                                            <h4 className="text-xs uppercase font-semibold text-gray-500 mb-3">Outputs Generated</h4>
+                                                            <h4 className="text-xs uppercase font-semibold text-gray-500 mb-3">Sorties Générées</h4>
                                                             <div className="space-y-2">
                                                                 <div className="flex justify-between items-center text-sm p-2 bg-navy-800 rounded">
                                                                     <span className="text-gray-300">Scripts</span>
                                                                     <span className="font-bold text-cyan-400">4</span>
                                                                 </div>
                                                                 <div className="flex justify-between items-center text-sm p-2 bg-navy-800 rounded">
-                                                                    <span className="text-gray-300">Videos</span>
+                                                                    <span className="text-gray-300">Vidéos</span>
                                                                     <span className="font-bold text-emerald-400">{run.status === 'completed' ? '2' : '0'}</span>
                                                                 </div>
                                                             </div>
@@ -260,7 +260,7 @@ const Runs = ({ setPath }) => {
                                                             onClick={() => setPath('/chat')}
                                                             className="w-full flex items-center justify-center gap-2 py-3 shadow-lg shadow-cyan-500/20 active:scale-95 transition-transform"
                                                         >
-                                                            <Eye className="w-4 h-4" /> View Full Logs
+                                                            <Eye className="w-4 h-4" /> Voir les Logs Complets
                                                         </Button>
                                                     </div>
 

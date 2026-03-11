@@ -26,18 +26,18 @@ const Sidebar = ({ currentPath, setPath }) => {
     }, []);
 
     const navItems = [
-        { name: 'Overview', icon: LayoutDashboard, path: '/overview' },
-        { name: 'Swarm Chat', icon: MessageSquare, path: '/chat' },
+        { name: 'Tableau de Bord', icon: LayoutDashboard, path: '/overview' },
+        { name: 'Chat de l\'Essaim', icon: MessageSquare, path: '/chat' },
         { name: 'Pipeline', icon: ListTodo, path: '/pipeline' },
-        { name: 'Approvals', icon: CheckSquare, path: '/approvals' },
-        { name: 'Runs', icon: Play, path: '/runs' },
+        { name: 'Approbations', icon: CheckSquare, path: '/approvals' },
+        { name: 'Exécutions', icon: Play, path: '/runs' },
         { name: 'Studio', icon: ImageIcon, path: '/studio' },
-        { name: 'Gallery', icon: Library, path: '/gallery' },
-        { name: 'Analytics', icon: LineChart, path: '/analytics' },
+        { name: 'Galerie', icon: Library, path: '/gallery' },
+        { name: 'Analytiques', icon: LineChart, path: '/analytics' },
         { name: 'Agents', icon: Bot, path: '/agents' },
-        { name: 'Budget & Models', icon: Wallet, path: '/budget' },
-        { name: 'Settings', icon: Settings, path: '/settings' },
-        { name: 'Blog Preview', icon: ExternalLink, path: '/blog' },
+        { name: 'Budget & Modèles', icon: Wallet, path: '/budget' },
+        { name: 'Paramètres', icon: Settings, path: '/settings' },
+        { name: 'Aperçu du Blog', icon: ExternalLink, path: '/blog' },
     ];
 
     return (
@@ -48,7 +48,7 @@ const Sidebar = ({ currentPath, setPath }) => {
                 </div>
                 <p className="text-[10px] text-gray-500 mt-[-1rem] uppercase tracking-[0.3em] font-black flex items-center justify-center">
                     <span className="w-2 h-2 rounded-full bg-cyan-500 mr-2 animate-pulse shadow-[0_0_8px_rgba(6,182,212,0.8)]"></span>
-                    Hybrid Engine
+                    Moteur Hybride
                 </p>
             </div>
 
@@ -75,7 +75,7 @@ const Sidebar = ({ currentPath, setPath }) => {
                 <div className="glass-card p-3 flex items-center justify-between bg-navy-900/50 border border-gray-800/50">
                     <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-cyan-400 animate-pulse" />
-                        <span className="text-xs font-bold text-gray-200 uppercase tracking-widest">Local Time</span>
+                        <span className="text-xs font-bold text-gray-200 uppercase tracking-widest">Heure Locale</span>
                     </div>
                     <span className="text-sm font-mono text-cyan-400 font-bold">
                         {time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -83,9 +83,9 @@ const Sidebar = ({ currentPath, setPath }) => {
                 </div>
 
                 <div className="glass-card p-4 flex flex-col gap-2">
-                    <div className="text-xs text-gray-400 uppercase tracking-widest font-semibold">System Status</div>
+                    <div className="text-xs text-gray-400 uppercase tracking-widest font-semibold">État du Système</div>
                     <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-300">Agents Online</span>
+                        <span className="text-gray-300">Agents en Ligne</span>
                         <span className="text-cyan-400 font-bold">10/10</span>
                     </div>
                     <div className="w-full bg-gray-700/50 rounded-full h-1.5 mt-1">

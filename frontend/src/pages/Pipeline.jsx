@@ -117,8 +117,8 @@ const Pipeline = () => {
     return (
         <div className="h-full flex flex-col">
             <header className="mb-8 p-1">
-                <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Production Pipeline</h1>
-                <p className="text-gray-400">Manage viral production flow with drag & drop efficiency.</p>
+                <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Pipeline de Production</h1>
+                <p className="text-gray-400">Gérez le flux de production virale avec l'efficacité du drag & drop.</p>
             </header>
 
             <div className="flex-1 flex gap-4 overflow-x-auto pb-6 custom-scrollbar">
@@ -172,7 +172,7 @@ const Pipeline = () => {
 
                                     <div className="grid grid-cols-3 gap-2 mb-3">
                                         <div className="bg-navy-900/50 rounded p-1.5 text-center flex flex-col items-center border border-gray-700/50">
-                                            <span className="text-[10px] text-gray-500 font-semibold mb-0.5">VIRAL</span>
+                                            <span className="text-[10px] text-gray-500 font-semibold mb-0.5">VIRALITY</span>
                                             <span className="text-sm font-bold text-cyan-400">{content.viralScore}</span>
                                         </div>
                                         <div className="bg-navy-900/50 rounded p-1.5 text-center flex flex-col items-center border border-gray-700/50">
@@ -216,14 +216,14 @@ const Pipeline = () => {
                         <h2 className="text-2xl font-bold text-white mb-4">{selectedItem.title}</h2>
                         <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 mb-4 space-y-4">
                             <div>
-                                <h3 className="font-semibold text-cyan-400 mb-2 uppercase text-xs tracking-wider">Final Script</h3>
+                                <h3 className="font-semibold text-cyan-400 mb-2 uppercase text-xs tracking-wider">Script Final</h3>
                                 <p className="text-gray-300 bg-navy-800/50 p-4 rounded-lg border border-gray-800 whitespace-pre-wrap leading-relaxed font-large">
-                                    {selectedItem.script || "No script available. Wait for step to finish or check raw output."}
+                                    {selectedItem.script || "Aucun script disponible. Attendez que l'étape soit terminée ou vérifiez la sortie brute."}
                                 </p>
                             </div>
                             {selectedItem.keywords && (
                                 <div>
-                                    <h3 className="font-semibold text-cyan-400 mb-2 uppercase text-xs tracking-wider">Keywords</h3>
+                                    <h3 className="font-semibold text-cyan-400 mb-2 uppercase text-xs tracking-wider">Mots-clés</h3>
                                     <div className="flex flex-wrap gap-2">
                                         {selectedItem.keywords.split(',').map((kw, i) => (
                                             <Badge key={i} variant="outline" className="text-gray-300 border-gray-700">{kw.trim()}</Badge>
@@ -233,15 +233,15 @@ const Pipeline = () => {
                             )}
                             <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-800">
                                 <div className="text-center">
-                                    <span className="block text-xs text-gray-400">VIRAL SCORE</span>
+                                    <span className="block text-xs text-gray-400">SCORE VIRAL</span>
                                     <span className="font-bold text-cyan-400 text-xl">{selectedItem.viralScore}</span>
                                 </div>
                                 <div className="text-center">
-                                    <span className="block text-xs text-gray-400">MONEY SCORE</span>
+                                    <span className="block text-xs text-gray-400">SCORE ARGENT</span>
                                     <span className="font-bold text-emerald-400 text-xl">{selectedItem.moneyScore}</span>
                                 </div>
                                 <div className="text-center">
-                                    <span className="block text-xs text-gray-400">FINAL SCORE</span>
+                                    <span className="block text-xs text-gray-400">SCORE FINAL</span>
                                     <span className="font-bold text-white text-xl">{selectedItem.finalScore}</span>
                                 </div>
                             </div>
