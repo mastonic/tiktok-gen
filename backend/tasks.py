@@ -3,10 +3,26 @@ from agents import ask_human_in_loop
 import datetime
 from models import AgentOutcome, VisualPrompts, TikTokMetadata
 
+from database import SessionLocal, ScriptInbox
+
 def create_tasks(*args, run_type="matin", commando_mode=False):
     now = datetime.datetime.now().strftime("%d/%m/%Y à %H:%M")
     focus_topic = "News IA, Outils gratuits, Nouveautés LLMs" if run_type == "matin" else "Tutoriels techniques, Self-hosting, Contours d'abonnements"
     
+    # 💥 Machine à Cash : Prevent Topic Loops 💥
+    recent_titles = []
+    try:
+        db = SessionLocal()
+        recent_scripts = db.query(ScriptInbox).order_by(ScriptInbox.id.desc()).limit(15).all()
+        recent_titles = [s.title for s in recent_scripts if s.title]
+        db.close()
+    except Exception as e:
+        pass
+        
+    recent_context = ""
+    if recent_titles:
+        recent_context = f"\n\n🚨 STRATÉGIE MACHINE À CASH - RÈGLE D'OR 🚨\nTU DOIS ABSOLUMENT IGNORER LES SUJETS SUIVANTS DÉJÀ TRAITÉS : {', '.join(recent_titles)}.\nTROUVE DE TOUTES NOUVELLES OPPORTUNITÉS, NE RÉPÈTE JAMAIS CEUX-LÀ !"
+        
     # Unpack agents
     if commando_mode:
         trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, tiktok_distributor, growth_commander = args
@@ -16,7 +32,7 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
     task_scout = Task(
         description=(
             f"Ta mission 'TrendHunter' est d'identifier les 5 sujets IA/Tech les plus chauds des dernières 24h via TikTok Creative Center, Google Trends et Perplexity. "
-            f"Aujourd'hui nous sommes le {now}. Focus : {focus_topic}. "
+            f"Aujourd'hui nous sommes le {now}. Focus : {focus_topic}. {recent_context}\n"
             "Identifie les recherches en hausse de >100% et croise-les avec AnswerThePublic pour trouver le Hook parfait."
         ),
         expected_output="Top 5 sujets explosifs avec Nom, URL, Killer Feature et Hook stratégique.",
