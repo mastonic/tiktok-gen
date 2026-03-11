@@ -20,12 +20,21 @@ const Runs = ({ setPath }) => {
         setIsLoading(true);
         try {
             const apiUrl = API_URL;
-            const response = await fetch(`${apiUrl}/api/run/${pendingRunType}`, { method: 'POST' });
-            const data = await response.json();
+            await fetch(`${apiUrl}/api/run/${pendingRunType}`, { method: 'POST' });
             setIsModalOpen(false);
-            // Non-blocking notification or simple success handling
         } catch (error) {
             console.error("Failed to trigger run:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleStopRun = async (runId) => {
+        setIsLoading(true);
+        try {
+            await fetch(`${API_URL}/api/run/${runId}/stop`, { method: 'POST' });
+        } catch (error) {
+            console.error("Failed to stop run:", error);
         } finally {
             setIsLoading(false);
         }
@@ -189,9 +198,20 @@ const Runs = ({ setPath }) => {
                                             </div>
                                         </td>
                                         <td className="py-4 px-6 text-center">
-                                            <Button variant="secondary" className="px-3 py-1 text-xs opacity-0 group-hover:opacity-100 flex items-center gap-2 mx-auto">
-                                                <RotateCcw className="w-3 h-3" /> Retry
-                                            </Button>
+                                            {run.status === 'running' ? (
+                                                <Button
+                                                    variant="danger"
+                                                    onClick={(e) => { e.stopPropagation(); handleStopRun(run.id); }}
+                                                    disabled={isLoading}
+                                                    className="px-3 py-1 text-xs flex items-center gap-2 mx-auto bg-red-600/20 text-red-500 border-red-500/30 hover:bg-red-600/40"
+                                                >
+                                                    <AlertCircle className="w-3 h-3" /> STOP
+                                                </Button>
+                                            ) : (
+                                                <Button variant="secondary" className="px-3 py-1 text-xs opacity-0 group-hover:opacity-100 flex items-center gap-2 mx-auto">
+                                                    <RotateCcw className="w-3 h-3" /> Retry
+                                                </Button>
+                                            )}
                                         </td>
                                     </tr>
 

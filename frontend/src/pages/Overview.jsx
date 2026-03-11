@@ -20,7 +20,9 @@ const Overview = () => {
         videosToday: '0/2',
         aiCostToday: '$0.00',
         estProfitScore: '0.0',
-        budgetRemaining: '$0.00'
+        budgetRemaining: '$0.00',
+        isRunning: false,
+        lastRunId: null
     });
     const [config, setConfig] = useState({ commando_mode: false });
 
@@ -63,10 +65,21 @@ const Overview = () => {
             });
             const data = await response.json();
             console.log(data);
-            alert(`Run ${type} completed successfully!`);
         } catch (error) {
             console.error("Error starting run:", error);
-            alert(`Failed to start ${type} run. Check console for details.`);
+            alert(`Failed to start ${type} run.`);
+        } finally {
+            setIsRunning(false);
+        }
+    };
+
+    const handleStopScan = async () => {
+        if (!overviewData.lastRunId) return;
+        setIsRunning(true);
+        try {
+            await fetch(`${API_URL}/api/run/${overviewData.lastRunId}/stop`, { method: 'POST' });
+        } catch (error) {
+            console.error("Error stopping run:", error);
         } finally {
             setIsRunning(false);
         }
@@ -87,24 +100,38 @@ const Overview = () => {
                     </div>
                 </div>
                 <div className="flex gap-3 w-full sm:w-auto">
-                    <Button
-                        variant="secondary"
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[#FF007F]/20 text-[#FF007F] border border-[#FF007F]/50 hover:bg-[#FF007F]/40 transition-all font-bold"
-                        onClick={() => handleRunCycle('matin')}
-                        disabled={isRunning}
-                    >
-                        <Play className="h-4 w-4" />
-                        {isRunning ? '...' : 'MATIN'}
-                    </Button>
-                    <Button
-                        variant="primary"
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[#00E5FF]/20 text-[#00E5FF] border border-[#00E5FF]/50 hover:bg-[#00E5FF]/40 transition-all font-bold"
-                        onClick={() => handleRunCycle('soir')}
-                        disabled={isRunning}
-                    >
-                        <Play className="h-4 w-4" />
-                        {isRunning ? '...' : 'SOIR'}
-                    </Button>
+                    {overviewData.isRunning ? (
+                        <Button
+                            variant="danger"
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-red-600/20 text-red-500 border border-red-500/50 hover:bg-red-600/40 transition-all font-black animate-pulse px-8"
+                            onClick={handleStopScan}
+                            disabled={isRunning}
+                        >
+                            <AlertTriangle className="h-4 w-4" />
+                            ARRÊTER LE SCAN
+                        </Button>
+                    ) : (
+                        <>
+                            <Button
+                                variant="secondary"
+                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[#FF007F]/20 text-[#FF007F] border border-[#FF007F]/50 hover:bg-[#FF007F]/40 transition-all font-bold"
+                                onClick={() => handleRunCycle('matin')}
+                                disabled={isRunning}
+                            >
+                                <Play className="h-4 w-4" />
+                                {isRunning ? '...' : 'MATIN'}
+                            </Button>
+                            <Button
+                                variant="primary"
+                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[#00E5FF]/20 text-[#00E5FF] border border-[#00E5FF]/50 hover:bg-[#00E5FF]/40 transition-all font-bold"
+                                onClick={() => handleRunCycle('soir')}
+                                disabled={isRunning}
+                            >
+                                <Play className="h-4 w-4" />
+                                {isRunning ? '...' : 'SOIR'}
+                            </Button>
+                        </>
+                    )}
                 </div>
             </header>
 

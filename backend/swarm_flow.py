@@ -2,13 +2,14 @@ from crewai.flow.flow import Flow, listen, start, router, or_
 from pydantic import BaseModel
 from typing import List, Optional, Union
 import json
+import sys
 from datetime import datetime
 
 from agents import create_agents
 from tasks import create_tasks
 from crewai import Crew, Process, Task
 from models import AgentOutcome, VisualPrompts, TikTokMetadata
-from database import save_agent_message
+from database import save_agent_message, SessionLocal, RunHistory
 
 class SwarmState(BaseModel):
     mode: str = "standard" # "standard" or "commando"
@@ -28,6 +29,25 @@ class SwarmState(BaseModel):
 
 class ViralFlow(Flow[SwarmState]):
     
+    def _check_cancelled(self):
+        """Check if the current run has been cancelled in the database."""
+        if not self.state.run_id:
+            return False
+            
+        try:
+            db = SessionLocal()
+            run = db.query(RunHistory).filter(RunHistory.run_id == self.state.run_id).first()
+            is_stopped = run.is_cancelled if run else False
+            db.close()
+            
+            if is_stopped:
+                print(f"🛑 [FLOW] Run {self.state.run_id} marked as CANCELLED. Stopping flow.")
+                save_agent_message(self.state.run_id, "System", "Flow", "danger", "🛑 Scan arrêté manuellement par l'utilisateur.")
+                return True
+        except Exception as e:
+            print(f"Error checking cancellation status: {e}")
+        return False
+
     @start()
     def initialize(self):
         print(f"🚀 Initializing Viral Flow in {self.state.mode.upper()} mode.")
@@ -40,6 +60,7 @@ class ViralFlow(Flow[SwarmState]):
 
     @listen(initialize)
     def phase_sourcing(self):
+        if self._check_cancelled(): return "FLOW_STOPPED"
         print("📡 Phase 1: Sourcing & Filtering...")
         now = datetime.now().strftime("%d/%m/%Y")
         focus_topic = "IA/Tech"
@@ -78,6 +99,7 @@ class ViralFlow(Flow[SwarmState]):
 
     @listen("commando_strategy")
     def phase_hook_commando(self):
+        if self._check_cancelled(): return "FLOW_STOPPED"
         print("🔥 COMMANDO 10K: ViralGrowthCommander dictating Hook...")
         task_hook = Task(
             description="Dicte le Hook viral le plus violent possible avant l'écriture.",
@@ -94,6 +116,7 @@ class ViralFlow(Flow[SwarmState]):
 
     @listen(or_("standard_strategy", phase_hook_commando))
     def phase_content_production(self):
+        if self._check_cancelled(): return "FLOW_STOPPED"
         print("✍️ Producing Script, ROI and Visuals...")
         task_roi = Task(
             description="Calculer l'économie réelle réalisée par le spectateur.",
@@ -150,6 +173,7 @@ class ViralFlow(Flow[SwarmState]):
 
     @listen("commando_distribution")
     def phase_tiktok_optimization(self):
+        if self._check_cancelled(): return "FLOW_STOPPED"
         print("📈 COMMANDO: TikTokDistributor optimizing Algorithm distribution...")
         task_dist = Task(
             description="Générer description et hashtags optimisés.",
@@ -175,6 +199,7 @@ class ViralFlow(Flow[SwarmState]):
 
     @listen(or_("standard_skip_dist", phase_tiktok_optimization))
     def phase_quality_control(self):
+        if self._check_cancelled(): return "FLOW_STOPPED"
         print("🛡️ Final Phase: Quality Controller review...")
         task_qa = Task(
             description="Revue finale et assemblage JSON AgentOutcome.",
@@ -199,5 +224,8 @@ class ViralFlow(Flow[SwarmState]):
 
     @listen(phase_quality_control)
     def finalize(self):
+        if self.state.final_outcome is None:
+             print("🏁 Flow stopped or failed earlier.")
+             return None
         print("🏁 Flow Complete. Saving state and returning results.")
         return self.state.final_outcome

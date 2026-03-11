@@ -86,7 +86,17 @@ def perplexity_tool(query: str) -> str:
     """
     api_key = os.environ.get("PERPLEXITY_API_KEY")
     if not api_key:
-        return "Error: PERPLEXITY_API_KEY not found. Please check your .env configuration."
+        try:
+            from database import SessionLocal, SystemConfig
+            db = SessionLocal()
+            conf = db.query(SystemConfig).first()
+            api_key = conf.perplexity_key if conf else None
+            db.close()
+        except:
+            pass
+            
+    if not api_key:
+        return "Error: PERPLEXITY_API_KEY not found. Please check your settings."
         
     url = "https://api.perplexity.ai/chat/completions"
     payload = {

@@ -32,7 +32,8 @@ def migrate_db():
             "progress_percent": "INTEGER DEFAULT 0",
             "current_step": "TEXT DEFAULT 'Initialisation'",
             "cost": "TEXT DEFAULT '0.00'",
-            "duration": "TEXT DEFAULT '--'"
+            "duration": "TEXT DEFAULT '--'",
+            "is_cancelled": "BOOLEAN DEFAULT 0"
         }
         for col, type_def in needed.items():
             if col not in columns:
@@ -99,6 +100,7 @@ def migrate_db():
             "fal_key": "TEXT DEFAULT ''",
             "stability_key": "TEXT DEFAULT ''",
             "elevenlabs_key": "TEXT DEFAULT ''",
+            "perplexity_key": "TEXT DEFAULT ''",
             "auto_cleanup_days": "INTEGER DEFAULT 30",
             "discord_webhook": "TEXT DEFAULT ''",
             "telegram_token": "TEXT DEFAULT ''",
@@ -165,6 +167,7 @@ class RunHistory(Base):
     current_step = Column(String, default="Initialisation")
     cost = Column(String)
     duration = Column(String, default="--")
+    is_cancelled = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class SystemAlert(Base):
@@ -198,6 +201,7 @@ class SystemConfig(Base):
     fal_key = Column(String, default="")
     stability_key = Column(String, default="")
     elevenlabs_key = Column(String, default="")
+    perplexity_key = Column(String, default="")
     
     # Data Management
     auto_cleanup_days = Column(Integer, default=30)

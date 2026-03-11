@@ -16,6 +16,7 @@ const Settings = () => {
         fal_key: "",
         stability_key: "",
         elevenlabs_key: "",
+        perplexity_key: "",
         auto_cleanup_days: 30,
         discord_webhook: "",
         telegram_token: "",
@@ -252,6 +253,7 @@ const Settings = () => {
                                 <ApiKeyInput label="Gemini API Key" value={config.gemini_key} onChange={(val) => setConfig({ ...config, gemini_key: val })} />
                                 <ApiKeyInput label="Fal.ai Key" value={config.fal_key} onChange={(val) => setConfig({ ...config, fal_key: val })} />
                                 <ApiKeyInput label="ElevenLabs Key" value={config.elevenlabs_key} onChange={(val) => setConfig({ ...config, elevenlabs_key: val })} />
+                                <ApiKeyInput label="Perplexity Key" value={config.perplexity_key} onChange={(val) => setConfig({ ...config, perplexity_key: val })} />
                             </div>
                         </section>
                     )}

@@ -403,6 +403,23 @@ async def run_mission(
         add_system_alert("danger", f"Échec du lancement : {str(e)}")
         return {"status": "error", "message": str(e)}
 
+@app.post("/api/run/{run_id}/stop")
+async def stop_run(run_id: str):
+    try:
+        db = SessionLocal()
+        run = db.query(RunHistory).filter(RunHistory.run_id == run_id).first()
+        if run:
+            run.is_cancelled = True
+            run.status = "stopped"
+            run.current_step = "Arrêté par l'utilisateur"
+            db.commit()
+            db.close()
+            return {"status": "success", "message": "Arrêt demandé."}
+        db.close()
+        return {"status": "error", "message": "Run non trouvé."}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 @app.get("/api/agents")
 async def get_agents():
     db = SessionLocal()
@@ -593,6 +610,11 @@ async def get_overview():
         today_spend = conf.today_spend if conf else 0.0
         daily_cap = conf.daily_cap if conf else 15.0
         
+        # Check if any run is currently 'running'
+        active_run = db.query(RunHistory).filter(RunHistory.status == "running").order_by(RunHistory.id.desc()).first()
+        is_running = active_run is not None
+        last_run_id = active_run.run_id if active_run else None
+
         db.close()
         
         profit_score = sum(s.money_score or 0 for s in scripts) / max(len(scripts), 1)
@@ -602,7 +624,9 @@ async def get_overview():
             "videosToday": f"{videos}/{max(videos, 2)}",
             "aiCostToday": f"${today_spend:.2f}",
             "estProfitScore": f"{profit_score:.1f}",
-            "budgetRemaining": f"${max(0.0, daily_cap - today_spend):.2f}"
+            "budgetRemaining": f"${max(0.0, daily_cap - today_spend):.2f}",
+            "isRunning": is_running,
+            "lastRunId": last_run_id
         }
     except Exception as e:
         print(f"Error in get_overview: {traceback.format_exc()}")
