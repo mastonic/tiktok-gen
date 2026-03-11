@@ -102,7 +102,10 @@ def perplexity_tool(query: str) -> str:
             pass
             
     if not api_key:
-        return "Error: PERPLEXITY_API_KEY not found. Please check your settings."
+        print("⚠️ [Perplexity] Key not found, falling back to DuckDuckGo/RSS.")
+        ddg_results = _duckduckgo_logic(query)
+        rss_results = _feed_parser_logic("https://www.reddit.com/r/artificial/new/.rss")
+        return f"Note: Perplexity indisponible (Clé manquante). Résultats de secours :\n\n{ddg_results}\n\nFlux RSS :\n{rss_results}"
         
     url = "https://api.perplexity.ai/chat/completions"
     payload = {
