@@ -65,15 +65,22 @@ def github_trending_tool(language: str = "") -> str:
         if language:
             url += f"?language={language}"
             
-        resp = requests.get(url, timeout=10)
-        data = resp.json()
-        results = f"Trending GitHub Repos ({language or 'all'}):\n"
-        for repo in data[:8]:
-            results += f"- {repo['name']} by {repo['author']} | Stars: {repo['stars']} | {repo['url']}\n"
-            results += f"  Desc: {repo['description']}\n\n"
-        return results
+        headers = {"User-Agent": "Mozilla/5.0"}
+        resp = requests.get(url, headers=headers, timeout=10)
+        
+        if resp.status_code == 200 and "application/json" in resp.headers.get("Content-Type", ""):
+            data = resp.json()
+            results = f"Trending GitHub Repos ({language or 'all'}):\n"
+            for repo in data[:8]:
+                results += f"- {repo['name']} by {repo['author']} | Stars: {repo['stars']} | {repo['url']}\n"
+                results += f"  Desc: {repo['description']}\n\n"
+            return results
+        else:
+            raise ValueError(f"Invalid response format or status {resp.status_code}")
+            
     except Exception as e:
-        return f"GitHub Trending Error: {e}. Fallback to scraping..."
+        print(f"⚠️ [GitHub] API Failed ({e}), falling back to HN Trending...")
+        return hacker_news_tool("github")
 
 @tool("ArxivTool")
 def arxiv_tool(query: str = "Artificial Intelligence") -> str:
@@ -96,19 +103,19 @@ def _duckduckgo_logic(query: str) -> str:
     try:
         results = ""
         with DDGS() as ddgs:
-            # Try original query
-            search_results = list(ddgs.text(query, max_results=5))
+            # Try original query with regional focus and year limit if needed
+            search_results = list(ddgs.text(query, region="wt-wt", safesearch="off", timelimit="y", max_results=5))
             
-            # If no results, try a broader fallback
+            # If no results, try a much broader fallback
             if not search_results:
-                print(f"⚠️ [DDG] No results for '{query}', trying broader search...")
-                search_results = list(ddgs.text("latest AI tools open source news 2026", max_results=5))
+                print(f"⚠️ [DDG] No results for '{query}', trying AI-wide news fallback...")
+                search_results = list(ddgs.text("AI development open source trending 2026", max_results=5))
                 
             for i, r in enumerate(search_results):
                 results += f"Source {i+1}: {r['title']}\nSnippet: {r['body']}\nLink: {r['href']}\n\n"
-        return results or "No results found even after fallback."
+        return results or "No results found even after fallback. Try using Perplexity."
     except Exception as e:
-        return f"Error searching: {e}"
+        return f"Error searching: {e}. Source possibly blocked."
 
 @tool("DuckDuckGoSearchTool")
 def duckduckgo_search_tool(query: str) -> str:
