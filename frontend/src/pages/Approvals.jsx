@@ -53,6 +53,16 @@ const Approvals = () => {
         }
     };
 
+    const handleReject = async (id) => {
+        try {
+            const apiUrl = API_URL;
+            await fetch(`${apiUrl}/api/approvals/${id}/reject`, { method: 'POST' });
+            fetchApprovals(); // Refresh list immediately
+        } catch (error) {
+            console.error("Failed to reject item:", error);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <header className="mb-8">
@@ -107,9 +117,9 @@ const Approvals = () => {
                         </div>
 
                         <div className="grid grid-cols-2 gap-2 mt-auto">
-                            <Button variant="danger" className="flex justify-center items-center gap-1 group">
+                            <Button variant="danger" onClick={() => handleReject(item.id)} className="flex justify-center items-center gap-1 group">
                                 <X className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                                <span className="hidden sm:inline text-xs">Acknowledge Wait</span>
+                                <span className="hidden sm:inline text-xs">Reject / Delete</span>
                             </Button>
                             <Button
                                 variant="primary"

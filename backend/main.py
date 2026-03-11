@@ -948,6 +948,42 @@ async def approve_item(item_id: str):
             status = "success"
         else:
             status = "not_found"
+    elif prefix == "v":
+        script = db.query(ScriptInbox).filter(ScriptInbox.id == int(db_id)).first()
+        if script:
+            script.status = "posted" # Assuming approval on video moves it out of queue to posted
+            db.commit()
+            status = "success"
+        else:
+            status = "not_found"
+    else:
+        status = "invalid_id"
+        
+    db.close()
+    return {"status": status}
+
+@app.post("/api/approvals/{item_id}/reject")
+async def reject_item(item_id: str):
+    db = SessionLocal()
+    prefix, db_id = item_id.split("_", 1)
+    
+    if prefix in ["s", "v"]:
+        script = db.query(ScriptInbox).filter(ScriptInbox.id == int(db_id)).first()
+        if script:
+            script.status = "rejected"
+            db.commit()
+            status = "success"
+        else:
+            status = "not_found"
+    elif prefix == "q":
+        question = db.query(PendingQuestion).filter(PendingQuestion.id == int(db_id)).first()
+        if question:
+            question.is_resolved = True
+            question.answer = "Rejected by human."
+            db.commit()
+            status = "success"
+        else:
+            status = "not_found"
     else:
         status = "invalid_id"
         
