@@ -138,11 +138,12 @@ class ViralFlow(Flow[SwarmState]):
         
         task_visuals = Task(
             description=(
-                "Créer exactement 18 prompts cinématiques en anglais pour FLUX. "
-                "Chaque prompt correspond à un clip de 5 secondes pour une vidéo totale de 90 secondes. "
-                "Assure une cohérence visuelle parfaite entre les 18 scènes."
+                "Créer *strictement et exactement* 18 prompts cinématiques en anglais pour le générateur FLUX. "
+                "C'est impératif : ni 17, ni 19, mais exactement 18 prompts. "
+                "Chaque prompt correspond à une scène de 5 secondes, pour une vidéo totale de 90 secondes (1m30). "
+                "Assure une cohérence visuelle parfaite, scénaristique et chronologique entre les 18 scènes, qui doivent se suivre."
             ),
-            expected_output="Exactly 18 cinematic prompts in English.",
+            expected_output="A list of exactly 18 cinematic prompts in English, creating a logical story.",
             agent=self.visual_promptist,
             output_pydantic=VisualPrompts,
             context=[task_script]
