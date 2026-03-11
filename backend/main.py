@@ -69,6 +69,10 @@ class AsyncLogCapture:
         self.history = []
 
     def write(self, text):
+        if isinstance(text, bytes):
+            text = text.decode('utf-8', errors='replace')
+        if not isinstance(text, str):
+            text = str(text)
         if text.strip():
             self.history.append(text)
             if self.loop is None:
