@@ -142,6 +142,14 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
         db.close()
         config_dict = {a.role: a.model for a in agent_configs}
         
+        # 0. Sync Database API Keys to Environment
+        if conf:
+            if conf.openai_key: os.environ["OPENAI_API_KEY"] = conf.openai_key.strip()
+            if conf.gemini_key: os.environ["GEMINI_API_KEY"] = conf.gemini_key.strip()
+            if conf.fal_key: os.environ["FAL_KEY"] = conf.fal_key.strip()
+            if conf.perplexity_key: os.environ["PERPLEXITY_API_KEY"] = conf.perplexity_key.strip()
+            if conf.elevenlabs_key: os.environ["ELEVENLABS_KEY"] = conf.elevenlabs_key.strip()
+        
         # 1. Prepare configuration and state
         commando_enabled = conf.commando_mode if conf else False
         mode_str = "commando" if commando_enabled else "standard"
