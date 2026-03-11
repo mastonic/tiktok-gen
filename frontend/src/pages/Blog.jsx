@@ -35,7 +35,7 @@ const PostCard = ({ post, onClick }) => (
         <div className="absolute inset-0 z-10 p-8 flex flex-col justify-end gap-4">
             <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 px-2 py-0.5 rounded-full">
-                    ✍️ iM-Tech Academy
+                    🤖 CrewAI972 Intelligence
                 </span>
                 {post.date && (
                     <span className="text-[10px] text-gray-400 flex items-center gap-1 font-medium">
@@ -353,7 +353,7 @@ const Blog = ({ onReadArticle, onEnterCockpit }) => {
                         className="cursor-default"
                         title="Cockpit Login"
                     >
-                        iM-System
+                        CrewAI972
                     </span> © 2026 • Martinique • <a href="#" className="hover:text-gray-400 transition">Mentions Légales</a> | <a href="#" className="hover:text-gray-400 transition">Contact</a>
                 </div>
             </footer>

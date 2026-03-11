@@ -72,7 +72,7 @@ const Login = ({ onLogin }) => {
                 </form>
 
                 <div className="mt-8 text-center text-gray-600 text-xs uppercase tracking-widest">
-                    iM-System Terminal v2.0
+                    CrewAI972 Terminal v2.1
                 </div>
             </div>
         </div>

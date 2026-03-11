@@ -133,7 +133,7 @@ const About = ({ onBack }) => {
                         Certains liens sur ce site sont des liens d'affiliation. Si vous passez par eux, le Dev Masto reçoit une petite commission qui sert exclusivement à financer les serveurs (et le café pour les nuits blanches). Ça ne vous coûte pas plus cher, et ça soutient l'indépendance du projet.
                     </p>
                     <div className="text-gray-600 text-xs tracking-widest uppercase">
-                        iM-System © 2026 • Martinique
+                        CrewAI972 © 2026 • Martinique
                     </div>
                 </footer>
             </main>

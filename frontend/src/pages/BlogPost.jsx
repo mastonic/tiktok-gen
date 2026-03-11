@@ -182,8 +182,8 @@ const BlogPost = ({ slug, onBack }) => {
                         <ArrowLeft className="w-4 h-4" />
                         <span className="hidden sm:inline">Retour au Blog</span>
                     </button>
-                    <div className="flex-1 text-center text-xl font-black tracking-tighter italic">
-                        iM-<span className="text-cyan-400">System</span>
+                    <div className="flex-1 flex justify-center transform hover:scale-105 transition-transform">
+                        <LogoFull className="h-14 w-auto" />
                     </div>
                     <button className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-4 py-2 rounded-full text-xs font-semibold hover:bg-white/10 transition">
                         <Share2 className="w-3.5 h-3.5" /> Partager
@@ -303,7 +303,7 @@ const BlogPost = ({ slug, onBack }) => {
                     Certains liens sur ce site sont des liens d'affiliation. Si vous passez par eux, le Dev Masto reçoit une petite commission qui sert exclusivement à financer les serveurs (et le café pour les nuits blanches). Ça ne vous coûte pas plus cher, et ça soutient l'indépendance du projet.
                 </p>
                 <div className="text-gray-600 text-xs tracking-widest uppercase">
-                    iM-System © 2026 • Martinique
+                    CrewAI972 © 2026 • Martinique
                 </div>
             </footer>
         </div>
