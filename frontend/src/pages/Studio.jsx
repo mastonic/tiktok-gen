@@ -391,7 +391,7 @@ const Studio = () => {
                                         key={`player-${selectedScript.id}`}
                                         component={MyComposition}
                                         inputProps={{ ...playerProps, isSquare }}
-                                        durationInFrames={playerProps.clips.length * 150} // 5s * 30fps = 150 frames per clip
+                                        durationInFrames={Math.max(150, (playerProps.clips?.length || 0) * 150)} // Safeguard: min 5s
                                         fps={30}
                                         compositionWidth={isSquare ? 1080 : 1080}
                                         compositionHeight={isSquare ? 1080 : 1920}
@@ -399,6 +399,7 @@ const Studio = () => {
                                         controls
                                         autoPlay
                                         loop
+                                        acknowledgeRemotionLicense
                                     />
                                     <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
                                         {isAvailable && finalVideoUrl ? (

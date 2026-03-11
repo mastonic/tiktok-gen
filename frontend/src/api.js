@@ -16,12 +16,14 @@ const getBaseUrl = () => {
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
         const isIP = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(hostname);
 
-        if (isIP || window.location.port === '3000') {
+        if (isIP) {
+            // Force same protocol as frontend to avoid Mixed Content
             const url = `${protocol}//${hostname}:5656`;
-            console.log("🔗 API (Direct Mode):", url);
+            console.log("🔗 API (IP Mode):", url);
             return url;
         }
 
+        // For domains like crewai972.xyz, handle both www and root
         const baseDomain = hostname.replace('www.', '');
         const url = `${protocol}//api.${baseDomain}`;
         console.log("🔗 API (Domain Mode):", url);
