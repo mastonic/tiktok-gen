@@ -65,9 +65,10 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
 
     task_scoring = Task(
         description=(
-            "Calcule l'économie réelle réalisée par le spectateur en utilisant cet outil gratuit au lieu d'un abonnement payant standard."
+            "Calcule la valeur ajoutée réelle pour le spectateur en utilisant cet outil (gain de temps, argent économisé, ou productivité décuplée). "
+            "Adapte ton angle en fonction de l'outil (ne parle pas d'économie si l'outil sert à automatiser une tâche, parle de temps gagné)."
         ),
-        expected_output="Score de ROI sur 100 et explication de l'économie mensuelle.",
+        expected_output="Score de ROI sur 100 et explication courte du bénéfice majeur (temps, argent ou productivité).",
         agent=monetization_scorer
     )
     tasks.append(task_scoring)
