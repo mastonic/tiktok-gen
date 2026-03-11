@@ -5,30 +5,49 @@ from typing import Optional
 
 FAL_KEY = os.environ.get("FAL_KEY")
 
+def clean_script_for_tts(text: str) -> str:
+    """
+    Cleans a script to keep only the spoken narrative.
+    Removes: [Visual directions], (Stage directions), **Headers:**, emojis, etc.
+    """
+    import re
+    # 1. Remove everything in brackets [ ... ] (often Visual or Sound directions)
+    text = re.sub(r'\[.*?\]', '', text, flags=re.DOTALL)
+    # 2. Remove everything in parentheses ( ... ) (often secondary directions)
+    text = re.sub(r'\(.*?\)', '', text, flags=re.DOTALL)
+    # 3. Remove Markdown headers and labels like **Hook:**, **Narration:**, **Visuel:**
+    text = re.sub(r'\*\*.*?\*\*[:\- ]*', '', text, flags=re.IGNORECASE)
+    # 4. Remove standalone labels at the start of lines
+    text = re.sub(r'^(Titre|Sujet|Description|Script|Hook|Mots-clés|Concepts|Visuel|Scene|Scène|Note|Musique|Plan)\s*:.*$', '', text, flags=re.IGNORECASE | re.MULTILINE)
+    # 5. Remove quotes and extra formatting characters
+    text = text.replace('"', '').replace('*', '').replace('_', '')
+    # 6. Clean up whitespace
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    return ' '.join(lines).strip()
+
 def generate_tts(text: str, output_path: str, mode: str = "f5-tts") -> bool:
     """
     StudioManager: Logic for generating 90s narrative audio.
     Modes: f5-tts (default fal-ai), parler-tts (local), edge-tts (fallback).
     """
-    if mode == "f5-tts" and FAL_KEY:
+    clean_text = clean_script_for_tts(text)
+    
+    # Mirror key for video_gen/comfy compatibility
+    fal_key = os.environ.get("FAL_KEY")
+    
+    if mode == "f5-tts" and fal_key:
         try:
-            # Clean up the script: Remove visual descriptions and formatting
-            import re
-            clean_text = re.sub(r'\[\*\*Visuel\*\*.*?\]', '', text, flags=re.IGNORECASE | re.DOTALL)
-            clean_text = clean_text.replace('**Narration** :', '').replace('**Narration**', '').replace('"', '').strip()
-            
             print(f"🎙️ [VoiceMaster] Generating narrative voice via fal-ai/f5-tts...")
             # F5-TTS logic (via fal-ai)
-            # Reference: https://fal.ai/models/fal-ai/f5-tts
             url = "https://fal.run/fal-ai/f5-tts"
-            headers = {"Authorization": f"Key {FAL_KEY}", "Content-Type": "application/json"}
+            headers = {"Authorization": f"Key {fal_key}", "Content-Type": "application/json"}
             payload = {
                 "gen_text": clean_text
             }
             response = requests.post(url, json=payload, headers=headers)
             response.raise_for_status()
         
-            # Track cost (F5-TTS on Fal is approx 0.035$ per long request)
+            # Track cost
             try:
                 from database import track_cost
                 track_cost(0.035)
@@ -49,14 +68,13 @@ def generate_tts(text: str, output_path: str, mode: str = "f5-tts") -> bool:
     if mode == "parler-tts":
         try:
             print(f"🎙️ [VoiceMaster] Attempting local generation via Parler-TTS...")
-            # Lazy imports for VPS compatibility
             try:
                 from parler_tts import ParlerTTSForConditionalGeneration
                 from transformers import AutoTokenizer
                 import torch
                 import scipy.io.wavfile as wavfile
             except ImportError:
-                print("⚠️ parler-tts or dependencies not installed. Falling back to Edge-TTS.")
+                print("⚠️ parler-tts not installed. Falling back to Edge-TTS.")
                 return generate_tts(text, output_path, mode="edge-tts")
 
             device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -65,7 +83,7 @@ def generate_tts(text: str, output_path: str, mode: str = "f5-tts") -> bool:
 
             description = "A deep masculine voice with a documentary narrative tone, clear and professional."
             input_ids = tokenizer(description, return_tensors="pt").input_ids.to(device)
-            prompt_input_ids = tokenizer(text, return_tensors="pt").input_ids.to(device)
+            prompt_input_ids = tokenizer(clean_text, return_tensors="pt").input_ids.to(device)
 
             generation = model.generate(input_ids=input_ids, prompt_input_ids=prompt_input_ids)
             audio_arr = generation.cpu().numpy().squeeze()
@@ -80,11 +98,6 @@ def generate_tts(text: str, output_path: str, mode: str = "f5-tts") -> bool:
     try:
         import edge_tts
         VOICE = "fr-FR-VivienneMultilingualNeural" 
-        
-        # Clean text for Edge-TTS fallback as well
-        import re
-        clean_text = re.sub(r'\[\*\*Visuel\*\*.*?\]', '', text, flags=re.IGNORECASE | re.DOTALL)
-        clean_text = clean_text.replace('**Narration** :', '').replace('**Narration**', '').replace('"', '').strip()
         
         async def run_edge_tts():
             communicate = edge_tts.Communicate(clean_text, VOICE, rate="-10%")
