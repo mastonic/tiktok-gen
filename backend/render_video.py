@@ -24,12 +24,23 @@ def generate_video(job_dir: str):
     if clips_dir.exists():
         clips = sorted(list(clips_dir.glob("clip_*.mp4")))
         if clips:
+            print(f"Normalizing and concatenating {len(clips)} clips into {video_in}...")
+            normalized_clips = []
+            for i, c in enumerate(clips):
+                norm_c = job_path / f"norm_clip_{i:02d}.mp4"
+                if not norm_c.exists() or norm_c.stat().st_size == 0:
+                    subprocess.run([
+                        "ffmpeg", "-y", "-i", str(c),
+                        "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1",
+                        "-an", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "18",
+                        str(norm_c)
+                    ], check=True)
+                normalized_clips.append(norm_c)
+                
             concat_txt = job_path / "concat.txt"
-            with open(concat_txt, "w") as f:
-                for c in clips:
+            with open(concat_txt, "w", encoding="utf-8") as f:
+                for c in normalized_clips:
                     f.write(f"file '{c.absolute()}'\n")
-            print(f"Concatenating {len(clips)} clips into {video_in}...")
-            # We use force overwrite here to fix the "stuck at 26s" bug
             subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_txt), "-c", "copy", str(video_in)], check=True)
 
     if not video_in.exists() or not voice_in.exists():
