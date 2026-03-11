@@ -41,15 +41,28 @@ def generate_tts(text: str, output_path: str, mode: str = "f5-tts") -> bool:
             
             # Fal.ai F5-TTS has a char limit (approx 1000). We chunk it if needed.
             MAX_CHARS = 800
-            chunks = [clean_text[i:i+MAX_CHARS] for i in range(0, len(clean_text), MAX_CHARS)]
+            
+            # Smart chunking (split at space)
+            chunks = []
+            words = clean_text.split(' ')
+            current_chunk = ""
+            for word in words:
+                if len(current_chunk) + len(word) + 1 < MAX_CHARS:
+                    current_chunk += (word + " ")
+                else:
+                    chunks.append(current_chunk.strip())
+                    current_chunk = word + " "
+            if current_chunk:
+                chunks.append(current_chunk.strip())
             
             audio_segments = []
             
-            # Unified reference audio for the "Docu-Style" voice
-            REF_AUDIO = "https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham_essay.wav" # Generic placeholder or your own pro sample
+            # Official Fal.ai reference audio for stability
+            REF_AUDIO = "https://storage.googleapis.com/falserverless/example_inputs/reference_audio.wav"
             
             for i, chunk in enumerate(chunks):
-                print(f"   -> Processing chunk {i+1}/{len(chunks)}...")
+                if not chunk: continue
+                print(f"   -> Processing chunk {i+1}/{len(chunks)} ({len(chunk)} chars)...")
                 url = "https://fal.run/fal-ai/f5-tts"
                 headers = {"Authorization": f"Key {fal_key}", "Content-Type": "application/json"}
                 payload = {
