@@ -10,6 +10,10 @@ class TikTokMetadata(BaseModel):
     hashtags: List[str] = Field(..., description="Strategic viral hashtags.")
     hook_type: str = Field("Aggressive", description="Type of hook used (e.g., Question, Shocking fact).")
 
+class Concept(BaseModel):
+    title: str = Field(..., description="Concept title")
+    description: str = Field(..., description="Short description of the concept")
+
 class AgentOutcome(BaseModel):
     title: str = Field(..., description="Title of the content.")
     script: str = Field(..., description="Final 90s+ script.")
@@ -18,7 +22,7 @@ class AgentOutcome(BaseModel):
     image_prompts: List[str] = Field(..., description="The 18 prompts for image generation.")
     tiktok_caption: Optional[str] = Field(None, description="TikTok specific metadata.")
     statut_validation: bool = Field(True, description="Ready for production.")
-    top_5_concepts: List[dict] = Field([], description="Related concepts for the blog.")
+    top_5_concepts: List[Concept] = Field([], description="Related concepts for the blog.")
 
 class ToolItem(BaseModel):
     id: str = Field(..., description="Tool ID (e.g., tool_1, tool_2)")
