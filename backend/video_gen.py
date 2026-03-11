@@ -4,20 +4,19 @@ import time
 import base64
 from typing import Optional
 
-FAL_KEY = os.environ.get("FAL_KEY")
-
 def generate_flux_image(prompt: str, save_path: str, is_square: bool = False) -> bool:
     """
     Generates a high-fidelity image using Flux.1 Schnell via Fal.ai.
     BudgetOptimizer: $0.003/img.
     """
-    if not FAL_KEY:
-        print("WARNING: FAL_KEY not found in environment.")
+    fal_key = (os.environ.get("FAL_KEY") or "").strip()
+    if not fal_key:
+        print("WARNING: fal_key not found in environment.")
         return False
 
     url = "https://queue.fal.run/fal-ai/flux/schnell" 
     headers = {
-        "Authorization": f"Key {FAL_KEY}",
+        "Authorization": f"Key {fal_key}",
         "Content-Type": "application/json"
     }
     
@@ -92,13 +91,14 @@ def generate_wan_video(prompt: str, is_square: bool = False) -> Optional[str]:
     """
     Implémentation de la fonction generate_wan_video (Qualité Cinématique 720p).
     """
-    if not FAL_KEY:
-        print("WARNING: FAL_KEY not found in environment.")
+    fal_key = (os.environ.get("FAL_KEY") or "").strip()
+    if not fal_key:
+        print("WARNING: fal_key not found in environment.")
         return "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_5mb.mp4"
 
     url = "https://queue.fal.run/fal-ai/wan/v2.1/t2v"
     headers = {
-        "Authorization": f"Key {FAL_KEY}",
+        "Authorization": f"Key {fal_key}",
         "Content-Type": "application/json"
     }
     payload = {
@@ -161,13 +161,14 @@ def generate_ltx_video(prompt: str, is_square: bool = False) -> Optional[str]:
     """
     Implémentation de la fonction generate_ltx_video (Économique, 768x512, Steps réduits).
     """
-    if not FAL_KEY:
-        print("WARNING: FAL_KEY not found in environment.")
+    fal_key = (os.environ.get("FAL_KEY") or "").strip()
+    if not fal_key:
+        print("WARNING: fal_key not found in environment.")
         return "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_5mb.mp4"
 
     url = "https://queue.fal.run/fal-ai/ltx-video"
     headers = {
-        "Authorization": f"Key {FAL_KEY}",
+        "Authorization": f"Key {fal_key}",
         "Content-Type": "application/json"
     }
     payload = {

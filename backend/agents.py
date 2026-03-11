@@ -12,19 +12,21 @@ if os.path.exists(env_path):
     load_dotenv(dotenv_path=env_path)
 
 def get_llm(model_name="openai/gpt-4o-mini"):
-    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
-    if not api_key or api_key.lower() == "vide":
-        print(f"WARNING: OPENAI_API_KEY not found or invalid, falling back to gemini")
-        gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
-        if not gemini_key or gemini_key.lower() == "vide":
-             print("CRITICAL: GEMINI_API_KEY also missing or invalid! Please check .env")
-        return LLM(
-            model="gemini/gemini-1.5-flash",
-            api_key=gemini_key,
-            max_retries=5,
-            timeout=120,
-        )
+    is_gemini = "gemini" in model_name.lower()
     
+    if is_gemini:
+        api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+        if not api_key or api_key.lower() == "vide":
+            print("CRITICAL: GEMINI_API_KEY missing, but gemini model requested!")
+    else:
+        api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+        if not api_key or api_key.lower() == "vide":
+            print(f"WARNING: OPENAI_API_KEY not found or invalid, falling back to gemini")
+            api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+            model_name = "gemini/gemini-1.5-flash"
+            if not api_key or api_key.lower() == "vide":
+                 print("CRITICAL: GEMINI_API_KEY also missing or invalid! Please check .env")
+
     return LLM(
         model=model_name,
         api_key=api_key,

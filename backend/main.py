@@ -1,3 +1,14 @@
+import sys
+import os
+from pathlib import Path
+
+# --- 1. Load Environment Variables First ---
+env_path = Path(__file__).parent.parent / ".env.local"
+if env_path.exists():
+    from dotenv import load_dotenv
+    load_dotenv(dotenv_path=env_path)
+    print(f"✅ Loaded environment from {env_path}")
+
 from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException, Body, Request
 from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
@@ -5,15 +16,12 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import asyncio
-import sys
 import io
 import json
-import os
 import traceback
 import re
 import wave
 import contextlib
-from pathlib import Path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from crewai import Crew, Process
@@ -29,9 +37,6 @@ from production import automate_visual_production
 import comfyui_client
 import video_gen
 import tts_service
-
-# Ensure environment variables are loaded
-comfyui_client.load_env_local()
 
 app = FastAPI(title="iM System API")
 
