@@ -673,8 +673,10 @@ def parse_ass_subtitles(ass_path):
                     if len(parts) >= 10:
                         start_str = parts[1]
                         end_str = parts[2]
-                        # Remove effects/tags like {\pos(540,1344)}{\t(0,50,...)}
+                        # Remove effects/tags like {\pos(540,1344)} and speaker labels like Narrateur:
                         text = re.sub(r'\{.*?\}', '', parts[9]).strip()
+                        # Remove Speaker: prefixes (e.g. "Narrateur:", "Intervenant:")
+                        text = re.sub(r'^[A-Za-zÀ-ÿ\s]+\[?.*?\]?\s*:\s*', '', text)
                         
                         def to_frames(s):
                             try:
@@ -1623,13 +1625,40 @@ async def get_blog_data(script_id: int):
         matched_links = all_links[:3]
 
     video_path = f"/media/production/db_{script.id}/final_output.mp4"
+    # Fallback image from the production folder if video is missing
+    fallback_img = f"/media/production/db_{script.id}/img_01.jpg"
+    if not os.path.exists(os.path.join(BASE_DIR, "media", "production", f"db_{script.id}", "img_01.jpg")):
+        fallback_img = script.cover_image or "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1200"
+        if fallback_img and fallback_img.startswith("http://localhost:5656"):
+            fallback_img = fallback_img.replace("http://localhost:5656", "")
+
+    # Unify slug generation with BlogSquad
+    def _slugify(text):
+        slug = text.lower().strip()
+        import re
+        slug = re.sub(r"[àáâãäå]", "a", slug)
+        slug = re.sub(r"[èéêë]", "e", slug)
+        slug = re.sub(r"[ìíîï]", "i", slug)
+        slug = re.sub(r"[òóôõö]", "o", slug)
+        slug = re.sub(r"[ùúûü]", "u", slug)
+        slug = re.sub(r"[ç]", "c", slug)
+        slug = re.sub(r"[^a-z0-9\s-]", "", slug)
+        slug = re.sub(r"\s+", "-", slug)
+        slug = re.sub(r"-+", "-", slug).strip("-")
+        return slug[:60]
     
-    # Simple slugify for matching
-    slug = re.sub(r'[^a-z0-9]+', '-', script.title.lower()).strip('-')
+    slug = _slugify(script.title)
     
+    # Check if a blog post MD actually exists, if not, try another script
+    posts_dir = Path(__file__).parent / "blog" / "posts"
+    if not (posts_dir / f"{slug}.md").exists():
+        # Optional: could search for another one, but for now we just return the calculated slug
+        pass
+
     return {
         "videoTitle": script.title,
-        "videoUrl": f"http://localhost:5656{video_path}",
+        "videoUrl": video_path, # Use relative path for frontend to handle with API_URL
+        "coverImage": fallback_img,
         "slug": slug,
         "summary": script.blog_summary or f"Voici les outils utilisés dans cette vidéo sur {script.title}.",
         "tools": [{
@@ -1716,7 +1745,7 @@ async def list_blog_posts():
     posts = []
     for f in files:
         try:
-            content = f.read_text(encoding="utf-8")
+            content = f.read_text(encoding="utf-8").replace("http://localhost:5656", "")
             title_match = re.search(r'^title:\s*"?(.+?)"?\s*$', content, re.MULTILINE)
             date_match = re.search(r'^date:\s*"?(.+?)"?\s*$', content, re.MULTILINE)
             excerpt_match = re.search(r'^excerpt:\s*"?(.+?)"?\s*$', content, re.MULTILINE)
@@ -1759,9 +1788,31 @@ async def get_blog_post_raw(slug: str):
     if not file_path.exists():
         raise HTTPException(status_code=404, detail=f"Article '{slug}' introuvable.")
 
+    content = file_path.read_text(encoding="utf-8").replace("http://localhost:5656", "")
+    
+    # Try to find a matching script to inject video_url if [INSERT_VIDEO_PLAYER] is present
+    db = SessionLocal()
+    # Simple search by title approximation or look in frontmatter title
+    title_match = re.search(r'^title:\s*"?([\s\S]*?)"?\s*$', content, re.M)
+    search_title = title_match.group(1).replace('"', '') if title_match else slug.replace('-', ' ')
+    
+    script = db.query(ScriptInbox).filter(ScriptInbox.title.like(f"%{search_title[:15]}%")).first()
+    if script:
+        # Inject into frontmatter
+        video_url = f"/media/production/db_{script.id}/final_output.mp4"
+        if "video_url:" not in content:
+            content = content.replace("---\n", f"---\nvideo_url: \"{video_url}\"\n", 1)
+        
+        # Also ensure cover_image is there if missing
+        if "cover_image: \"https" in content or "cover_image: None" in content:
+            local_img = f"/media/production/db_{script.id}/img_01.jpg"
+            content = re.sub(r'cover_image: ".*?"', f'cover_image: "{local_img}"', content)
+            
+    db.close()
+
     from fastapi.responses import PlainTextResponse
     return PlainTextResponse(
-        content=file_path.read_text(encoding="utf-8"),
+        content=content,
         media_type="text/plain; charset=utf-8"
     )
 

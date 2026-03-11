@@ -10,6 +10,14 @@ import json
 import logging
 from pathlib import Path
 from typing import List, Optional, Dict, Any
+import datetime
+
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+try:
+    from video_gen import generate_flux_image
+except ImportError:
+    generate_flux_image = None
 
 from crewai import Agent, Task, Crew, Process, LLM
 from pydantic import BaseModel, Field
@@ -42,21 +50,15 @@ class BentoBoxData(BaseModel):
 # LLM Helper
 # ─────────────────────────────────────────────
 
-def _get_llm(model: str = "openai/gpt-4o-mini") -> LLM:
-    is_gemini = "gemini" in model.lower()
+def _get_llm(model: str = "gpt-4o-mini") -> LLM:
+    """Returns an OpenAI LLM for the BlogSquad."""
+    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    if not api_key or api_key.lower() == "vide":
+        print("CRITICAL: OPENAI_API_KEY missing in blog squad! Please check .env")
+        # Hard fallback to check if we can continue with any key if this happens
     
-    if is_gemini:
-        api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-        if not api_key or api_key.lower() == "vide":
-            print("CRITICAL: GEMINI_API_KEY missing, but gemini model requested in blog squad!")
-    else:
-        api_key = os.environ.get("OPENAI_API_KEY", "").strip()
-        if not api_key or api_key.lower() == "vide":
-            print("WARNING: OPENAI_API_KEY not found or invalid in blog squad, falling back to gemini")
-            api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-            model = "gemini/gemini-1.5-flash"
-            if not api_key or api_key.lower() == "vide":
-                 print("CRITICAL: GEMINI_API_KEY also missing or invalid in blog squad! Please check .env")
+    if "gpt" not in model.lower():
+        model = "gpt-4o-mini"
 
     return LLM(model=model, api_key=api_key, max_retries=5, timeout=120)
 
@@ -74,6 +76,25 @@ def _slugify(text: str) -> str:
     slug = re.sub(r"\s+", "-", slug)
     slug = re.sub(r"-+", "-", slug).strip("-")
     return slug[:60]
+
+
+def _get_internet_image(query: str) -> Optional[str]:
+    """Tries to find a real image on the web as a priority."""
+    try:
+        from duckduckgo_search import DDGS
+        with DDGS() as ddgs:
+            # Search for high quality images
+            results = list(ddgs.images(f"{query} tech professional", max_results=5))
+            for r in results:
+                url = r.get('image')
+                if url and url.startswith('http') and not any(x in url for x in ['fbcdn', 'twimg', 'instagram']):
+                    # Simple validation: check if it's a direct image link and not a social media one
+                    if url.split('?')[0].lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                        return url
+        return None
+    except Exception as e:
+        logger.warning(f"Internet image search failed: {e}")
+        return None
 
 
 # ─────────────────────────────────────────────
@@ -240,11 +261,14 @@ category: "{category}"
             # Frontmatter de secours
             seo_tags = bento_data.get("seo_tags", [])
             tags_yaml = "\n".join([f'  - "{t}"' for t in seo_tags])
-            import datetime
+            
+            # Decide cover image path
+            cover_img = bento_data.get("cover_image") or "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1200"
+            
             fallback_fm = f"""---
 title: "{bento_data.get('article_title', concept_title)}"
 excerpt: "{concept_title} — découvrez cet outil open source incontournable."
-cover_image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1200"
+cover_image: "{cover_img}"
 category: "IA Générative"
 slug: "{slug}"
 date: "{datetime.datetime.now().strftime('%Y-%m-%d')}"
@@ -323,6 +347,28 @@ tags:
                     bento_data["article_slug"] = _slugify(concept_title)
                 if not bento_data.get("article_title"):
                     bento_data["article_title"] = concept_title
+
+                # --- NEW: Image Generation for the Article ---
+                slug = bento_data.get("article_slug")
+                img_filename = f"{slug}.jpg"
+                img_path = Path(__file__).parent / "media" / "blog" / img_filename
+                img_url = f"/media/blog/{img_filename}"
+                
+                # Try internet image first
+                internet_img = _get_internet_image(concept_title)
+                if internet_img:
+                    logger.info(f"🌐 [BlogSquad] Found internet image for: {concept_title}")
+                    bento_data["cover_image"] = internet_img
+                    article_md = re.sub(r'cover_image: ".*?"', f'cover_image: "{internet_img}"', article_md)
+                elif generate_flux_image:
+                    prompt = f"Cinematic high-tech digital art for a blog post titled '{concept_title}'. Professional, dark theme, neon accents, futuristic technology style, 16:9 aspect ratio."
+                    logger.info(f"🎨 [BlogSquad] Generating cover image for: {concept_title}")
+                    success_img = generate_flux_image(prompt, str(img_path))
+                    if success_img:
+                        bento_data["cover_image"] = img_url
+                        # If article_md already has a placeholder, replace it
+                        article_md = re.sub(r'cover_image: ".*?"', f'cover_image: "{img_url}"', article_md)
+                
 
                 # Save to file
                 file_path = self.save_to_markdown(article_md, bento_data, concept_title)

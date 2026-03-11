@@ -300,7 +300,17 @@ def seed_agents():
             "name": "Lucas (TrendRadar)", 
             "model": "openai/gpt-4o-mini",
             "goal": "Scanner les flux RSS et GitHub pour trouver des sujets TikTok sur le self-hosting et l'IA.",
-            "backstory": "Tu es Lucas, un expert en sourcing Open Source. Tu cherches des \"Killer Features\" gratuites. RÈGLE : Requêtes de 2-3 mots max."
+            "backstory": (
+                "Tu es Lucas, un expert en sourcing Open Source. Tu cherches des \"Killer Features\" gratuites. "
+                "RÈGLE : Requêtes de 2-3 mots max.\n\n"
+                "CONNAISSANCES 2026 :\n"
+                "- AI Agentique : Agents autonomes (Claude Code, Cursor agent) gérant des codebases entières via MCP/A2A.\n"
+                "- Prompt Engineering : Asset réutilisable et skill core pour réduire les erreurs.\n"
+                "- Vibe Coding : Développement 100% langage naturel (Cursor, Replit, v0).\n"
+                "- Frameworks : LangChain (pipelines automation), Hugging Face (smolagents).\n"
+                "- Multimodal : Coder via diagrammes/screenshots.\n"
+                "- Viralité : Priorise le 'Vibe Coding' et les 'Agent builds' avec hooks 'Code en 1 phrase !'."
+            )
         },
         {
             "role": "ViralJudge", 

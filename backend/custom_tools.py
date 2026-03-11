@@ -44,6 +44,23 @@ def duckduckgo_search_tool(query: str) -> str:
     """Searches the web using DuckDuckGo."""
     return _duckduckgo_logic(query)
 
+@tool("DuckDuckGoImageTool")
+def duckduckgo_image_tool(query: str) -> str:
+    """
+    Searches for an image URL on the web using DuckDuckGo.
+    Useful for finding real product logos or tool screenshots.
+    Args:
+        query (str): The search query for the image.
+    """
+    try:
+        with DDGS() as ddgs:
+            results = list(ddgs.images(query, max_results=3))
+            if results:
+                return results[0]['image']
+        return "No image found."
+    except Exception as e:
+        return f"Error searching images: {e}"
+
 @tool("TrafilaturaScraper")
 def trafilatura_scraper(url: str) -> str:
     """

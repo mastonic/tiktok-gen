@@ -11,21 +11,18 @@ env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env.local"
 if os.path.exists(env_path):
     load_dotenv(dotenv_path=env_path)
 
-def get_llm(model_name="openai/gpt-4o-mini"):
-    is_gemini = "gemini" in model_name.lower()
-    
-    if is_gemini:
-        api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-        if not api_key or api_key.lower() == "vide":
-            print("CRITICAL: GEMINI_API_KEY missing, but gemini model requested!")
-    else:
-        api_key = os.environ.get("OPENAI_API_KEY", "").strip()
-        if not api_key or api_key.lower() == "vide":
-            print(f"WARNING: OPENAI_API_KEY not found or invalid, falling back to gemini")
-            api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-            model_name = "gemini/gemini-1.5-flash"
-            if not api_key or api_key.lower() == "vide":
-                 print("CRITICAL: GEMINI_API_KEY also missing or invalid! Please check .env")
+def get_llm(model_name="gpt-4o-mini"):
+    """
+    Returns an OpenAI LLM instance. 
+    Gemini is deprecated in this build due to regional restrictions.
+    """
+    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    if not api_key or api_key.lower() == "vide":
+        raise ValueError("CRITICAL: OPENAI_API_KEY is missing or invalid.")
+
+    # Map model names to OpenAI if they were passed in another format
+    if "gpt" not in model_name:
+        model_name = "gpt-4o-mini" # Default safe choice
 
     return LLM(
         model=model_name,
@@ -105,9 +102,9 @@ def create_studio_agents(config=None):
 def create_agents(config=None, commando_mode=False):
     # Existing creation logic preserved but updated roles as requested
 
-    # config is a dict: { 'TrendRadar': 'openai/gpt-4o', ... }
+    # config is a dict: { 'TrendRadar': 'gpt-4o', ... }
     def get_agent_llm(role):
-        m = config.get(role, "openai/gpt-4o-mini") if config else "openai/gpt-4o-mini"
+        m = config.get(role, "gpt-4o-mini") if config else "gpt-4o-mini"
         return get_llm(m)
 
     trend_radar = Agent(

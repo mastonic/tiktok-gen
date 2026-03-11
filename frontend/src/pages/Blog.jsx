@@ -72,13 +72,14 @@ const HeroSection = ({ data, onReadArticle }) => {
                     {data?.videoUrl ? (
                         <video
                             src={data.videoUrl.startsWith('http') ? data.videoUrl : `${API_URL}${data.videoUrl}`}
+                            poster={data.coverImage ? (data.coverImage.startsWith('http') ? data.coverImage : `${API_URL}${data.coverImage}`) : ""}
                             autoPlay loop muted playsInline controls
                             className="w-full h-full object-cover"
                         />
                     ) : (
                         <>
                             <img
-                                src="https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1600"
+                                src={data?.coverImage ? (data.coverImage.startsWith('http') ? data.coverImage : `${API_URL}${data.coverImage}`) : "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1600"}
                                 className="w-full h-full object-cover"
                                 alt="AI Visual"
                             />

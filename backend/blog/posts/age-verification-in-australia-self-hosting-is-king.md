@@ -1,8 +1,8 @@
 ---
 title: "Age Verification in Australia — Self-Hosting Is King"
 excerpt: "L'auto-hébergement offre une solution de vérification d'âge respectueuse de la vie privée en Australie."
-cover_image: "http://localhost:5656/media/production/db_12/img_01.jpg"
-video_url: "http://localhost:5656/media/production/db_12/final_output.mp4"
+cover_image: "/media/production/db_12/img_01.jpg"
+video_url: "/media/production/db_12/final_output.mp4"
 category: "IA Générative"
 ---
 

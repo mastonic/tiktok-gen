@@ -123,7 +123,7 @@ def automate_visual_production(script_id_num: int):
             content = blog_file.read_text(encoding="utf-8")
             new_content = re.sub(
                 r'cover_image:\s*"https://images\.unsplash\.com/.*?"',
-                f'cover_image: "http://localhost:5656{first_img_rel}"',
+                f'cover_image: "{first_img_rel}"',
                 content
             )
             blog_file.write_text(new_content, encoding="utf-8")
@@ -218,7 +218,7 @@ def automate_visual_production(script_id_num: int):
                         frontmatter_indices = [i for i, line in enumerate(lines) if line.strip() == '---']
                         if len(frontmatter_indices) >= 2:
                             insert_idx = frontmatter_indices[1]
-                            lines.insert(insert_idx, f'video_url: "http://localhost:5656{video_rel}"')
+                            lines.insert(insert_idx, f'video_url: "{video_rel}"')
                             blog_file.write_text("\n".join(lines), encoding="utf-8")
                             print(f"✅ Video URL injected into blog: {blog_slug}")
             except Exception as vid_inject_e:
