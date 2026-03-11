@@ -1,3 +1,4 @@
+import { API_URL } from '../api';
 import React, { useState, useEffect } from 'react';
 import { Modal, Card, Badge, Button } from '../components/ui';
 import { Clock, DollarSign, Activity, Play, ChevronDown, RotateCcw, Eye, Zap, AlertCircle } from 'lucide-react';
@@ -18,7 +19,7 @@ const Runs = ({ setPath }) => {
         if (!pendingRunType) return;
         setIsLoading(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             const response = await fetch(`${apiUrl}/api/run/${pendingRunType}`, { method: 'POST' });
             const data = await response.json();
             setIsModalOpen(false);
@@ -33,7 +34,7 @@ const Runs = ({ setPath }) => {
     useEffect(() => {
         const fetchRuns = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+                const apiUrl = API_URL;
                 const response = await fetch(`${apiUrl}/api/runs`);
                 const data = await response.json();
                 setRuns(data);

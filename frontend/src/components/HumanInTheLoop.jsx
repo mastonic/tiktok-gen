@@ -1,3 +1,4 @@
+import { API_URL } from '../api';
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Send } from 'lucide-react';
 import { Button } from './ui';
@@ -11,7 +12,7 @@ const HumanInTheLoop = () => {
         // Poll for pending questions every 3 seconds
         const pollQuestions = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+                const apiUrl = API_URL;
                 const res = await fetch(`${apiUrl}/api/pending-questions`);
                 const data = await res.json();
                 if (data && data.length > 0) {
@@ -32,7 +33,7 @@ const HumanInTheLoop = () => {
         if (!answer.trim() || !pendingQuestion) return;
         setIsSubmitting(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             await fetch(`${apiUrl}/api/answer-question`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

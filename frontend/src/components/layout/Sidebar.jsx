@@ -15,6 +15,8 @@ import {
     ExternalLink
 } from 'lucide-react';
 
+import { LogoFull } from '../ui/Logos';
+
 const Sidebar = ({ currentPath, setPath }) => {
     const [time, setTime] = React.useState(new Date());
 
@@ -39,13 +41,13 @@ const Sidebar = ({ currentPath, setPath }) => {
     ];
 
     return (
-        <aside className="w-64 h-screen bg-navy-800 border-r border-gray-800 flex flex-col shadow-2xl z-20">
+        <aside className="w-72 h-screen bg-navy-800 border-r border-gray-800 flex flex-col shadow-2xl z-20">
             <div className="p-6">
-                <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                    <span className="text-cyan-400">Mission</span> Control
-                </h1>
-                <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest font-semibold flex items-center">
-                    <span className="w-2 h-2 rounded-full bg-cyan-500 mr-2 animate-pulse"></span>
+                <div className="flex items-center justify-center mb-6 transform hover:scale-105 transition-transform duration-300">
+                    <LogoFull className="h-20 w-auto" />
+                </div>
+                <p className="text-[10px] text-gray-500 mt-[-1rem] uppercase tracking-[0.3em] font-black flex items-center justify-center">
+                    <span className="w-2 h-2 rounded-full bg-cyan-500 mr-2 animate-pulse shadow-[0_0_8px_rgba(6,182,212,0.8)]"></span>
                     Hybrid Engine
                 </p>
             </div>

@@ -35,24 +35,45 @@ const SubtitleText = ({ text }) => {
     );
 };
 
-export const MyComposition = ({ clips, audioUrl, subtitles }) => {
-    const { fps } = useVideoConfig();
+export const MyComposition = ({ clips, audioUrl, subtitles, isSquare = false }) => {
+    const { fps, width, height } = useVideoConfig();
     const clipDurationInFrames = 5 * fps; // 5 seconds per clip
 
     return (
-        <AbsoluteFill style={{ backgroundColor: '#111' }}>
+        <AbsoluteFill style={{ backgroundColor: '#000' }}>
             {/* 1. Video Clips Sequence */}
-            {clips && clips.map((clip, idx) => (
+            {clips && clips.length > 0 ? clips.map((clip, idx) => (
                 <Sequence key={idx} from={idx * clipDurationInFrames} durationInFrames={clipDurationInFrames}>
                     <AbsoluteFill style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         {clip.endsWith('.mp4') ? (
-                            <video src={clip} style={{ width: '100%', height: '100%', objectFit: 'cover' }} autoPlay loop muted />
+                            <video
+                                src={clip}
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover'
+                                }}
+                                autoPlay
+                                loop
+                                muted
+                            />
                         ) : (
-                            <Img src={clip} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <Img
+                                src={clip}
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover'
+                                }}
+                            />
                         )}
                     </AbsoluteFill>
                 </Sequence>
-            ))}
+            )) : (
+                <AbsoluteFill className="bg-navy-900 flex items-center justify-center text-gray-600 text-sm">
+                    Aucun clip disponible
+                </AbsoluteFill>
+            )}
 
             {/* 2. Voiceover */}
             {audioUrl && <Audio src={audioUrl} />}

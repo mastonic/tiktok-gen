@@ -6,7 +6,7 @@
 
 @layer base {
   body {
-    @apply bg-navy-900 text-gray-200 font-sans tracking-wide antialiased m-0 p-0;
+    @apply bg-[#050505] text-[#FFFFFF] font-sans tracking-wide antialiased m-0 p-0;
   }
 }
 
@@ -14,7 +14,7 @@
   .glass-panel {
     @apply bg-navy-800/80 backdrop-blur-md border border-gray-700/50 rounded-2xl shadow-xl;
   }
-  
+
   .glass-card {
     @apply bg-navy-700/60 backdrop-blur border border-gray-600/30 rounded-xl shadow-lg hover:border-cyan-400/30 transition-colors duration-300;
   }
@@ -22,15 +22,15 @@
   .text-glow {
     text-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
   }
-  
+
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500;
   }
-  
+
   .btn-primary {
-    @apply px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-medium rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:shadow-[0_0_20px_rgba(6,182,212,0.6)] transition-all duration-300 transform hover:-translate-y-0.5;
+    @apply px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-medium rounded-xl shadow-[0_0_15px_rgba(6, 182, 212, 0.4)] hover:shadow-[0_0_20px_rgba(6, 182, 212, 0.6)] transition-all duration-300 transform hover:-translate-y-0.5;
   }
-  
+
   .btn-secondary {
     @apply px-4 py-2 bg-navy-700/80 hover:bg-navy-600/80 text-gray-200 border border-gray-600 rounded-xl transition-all duration-300;
   }
@@ -38,32 +38,32 @@
   .btn-danger {
     @apply px-4 py-2 bg-red-900/60 hover:bg-red-800/60 text-red-200 border border-red-700/50 rounded-xl transition-all duration-300;
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-  
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: rgba(17, 24, 39, 0.5); 
+    background: rgba(17, 24, 39, 0.5);
     border-radius: 8px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(75, 85, 99, 0.6); 
+    background: rgba(75, 85, 99, 0.6);
     border-radius: 8px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(107, 114, 128, 0.8); 
+    background: rgba(107, 114, 128, 0.8);
   }
 }

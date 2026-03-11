@@ -1,3 +1,4 @@
+import { API_URL } from '../api';
 import React from 'react';
 import { ArrowLeft, Cpu, Shield, Zap, Coffee, Code, Terminal, Heart } from 'lucide-react';
 

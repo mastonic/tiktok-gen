@@ -1,10 +1,10 @@
+import { API_URL } from '../api';
 import React, { useState, useEffect } from 'react';
 import { ExternalLink, Zap, Mic, Video, Server, Loader2, AlertCircle, Mail, ArrowRight, Calendar, BookOpen, Cpu, Search } from 'lucide-react';
 import AffiliateBento from '../components/AffiliateBento';
 import BlogPost from './BlogPost';
 import About from './About';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+import { LogoFull } from '../components/ui/Logos';
 
 const categoryIcons = {
     'Voice IA': Mic,
@@ -70,7 +70,11 @@ const HeroSection = ({ data, onReadArticle }) => {
             <div className="lg:col-span-8 space-y-8">
                 <div className="relative aspect-video w-full bg-neutral-900 rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl shadow-cyan-950/10">
                     {data?.videoUrl ? (
-                        <video src={data.videoUrl} autoPlay loop muted playsInline controls className="w-full h-full object-cover" />
+                        <video
+                            src={data.videoUrl.startsWith('http') ? data.videoUrl : `${API_URL}${data.videoUrl}`}
+                            autoPlay loop muted playsInline controls
+                            className="w-full h-full object-cover"
+                        />
                     ) : (
                         <>
                             <img
@@ -204,10 +208,10 @@ const Blog = ({ onReadArticle, onEnterCockpit }) => {
 
             {/* HEADER */}
             <header className="border-b border-white/5 bg-black/50 backdrop-blur-xl sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <div className="text-2xl font-black tracking-tighter italic shrink-0">
-                        iM-<span className="text-cyan-400">System</span>
-                        <span className="ml-2 text-xs font-semibold text-gray-600 bg-white/5 px-2 py-0.5 rounded-full border border-white/8 align-middle normal-case not-italic">BLOG</span>
+                <div className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between">
+                    <div className="flex items-center gap-4 shrink-0 transform hover:scale-105 transition-transform duration-300">
+                        <LogoFull className="h-16 w-auto" />
+                        <span className="text-[10px] font-black tracking-[0.3em] text-gray-600 bg-white/5 px-2 py-0.5 rounded-full border border-white/8 align-middle uppercase">Blog</span>
                     </div>
 
                     {/* Search Input - Desktop & Tablet */}

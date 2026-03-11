@@ -1,3 +1,4 @@
+import { API_URL } from '../api';
 import React, { useState, useEffect } from 'react';
 import { Card, Badge, Button } from '../components/ui';
 import { Check, X, RefreshCw, Eye } from 'lucide-react';
@@ -9,7 +10,7 @@ const Approvals = () => {
 
     const fetchApprovals = async () => {
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             const response = await fetch(`${apiUrl}/api/approvals`);
             const data = await response.json();
             setApprovals(data);
@@ -21,7 +22,7 @@ const Approvals = () => {
     useEffect(() => {
         const intervalId = setInterval(async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+                const apiUrl = API_URL;
                 const response = await fetch(`${apiUrl}/api/approvals`);
                 const data = await response.json();
 
@@ -44,7 +45,7 @@ const Approvals = () => {
 
     const handleApprove = async (id) => {
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             await fetch(`${apiUrl}/api/approvals/${id}/approve`, { method: 'POST' });
             fetchApprovals(); // Refresh list immediately
         } catch (error) {

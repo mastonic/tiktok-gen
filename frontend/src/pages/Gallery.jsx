@@ -1,3 +1,4 @@
+import { API_URL } from '../api';
 import React, { useState, useEffect } from 'react';
 import { Film, Download, Info, Calendar, Hash, BarChart3, ChevronRight, Play } from 'lucide-react';
 import { Badge } from '../components/ui';
@@ -10,7 +11,7 @@ const Gallery = () => {
     useEffect(() => {
         const fetchVideos = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+                const apiUrl = API_URL;
                 const response = await fetch(`${apiUrl}/api/contents`);
                 const data = await response.json();
                 // Filter for 'Posted' column
@@ -62,7 +63,7 @@ const Gallery = () => {
                             {/* Video Preview / Placeholder */}
                             <div className="relative aspect-[9/16] bg-navy-900 border-b border-gray-800 overflow-hidden">
                                 <video
-                                    src={`${import.meta.env.VITE_API_URL || 'http://localhost:5656'}/media/production/db_${video.id.replace('db_', '')}/final_output.mp4`}
+                                    src={`${API_URL}/media/production/db_${video.id.replace('db_', '')}/final_output.mp4`}
                                     className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                                     muted
                                     onMouseOver={e => e.target.play()}
@@ -108,7 +109,7 @@ const Gallery = () => {
                                         <Info className="h-3.5 w-3.5 text-cyan-400" /> Details
                                     </button>
                                     <a
-                                        href={`${import.meta.env.VITE_API_URL || 'http://localhost:5656'}/media/production/db_${video.id.replace('db_', '')}/final_output.mp4`}
+                                        href={`${API_URL}/media/production/db_${video.id.replace('db_', '')}/final_output.mp4`}
                                         download={`iM_System_${video.id}.mp4`}
                                         className="flex items-center justify-center bg-cyan-600 hover:bg-cyan-500 text-white p-2.5 rounded-lg transition-colors shadow-lg shadow-cyan-600/20"
                                     >
@@ -146,7 +147,7 @@ const Gallery = () => {
                         {/* Left: Video Player */}
                         <div className="md:w-1/2 bg-black flex items-center justify-center">
                             <video
-                                src={`${import.meta.env.VITE_API_URL || 'http://localhost:5656'}/media/production/db_${selectedVideo.id.replace('db_', '')}/final_output.mp4`}
+                                src={`${API_URL}/media/production/db_${selectedVideo.id.replace('db_', '')}/final_output.mp4`}
                                 className="w-full h-full max-h-[80vh] md:max-h-none object-contain"
                                 controls
                                 autoPlay
@@ -237,7 +238,7 @@ const Gallery = () => {
                                                     const url = document.getElementById('tiktok-url-input').value;
                                                     if (!url) return;
                                                     try {
-                                                        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+                                                        const apiUrl = API_URL;
                                                         const res = await fetch(`${apiUrl}/api/contents/${selectedVideo.id}/link-tiktok`, {
                                                             method: 'POST',
                                                             headers: { 'Content-Type': 'application/json' },
@@ -260,7 +261,7 @@ const Gallery = () => {
 
                             <div className="mt-4 flex gap-4">
                                 <a
-                                    href={`${import.meta.env.VITE_API_URL || 'http://localhost:5656'}/media/production/db_${selectedVideo.id.replace('db_', '')}/final_output.mp4`}
+                                    href={`${API_URL}/media/production/db_${selectedVideo.id.replace('db_', '')}/final_output.mp4`}
                                     download
                                     className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-cyan-600/20 transition-all uppercase tracking-widest text-xs"
                                 >

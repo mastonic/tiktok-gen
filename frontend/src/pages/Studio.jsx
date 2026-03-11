@@ -1,5 +1,10 @@
+import { API_URL } from '../api';
 import React, { useState, useEffect } from 'react';
-import { Image, Download, Copy, PlayCircle, Loader2, Film, Wand2, Eye, Clock, Calendar, RefreshCw, Video as VideoIcon } from 'lucide-react';
+import {
+    Image, Download, Copy, PlayCircle, Loader2, Film, Wand2,
+    Eye, Clock, Calendar, RefreshCw, Mic, Music, Play,
+    CheckCircle2, AlertCircle, Video as VideoIcon
+} from 'lucide-react';
 import { Player } from '@remotion/player';
 import { MyComposition } from '../components/remotion/Composition';
 import { Badge } from '../components/ui';
@@ -14,6 +19,7 @@ const Studio = () => {
     const [videoProgress, setVideoProgress] = useState(null);
     const [isAvailable, setIsAvailable] = useState(false);
     const [finalVideoUrl, setFinalVideoUrl] = useState('');
+    const [isSquare, setIsSquare] = useState(false);
 
     useEffect(() => {
         fetchScripts();
@@ -21,32 +27,27 @@ const Studio = () => {
 
     const fetchScripts = async () => {
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             const response = await fetch(`${apiUrl}/api/contents`);
             const data = await response.json();
 
-            // Keep scripts with images or video potential
-            const validScripts = data; // Already filtered by status column in backend API
-
-            // Strictly sort by ID (newest first) as requested
-            validScripts.sort((a, b) => {
-                const idA = parseInt(a.id.split('_')[1]) || 0;
-                const idB = parseInt(b.id.split('_')[1]) || 0;
-                return idB - idA;
+            // Strictly sort by ID (newest first)
+            data.sort((a, b) => {
+                const getNum = (id) => parseInt(id.toString().split('_')[1]) || 0;
+                return getNum(b.id) - getNum(a.id);
             });
 
-            setScripts(validScripts);
+            setScripts(data);
 
             const savedId = localStorage.getItem('lastSelectedScriptId');
-            const restored = validScripts.find(s => s.id === savedId);
+            const restored = data.find(s => s.id === savedId);
 
             if (restored) {
                 setSelectedScript(restored);
                 loadScriptAssets(restored);
-            } else if (validScripts.length > 0) {
-                const first = validScripts[0];
-                setSelectedScript(first);
-                loadScriptAssets(first);
+            } else if (data.length > 0) {
+                setSelectedScript(data[0]);
+                loadScriptAssets(data[0]);
             }
         } catch (error) {
             console.error("Error fetching scripts:", error);
@@ -54,7 +55,7 @@ const Studio = () => {
     };
 
     const loadScriptAssets = (script) => {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+        const apiUrl = API_URL;
         const timestamp = Date.now();
         if (script.hasImages) {
             const imgs = (script.imagePrompts || []).map((_, i) =>
@@ -65,13 +66,12 @@ const Studio = () => {
             setGeneratedImages([]);
         }
 
-        // Also load player props if it has audio
-        if (script.hasAudio) {
+        if (script.hasAudio || script.hasVideos) {
             setPlayerProps({
                 clips: script.existingClips && script.existingClips.length > 0
                     ? script.existingClips.map(c => `${apiUrl}${c}?t=${timestamp}`)
                     : (script.imagePrompts || []).map((_, i) => `${apiUrl}/media/production/${script.id}/img_${(i + 1).toString().padStart(2, '0')}.jpg?t=${timestamp}`),
-                audioUrl: `${apiUrl}/media/production/${script.id}/voiceover.wav?t=${timestamp}`,
+                audioUrl: script.hasAudio ? `${apiUrl}/media/production/${script.id}/voiceover.wav?t=${timestamp}` : "",
                 subtitles: []
             });
             setShowPlayer(true);
@@ -84,7 +84,7 @@ const Studio = () => {
         if (!selectedScript) return;
         setIsGenerating(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             const response = await fetch(`${apiUrl}/api/flux/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -97,10 +97,34 @@ const Studio = () => {
             if (data.status === 'success') {
                 const timestamp = Date.now();
                 setGeneratedImages(data.images.map(img => `${apiUrl}${img}?t=${timestamp}`));
-                fetchScripts(); // Refresh to get hasImages:true
+                fetchScripts();
             }
         } catch (error) {
             console.error("Error generating images:", error);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleGenerateVoice = async () => {
+        if (!selectedScript) return;
+        setIsGenerating(true);
+        try {
+            const apiUrl = API_URL;
+            const response = await fetch(`${apiUrl}/api/tts/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ script_id: selectedScript.id }),
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                alert("Voix-off générée avec succès !");
+                fetchScripts();
+                loadScriptAssets(selectedScript);
+            }
+        } catch (error) {
+            console.error("Error generating voice:", error);
+            alert("Erreur lors de la génération vocale.");
         } finally {
             setIsGenerating(false);
         }
@@ -110,8 +134,8 @@ const Studio = () => {
         if (!selectedScript) return;
         try {
             setVideoProgress({ total: 100, completed: 0, status: 'Démarrage...' });
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
-            const response = await fetch(`${apiUrl}/api/workflows/image-to-video`, {
+            const apiUrl = API_URL;
+            await fetch(`${apiUrl}/api/workflows/image-to-video`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ script_id: selectedScript.id })
@@ -142,7 +166,6 @@ const Studio = () => {
 
         } catch (error) {
             console.error("Error triggering image-to-video workflow:", error);
-            alert("Erreur lors du lancement du workflow Image-to-Video");
             setVideoProgress(null);
         }
     };
@@ -150,7 +173,7 @@ const Studio = () => {
     const handleAssemblageViral = async () => {
         if (!selectedScript) return;
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             const response = await fetch(`${apiUrl}/api/workflows/assemblage-viral`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -177,11 +200,11 @@ const Studio = () => {
     const handlePublish = async () => {
         if (!selectedScript) return;
         try {
-            setIsGenerating(true); // Re-use loading state for rendering
+            setIsGenerating(true);
             setIsAvailable(false);
             setFinalVideoUrl('');
 
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             const response = await fetch(`${apiUrl}/api/workflows/publish`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -190,12 +213,9 @@ const Studio = () => {
             const data = await response.json();
 
             if (data.status === 'success' && data.videoUrl) {
-                // Refresh script list to get newest hasFinalVideo status
                 await fetchScripts();
-                // Find updated script to get correct finalVideoUrl
                 const updated = scripts.find(s => s.id === selectedScript.id);
                 const downloadUrl = updated?.finalVideoUrl ? `${apiUrl}${updated.finalVideoUrl}` : `${apiUrl}${data.videoUrl}`;
-
                 setFinalVideoUrl(downloadUrl);
                 setIsAvailable(true);
             } else {
@@ -214,16 +234,32 @@ const Studio = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                        <Image className="h-6 w-6 text-pink-500" />
+                        <VideoIcon className="h-6 w-6 text-pink-500" />
                         Production Studio
                     </h1>
-                    <p className="text-gray-400 mt-1 text-sm">Générer les images FLUX.1 et vidéo viral</p>
+                    <p className="text-gray-400 mt-1 text-sm">Générer les images FLUX.1, la voix-off et la vidéo finale</p>
                 </div>
                 <button
                     onClick={fetchScripts}
                     className="p-2 bg-navy-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-gray-500 transition-all self-end sm:self-auto"
                 >
                     <RefreshCw className="h-5 w-5" />
+                </button>
+            </div>
+
+            {/* Format Toggle */}
+            <div className="flex bg-navy-800/50 p-1 rounded-xl border border-gray-700 w-fit mb-6">
+                <button
+                    onClick={() => setIsSquare(false)}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${!isSquare ? 'bg-cyan-600 text-white shadow-lg' : 'text-gray-400 hover:text-gray-200'}`}
+                >
+                    9:16 (TikTok)
+                </button>
+                <button
+                    onClick={() => setIsSquare(true)}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${isSquare ? 'bg-cyan-600 text-white shadow-lg' : 'text-gray-400 hover:text-gray-200'}`}
+                >
+                    1:1 (Square)
                 </button>
             </div>
 
@@ -255,8 +291,9 @@ const Studio = () => {
                                         {script.date || (script.created_at ? new Date(script.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : 'Date inconnue')}
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        {script.hasImages && <Badge variant="success" className="text-[8px] h-3">Images OK</Badge>}
-                                        {script.hasVideos && <Badge variant="info" className="text-[8px] h-3">Video OK</Badge>}
+                                        {script.hasImages && <Badge variant="success" className="text-[8px] h-3">IMG</Badge>}
+                                        {script.hasAudio && <Badge variant="warning" className="text-[8px] h-3">VOICE</Badge>}
+                                        {script.hasVideos && <Badge variant="info" className="text-[8px] h-3">VIDEO</Badge>}
                                     </div>
                                 </div>
                             </button>
@@ -287,6 +324,14 @@ const Studio = () => {
                                     >
                                         {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
                                         <span className="whitespace-nowrap">{selectedScript.hasImages ? "Régénérer" : "Images"}</span>
+                                    </button>
+                                    <button
+                                        onClick={handleGenerateVoice}
+                                        disabled={isGenerating}
+                                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-gray-700 text-white rounded-lg text-xs font-semibold transition-all shadow-lg"
+                                    >
+                                        <Mic className="h-4 w-4" />
+                                        <span className="whitespace-nowrap">{selectedScript.hasAudio ? "Voix OK" : "Voix"}</span>
                                     </button>
                                     <button
                                         onClick={handleImageToVideo}
@@ -326,16 +371,25 @@ const Studio = () => {
                                 </div>
                             )}
 
+                            {/* Info Box */}
+                            <div className="mb-6 p-4 bg-navy-900/50 rounded-xl border border-gray-700 text-xs text-gray-400 flex items-start gap-3">
+                                <AlertCircle className="h-4 w-4 text-cyan-400 shrink-0" />
+                                <div>
+                                    <p className="font-semibold text-gray-200 mb-1">Narration Longue (90s)</p>
+                                    <p>Ce script nécessite 18 images FLUX pour une synchronisation parfaite à 5s par clip. Assurez-vous de générer tous les éléments avant l'exportation finale.</p>
+                                </div>
+                            </div>
+
                             {/* Remotion Player Section */}
                             {showPlayer && playerProps && (
-                                <div className="mb-8 overflow-hidden rounded-xl border border-gray-700 bg-black aspect-[9/16] max-w-[320px] mx-auto shadow-2xl relative group">
+                                <div className={`mb-8 overflow-hidden rounded-xl border border-gray-700 bg-black ${isSquare ? 'aspect-square max-w-[400px]' : 'aspect-[9/16] max-w-[320px]'} mx-auto shadow-2xl relative group`}>
                                     <Player
                                         component={MyComposition}
-                                        inputProps={playerProps}
-                                        durationInFrames={playerProps.clips.length * 90}
+                                        inputProps={{ ...playerProps, isSquare }}
+                                        durationInFrames={playerProps.clips.length * 150} // 5s * 30fps = 150 frames per clip
                                         fps={30}
-                                        compositionWidth={1080}
-                                        compositionHeight={1920}
+                                        compositionWidth={isSquare ? 1080 : 1080}
+                                        compositionHeight={isSquare ? 1080 : 1920}
                                         style={{ width: '100%', height: '100%' }}
                                         controls
                                         autoPlay
@@ -372,7 +426,15 @@ const Studio = () => {
                                     <div key={i} className="group relative bg-navy-900 rounded-xl overflow-hidden border border-gray-800 transition-all hover:border-pink-500/50">
                                         <div className="aspect-[9/16] bg-gray-800">
                                             {generatedImages[i] ? (
-                                                <img src={generatedImages[i]} alt={`Scene ${i + 1}`} className="w-full h-full object-cover" />
+                                                <img
+                                                    src={generatedImages[i]}
+                                                    alt={`Scene ${i + 1}`}
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.src = "https://placehold.co/1080x1920/0a0f1c/3B82F6?text=Image+Generating";
+                                                    }}
+                                                />
                                             ) : (
                                                 <div className="w-full h-full flex flex-col items-center justify-center text-gray-600 gap-2 p-4 text-center">
                                                     <Image className="h-8 w-8 opacity-20" />
@@ -381,10 +443,13 @@ const Studio = () => {
                                             )}
                                         </div>
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
-                                            <p className="text-[10px] text-gray-200 line-clamp-3">{prompt}</p>
+                                            <p className="text-[10px] text-gray-200 line-clamp-3 leading-relaxed">{prompt}</p>
                                         </div>
-                                        <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded text-[10px] text-white border border-white/10">
-                                            Scene {i + 1}
+                                        <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded text-[10px] text-white border border-white/10 font-black">
+                                            SCENE {i + 1}
+                                        </div>
+                                        <div className="absolute top-2 right-2">
+                                            {generatedImages[i] && <CheckCircle2 className="h-4 w-4 text-green-500 drop-shadow-md" />}
                                         </div>
                                     </div>
                                 ))}

@@ -1,3 +1,4 @@
+import { API_URL } from '../api';
 import React, { useState, useEffect } from 'react';
 import { Card, Button } from '../components/ui';
 import {
@@ -11,7 +12,7 @@ const Analytics = () => {
     useEffect(() => {
         const fetchMetrics = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+                const apiUrl = API_URL;
                 const response = await fetch(`${apiUrl}/api/metrics`);
                 const data = await response.json();
                 setRunMetrics(data);

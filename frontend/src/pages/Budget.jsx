@@ -1,3 +1,4 @@
+import { API_URL } from '../api';
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Badge } from '../components/ui';
 import { DollarSign, Wallet, TrendingDown, Power, Settings2 } from 'lucide-react';
@@ -11,7 +12,7 @@ const Budget = () => {
 
     const fetchConfig = async () => {
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             const response = await fetch(`${apiUrl}/api/system/config`);
             const data = await response.json();
             setConfig(data);
@@ -23,7 +24,7 @@ const Budget = () => {
 
     const fetchRoutes = async () => {
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             const response = await fetch(`${apiUrl}/api/routes`);
             const data = await response.json();
             setRoutes(data);
@@ -40,7 +41,7 @@ const Budget = () => {
     const handleSaveConfig = async () => {
         setIsSaving(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             await fetch(`${apiUrl}/api/system/config`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -57,7 +58,7 @@ const Budget = () => {
 
     const handleToggleAutoStop = async () => {
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             await fetch(`${apiUrl}/api/system/config`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -71,7 +72,7 @@ const Budget = () => {
 
     const handleToggleSystemPower = async () => {
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             await fetch(`${apiUrl}/api/system/config`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

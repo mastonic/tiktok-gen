@@ -169,7 +169,7 @@ def create_agents(config=None, commando_mode=False):
         role='QualityController',
         goal='Vérifier la signature finale et forcer les mots-clés d\'impact en MAJUSCULES.',
         backstory=(
-            'Tu es le garant de la perfection. Tu valides la cohérence des 7 images, la force de la caption '
+            'Tu es le garant de la perfection. Tu valides la cohérence des 18 images, la force de la caption '
             'et tu t\'assures que les 3 mots-clés stratégiques sont bien présents en MAJUSCULES.'
         ),
         verbose=True,

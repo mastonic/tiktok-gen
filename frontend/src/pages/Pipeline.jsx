@@ -1,3 +1,4 @@
+import { API_URL } from '../api';
 import React, { useState, useEffect } from 'react';
 import { Badge, Card } from '../components/ui';
 import { GripVertical, AlertTriangle, Trash2, RotateCcw, Clock, Play, CheckCircle } from 'lucide-react';
@@ -22,7 +23,7 @@ const Pipeline = () => {
     useEffect(() => {
         const fetchContents = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+                const apiUrl = API_URL;
                 const response = await fetch(`${apiUrl}/api/contents`);
                 const data = await response.json();
                 setContents(data);
@@ -39,7 +40,7 @@ const Pipeline = () => {
         e.stopPropagation();
         if (!window.confirm("Supprimer définitivement cet élément et ses médias ?")) return;
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             const res = await fetch(`${apiUrl}/api/contents/${itemId}`, { method: 'DELETE' });
             if (res.ok) {
                 setContents(prev => prev.filter(c => c.id !== itemId));
@@ -53,7 +54,7 @@ const Pipeline = () => {
         e.stopPropagation();
         if (!window.confirm("Relancer cet élément en relecture agent ?")) return;
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             const res = await fetch(`${apiUrl}/api/contents/${itemId}/relaunch`, { method: 'POST' });
             if (res.ok) {
                 // Refresh to sync state
@@ -99,7 +100,7 @@ const Pipeline = () => {
         setContents(prev => prev.map(c => c.id === contentId ? { ...c, column: targetCol } : c));
 
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             const res = await fetch(`${apiUrl}/api/contents/${contentId}/move`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

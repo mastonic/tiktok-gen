@@ -1,3 +1,4 @@
+import { API_URL } from '../api';
 import React from 'react';
 import { ExternalLink, Zap, Mic, Video, Server, BookOpen, Cpu, Cloud } from 'lucide-react';
 

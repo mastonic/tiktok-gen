@@ -1,3 +1,4 @@
+import { API_URL } from '../api';
 import React, { useState, useEffect } from 'react';
 import { Card, Badge, Button, Modal } from '../components/ui';
 import { ShieldCheck, Cpu, Play, Terminal, Settings2, Save, Loader2, CheckCircle2 } from 'lucide-react';
@@ -21,7 +22,7 @@ const Agents = () => {
 
     const fetchAgents = async () => {
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             const response = await fetch(`${apiUrl}/api/agents`);
             const data = await response.json();
             setAgents(data);
@@ -67,7 +68,7 @@ const Agents = () => {
         if (!selectedAgent) return;
         setIsSaving(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             const response = await fetch(`${apiUrl}/api/agents/update`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -97,7 +98,7 @@ const Agents = () => {
         if (!selectedAgent || !window.confirm("Réinitialiser cet agent aux paramètres d'usine ?")) return;
         setIsSaving(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             const response = await fetch(`${apiUrl}/api/agents/${selectedAgent.id}/reset`, {
                 method: 'POST'
             });
@@ -117,7 +118,7 @@ const Agents = () => {
 
     const handleToggleAgent = async (agent) => {
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             const newStatus = !agent.is_active;
             const response = await fetch(`${apiUrl}/api/agents/update`, {
                 method: 'POST',

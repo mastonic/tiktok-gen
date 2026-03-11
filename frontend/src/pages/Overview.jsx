@@ -1,3 +1,4 @@
+import { API_URL } from '../api';
 import React, { useState, useEffect } from 'react';
 import { Card, Badge, Button } from '../components/ui';
 import {
@@ -26,7 +27,7 @@ const Overview = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+                const apiUrl = API_URL;
                 const [overviewRes, trendsRes, alertsRes, configRes] = await Promise.all([
                     fetch(`${apiUrl}/api/overview`),
                     fetch(`${apiUrl}/api/trends`),
@@ -54,7 +55,7 @@ const Overview = () => {
     const handleRunCycle = async (type) => {
         setIsRunning(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+            const apiUrl = API_URL;
             const response = await fetch(`${apiUrl}/api/run`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

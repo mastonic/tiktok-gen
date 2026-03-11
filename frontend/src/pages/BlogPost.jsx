@@ -1,3 +1,4 @@
+import { API_URL } from '../api';
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -7,7 +8,6 @@ import {
 } from 'lucide-react';
 import AffiliateBento from '../components/AffiliateBento';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5656';
 
 /**
  * Parse un fichier Markdown avec frontmatter YAML et données Bento JSON.
@@ -248,7 +248,11 @@ const BlogPost = ({ slug, onBack }) => {
                             return (
                                 <div key={i} className="my-10 aspect-video rounded-[2.5rem] bg-neutral-900 overflow-hidden border border-white/10 shadow-2xl">
                                     {videoUrl ? (
-                                        <video src={videoUrl} controls autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                                        <video
+                                            src={videoUrl.startsWith('http') ? videoUrl : `${API_URL}${videoUrl}`}
+                                            controls autoPlay loop muted playsInline
+                                            className="w-full h-full object-cover"
+                                        />
                                     ) : (
                                         <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 gap-3">
                                             <Video className="w-12 h-12 text-cyan-400" />

@@ -1,18 +1,20 @@
 import React from 'react';
 import Sidebar from './Sidebar';
+import { LogoIcon } from '../ui/Logos';
 
 const Layout = ({ currentPath, setPath, children }) => {
     const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
     return (
-        <div className="flex h-screen bg-navy-900 text-gray-200 overflow-hidden relative">
+        <div className="flex h-screen bg-[#050505] text-white overflow-hidden relative">
             <div className="absolute inset-0 z-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-[0.03] pointer-events-none"></div>
 
             {/* Mobile Header */}
             <div className="lg:hidden absolute top-0 left-0 right-0 h-16 flex items-center justify-between px-6 bg-navy-800/80 backdrop-blur-md border-b border-gray-800 z-40">
-                <h1 className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-                    <span className="text-cyan-400">Mission</span> Control
-                </h1>
+                <div className="flex items-center gap-2">
+                    <LogoIcon className="h-8 w-auto" />
+                    <span className="text-sm font-black tracking-tight text-white uppercase italic">CrewAI<span className="text-cyan-400">972</span></span>
+                </div>
                 <button
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                     className="p-2 text-gray-400 hover:text-white transition-colors"

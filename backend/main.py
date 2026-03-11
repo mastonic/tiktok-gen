@@ -1036,7 +1036,31 @@ async def run_image_to_video(background_tasks: BackgroundTasks, payload: Optiona
 async def get_video_progress(job_id: str):
     return video_generation_progress.get(job_id, {"status": "not_found"})
 
+@app.post("/api/tts/generate")
+async def generate_voice(payload: dict):
+    script_id = payload.get("script_id")
+    if not script_id: return {"status": "error", "message": "ID script manquant"}
+    
+    db = SessionLocal()
+    script = db.query(ScriptInbox).filter(ScriptInbox.id == int(script_id.split("_")[1])).first()
+    db.close()
+    
+    if not script: return {"status": "error", "message": "Script introuvable"}
+    
+    job_dir = os.path.join("media/production", script_id)
+    os.makedirs(job_dir, exist_ok=True)
+    voice_path = os.path.join(job_dir, "voiceover.wav")
+    
+    import tts_service
+    tts_service.generate_tts(script.final_script, voice_path)
+    
+    return {"status": "success", "audioUrl": f"/{voice_path}"}
+
 @app.post("/api/workflows/assemblage-viral")
+async def run_assemblage_viral_endpoint(payload: dict = None):
+    # This just calls the logic but ensures return format
+    return await run_assemblage_viral(payload)
+
 async def run_assemblage_viral(payload: Optional[dict] = None):
     print("Executing Assemblage Viral Workflow...")
     # Fetch script

@@ -60,7 +60,7 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
     cta = "Abonne-toi et mets un cœur pour ne rien rater !" if commando_mode else "J'ai cassé Internet... encore."
     task_scripting = Task(
         description=(
-            "Rédige un script TikTok narratif d'exactement 30s en suivant strictement le Hook du Commander (si présent). "
+            "Rédige un script TikTok narratif d'exactement 90s en suivant strictement le Hook du Commander (si présent). "
             f"Signature obligatoire : {cta}. Utilise 3 mots-clés stratégiques en MAJUSCULES."
         ),
         expected_output="Un script TikTok complet avec signature et mots-clés en MAJUSCULES.",

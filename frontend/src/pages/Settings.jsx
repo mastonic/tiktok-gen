@@ -1,6 +1,7 @@
+import { API_URL } from '../api';
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Badge } from '../components/ui';
-import { Save, Shield, Bell, Key, Database, Globe, Loader2, AlertCircle, TriangleAlert, DollarSign, Plus, Trash2, ExternalLink } from 'lucide-react';
+import { Save, Shield, Bell, Key, Database, Globe, Loader2, AlertCircle, TriangleAlert, DollarSign, Plus, Trash2, ExternalLink, CheckCircle2 } from 'lucide-react';
 
 const Settings = () => {
     const [config, setConfig] = useState({
@@ -28,7 +29,7 @@ const Settings = () => {
     const [affiliates, setAffiliates] = useState([]);
     const [newAffiliate, setNewAffiliate] = useState({ name: '', category: '', description: '', cta: 'Tester Gratuitement', link: '', gradient: 'from-cyan-400 to-emerald-400', reconciliation_keywords: '' });
     const [addingAffiliate, setAddingAffiliate] = useState(false);
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
+    const apiUrl = API_URL;
 
     const fetchConfig = async () => {
         try {
