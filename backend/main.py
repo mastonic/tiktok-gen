@@ -1,13 +1,17 @@
 import sys
 import os
+import time
 from pathlib import Path
 
 # --- 1. Load Environment Variables First ---
 env_path = Path(__file__).parent.parent / ".env.local"
 if env_path.exists():
-    from dotenv import load_dotenv
-    load_dotenv(dotenv_path=env_path)
-    print(f"✅ Loaded environment from {env_path}")
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(dotenv_path=env_path)
+        print(f"✅ Loaded environment from {env_path}")
+    except ImportError:
+        print("⚠️ python-dotenv not found, skipping .env.local loading (native os.environ will be used)")
 
 from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException, Body, Request
 from typing import Optional
