@@ -91,6 +91,7 @@ const Studio = () => {
                 body: JSON.stringify({
                     prompts: selectedScript.imagePrompts,
                     job_id: selectedScript.id,
+                    is_square: isSquare
                 }),
             });
             const data = await response.json();
@@ -138,7 +139,10 @@ const Studio = () => {
             await fetch(`${apiUrl}/api/workflows/image-to-video`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ script_id: selectedScript.id })
+                body: JSON.stringify({
+                    script_id: selectedScript.id,
+                    is_square: isSquare
+                })
             });
 
             const interval = setInterval(async () => {

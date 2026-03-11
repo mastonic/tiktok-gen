@@ -6,10 +6,10 @@ from typing import Optional
 
 FAL_KEY = os.environ.get("FAL_KEY")
 
-def generate_flux_image(prompt: str, save_path: str) -> bool:
+def generate_flux_image(prompt: str, save_path: str, is_square: bool = False) -> bool:
     """
     Generates a high-fidelity image using Flux.1 Schnell via Fal.ai.
-    Forced for BudgetOptimizer: 0.003$ per image.
+    BudgetOptimizer: $0.003/img.
     """
     if not FAL_KEY:
         print("WARNING: FAL_KEY not found in environment.")
@@ -20,9 +20,13 @@ def generate_flux_image(prompt: str, save_path: str) -> bool:
         "Authorization": f"Key {FAL_KEY}",
         "Content-Type": "application/json"
     }
+    
+    # Selection of size based on format
+    img_size = "square" if is_square else "portrait_16_9"
+    
     payload = {
         "prompt": prompt,
-        "image_size": "portrait_16_9", # FORCED TikTok-Native (Fal uses 16_9 for its portrait preset)
+        "image_size": img_size,
         "num_inference_steps": 4,
         "enable_safety_checker": True
     }
@@ -84,7 +88,7 @@ def generate_flux_image(prompt: str, save_path: str) -> bool:
         traceback.print_exc()
         return False
 
-def generate_wan_video(prompt: str) -> Optional[str]:
+def generate_wan_video(prompt: str, is_square: bool = False) -> Optional[str]:
     """
     Implémentation de la fonction generate_wan_video (Qualité Cinématique 720p).
     """
@@ -99,7 +103,7 @@ def generate_wan_video(prompt: str) -> Optional[str]:
     }
     payload = {
         "prompt": prompt,
-        "aspect_ratio": "9:16",
+        "aspect_ratio": "1:1" if is_square else "9:16",
         "num_frames": 81,
         "resolution": "720p",
         "guidance_scale": 6.0
@@ -153,7 +157,7 @@ def generate_wan_video(prompt: str) -> Optional[str]:
         print(f"Error calling Wan API: {e}")
         return None
 
-def generate_ltx_video(prompt: str) -> Optional[str]:
+def generate_ltx_video(prompt: str, is_square: bool = False) -> Optional[str]:
     """
     Implémentation de la fonction generate_ltx_video (Économique, 768x512, Steps réduits).
     """
@@ -168,7 +172,7 @@ def generate_ltx_video(prompt: str) -> Optional[str]:
     }
     payload = {
         "prompt": prompt,
-        "resolution": "768x512",
+        "resolution": "768x768" if is_square else "768x512",
         "num_frames": 65,
         "steps": 25,
         "cfg_scale": 3.0

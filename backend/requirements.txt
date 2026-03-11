@@ -1,6 +1,14 @@
 pydantic>=2.0.0
-apscheduler
-requests
+openai
+edge-tts
+moviepy
+scipy
+torch
+torchaudio
+transformers
+parler-tts
+tiktok-uploader
+python-telegram-bot
 pytz
 python-multipart
 httpx
@@ -17,5 +25,5 @@ pytrends
 ffmpeg-python
 piper-tts
 fal-client
-tiktok-uploader
-python-telegram-bot
+apscheduler
+requests

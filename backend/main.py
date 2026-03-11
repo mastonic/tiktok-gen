@@ -935,6 +935,7 @@ async def get_metrics():
 class FluxPromptRequest(BaseModel):
     prompts: list[str]
     job_id: str
+    is_square: bool = False
 
 @app.post("/api/flux/generate")
 def generate_flux_images(request: FluxPromptRequest):
@@ -951,8 +952,8 @@ def generate_flux_images(request: FluxPromptRequest):
     for i, prompt in enumerate(request.prompts):
         filename = f"{job_dir}/img_{i+1:02d}.jpg"
         
-        print(f"🎨 Regenerating image {i+1}/{len(request.prompts)} with Fal.ai...")
-        success = generate_flux_image(prompt, filename)
+        print(f"🎨 Regenerating image {i+1}/{len(request.prompts)} with Fal.ai (Square={request.is_square})...")
+        success = generate_flux_image(prompt, filename, is_square=request.is_square)
         
         if success:
             generated_images.append(f"/media/production/{request.job_id}/img_{i+1:02d}.jpg")
@@ -965,7 +966,7 @@ def generate_flux_images(request: FluxPromptRequest):
 
 video_generation_progress = {}
 
-def process_image_to_video(job_dir_name, images, job_dir, clips_dir, prompt):
+def process_image_to_video(job_dir_name, images, job_dir, clips_dir, prompt, is_square=False):
     success_count = 0
     video_generation_progress[job_dir_name] = {"total": len(images), "completed": 0, "status": "running"}
     for img in images:
@@ -979,7 +980,7 @@ def process_image_to_video(job_dir_name, images, job_dir, clips_dir, prompt):
             video_generation_progress[job_dir_name]["completed"] = success_count
             continue
 
-        url = video_gen.generate_ltx_video(prompt)
+        url = video_gen.generate_ltx_video(prompt, is_square=is_square)
         if url:
             if video_gen.download_video(url, clip_path):
                 success_count += 1
@@ -1024,11 +1025,14 @@ async def run_image_to_video(background_tasks: BackgroundTasks, payload: Optiona
 
     if not images:
         return {"status": "error", "message": f"Aucune image trouvée dans {job_dir}"}
-
-    prompt = "Cinematic slow movement, 4k, high resolution, consistent with original image style."
+    
+    is_square = payload.get("is_square", False) if payload else False
+    
+    # Identify video prompting
+    prompt = "Cinematic video of the prompt, high movement, high quality" # Default
     
     print(f"Found {len(images)} images in {job_dir}. Sending to Fal.ai in background...")
-    background_tasks.add_task(process_image_to_video, job_dir_name, images, job_dir, clips_dir, prompt)
+    background_tasks.add_task(process_image_to_video, job_dir_name, images, job_dir, clips_dir, prompt, is_square=is_square)
     
     return {"status": "success", "message": f"Génération de {len(images)} clips démarrée en arrière-plan..."}
 
