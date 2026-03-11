@@ -60,17 +60,19 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
     cta = "Abonne-toi et mets un cœur pour ne rien rater !" if commando_mode else "J'ai cassé Internet... encore."
     task_scripting = Task(
         description=(
-            "Rédige un script TikTok narratif d'exactement 90s en suivant strictement le Hook du Commander (si présent). "
+            "Rédige un script TikTok narratif d'EXACTEMENT 90 à 100 secondes en suivant strictement le Hook du Commander (si présent). "
+            "Le script doit être long, détaillé et captivant. "
             f"Signature obligatoire : {cta}. Utilise 3 mots-clés stratégiques en MAJUSCULES."
         ),
-        expected_output="Un script TikTok complet avec signature et mots-clés en MAJUSCULES.",
+        expected_output="Un script TikTok long d'exactement 90-100 secondes avec signature et mots-clés.",
         agent=script_architect
     )
     tasks.append(task_scripting)
 
     task_visuals = Task(
         description=(
-            "Crée exactement 18 prompts cinématiques en anglais pour FLUX. Raconte une histoire visuelle cohérente pour un format LONG de 90s."
+            "Crée exactement 18 prompts cinématiques en anglais pour FLUX. "
+            "Raconte une histoire visuelle cohérente pour un format LONG de 90 secondes (1 clip de 5s par prompt)."
         ),
         expected_output="Exactly 18 cinematically consistent image prompts.",
         agent=visual_promptist,

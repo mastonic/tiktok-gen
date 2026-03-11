@@ -126,15 +126,23 @@ class ViralFlow(Flow[SwarmState]):
         
         cta = "Abonne-toi et mets un cœur pour ne rien rater !" if self.state.mode == "commando" else "J'ai cassé Internet... encore."
         task_script = Task(
-            description=f"Rédiger un script TikTok narratif LONG de 90s minimum (Signature: {cta}).",
-            expected_output="Script TikTok narratif simple et détaillé de 90s minimum.",
+            description=(
+                f"Rédiger un script TikTok narratif LONG d'exactement 90 à 100 secondes (Signature: {cta}). "
+                "Le script doit être dense, technique et ultra-captivant pour maintenir l'attention sur la durée. "
+                "Développe chaque point en profondeur."
+            ),
+            expected_output="Script TikTok narratif simple et détaillé d'exactement 90-100 secondes.",
             agent=self.script_architect,
             context=[task_roi]
         )
         
         task_visuals = Task(
-            description="Créer 18 prompts cinématiques pour FLUX.",
-            expected_output="Exactly 18 prompts.",
+            description=(
+                "Créer exactement 18 prompts cinématiques en anglais pour FLUX. "
+                "Chaque prompt correspond à un clip de 5 secondes pour une vidéo totale de 90 secondes. "
+                "Assure une cohérence visuelle parfaite entre les 18 scènes."
+            ),
+            expected_output="Exactly 18 cinematic prompts in English.",
             agent=self.visual_promptist,
             output_pydantic=VisualPrompts,
             context=[task_script]
