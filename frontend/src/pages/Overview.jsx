@@ -7,7 +7,8 @@ import {
     DollarSign,
     TrendingUp,
     AlertTriangle,
-    Play
+    Play,
+    Eye
 } from 'lucide-react';
 
 const Overview = () => {

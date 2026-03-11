@@ -54,6 +54,44 @@ def hacker_news_tool(query: str = "") -> str:
     except Exception as e:
         return f"HN Error: {e}"
 
+@tool("GithubTrendingTool")
+def github_trending_tool(language: str = "") -> str:
+    """
+    Fetches trending repositories on GitHub. 
+    Can filter by language (e.g. 'python', 'javascript').
+    """
+    try:
+        url = "https://github-trending-api.mirror.workers.dev/repositories"
+        if language:
+            url += f"?language={language}"
+            
+        resp = requests.get(url, timeout=10)
+        data = resp.json()
+        results = f"Trending GitHub Repos ({language or 'all'}):\n"
+        for repo in data[:8]:
+            results += f"- {repo['name']} by {repo['author']} | Stars: {repo['stars']} | {repo['url']}\n"
+            results += f"  Desc: {repo['description']}\n\n"
+        return results
+    except Exception as e:
+        return f"GitHub Trending Error: {e}. Fallback to scraping..."
+
+@tool("ArxivTool")
+def arxiv_tool(query: str = "Artificial Intelligence") -> str:
+    """
+    Searches Arxiv for the latest research papers.
+    Useful for deep technical content or new AI breakthroughs.
+    """
+    try:
+        url = f"http://export.arxiv.org/api/query?search_query=all:{query}&start=0&max_results=5&sortBy=submittedDate&sortOrder=descending"
+        import feedparser
+        feed = feedparser.parse(url)
+        results = f"Latest Arxiv Papers for '{query}':\n"
+        for entry in feed.entries:
+            results += f"- {entry.title}\n  Summary: {entry.summary[:200]}...\n  Link: {entry.link}\n\n"
+        return results
+    except Exception as e:
+        return f"Arxiv Error: {e}"
+
 def _duckduckgo_logic(query: str) -> str:
     try:
         results = ""

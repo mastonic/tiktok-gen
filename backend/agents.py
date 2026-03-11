@@ -1,6 +1,6 @@
 from crewai import Agent, LLM
 from langchain_google_genai import ChatGoogleGenerativeAI
-from custom_tools import feed_parser_tool, duckduckgo_search_tool, trafilatura_scraper, pytrends_tool, perplexity_tool, hacker_news_tool
+from custom_tools import feed_parser_tool, duckduckgo_search_tool, trafilatura_scraper, pytrends_tool, perplexity_tool, hacker_news_tool, github_trending_tool, arxiv_tool
 import os
 import requests
 from dotenv import load_dotenv
@@ -117,7 +117,7 @@ def create_agents(config=None, commando_mode=False):
         verbose=True,
         allow_delegation=False,
         llm=get_agent_llm('TrendRadar'),
-        tools=[perplexity_tool, pytrends_tool, feed_parser_tool, duckduckgo_search_tool, hacker_news_tool]
+        tools=[perplexity_tool, pytrends_tool, feed_parser_tool, duckduckgo_search_tool, hacker_news_tool, github_trending_tool, arxiv_tool]
     )
 
     viral_judge = Agent(
