@@ -91,11 +91,14 @@ export const MyComposition = ({ clips, audioUrl, subtitles, isSquare = false }) 
             {audioUrl && <Audio src={audioUrl} />}
 
             {/* 3. Subtitles */}
-            {subtitles && subtitles.map((sub, idx) => (
-                <Sequence key={`sub-${idx}`} from={sub.start} durationInFrames={sub.end - sub.start}>
-                    <SubtitleText text={sub.text} />
-                </Sequence>
-            ))}
+            {subtitles && subtitles.map((sub, idx) => {
+                const duration = Math.max(1, sub.end - sub.start); // Ensure positive duration
+                return (
+                    <Sequence key={`sub-${idx}`} from={sub.start} durationInFrames={duration}>
+                        <SubtitleText text={sub.text} />
+                    </Sequence>
+                );
+            })}
         </AbsoluteFill>
     );
 };

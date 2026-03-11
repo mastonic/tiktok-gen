@@ -1,4 +1,5 @@
 import { API_URL } from '../api';
+console.log("🚀 [Studio] v1.3 (Hardened API Detection)");
 import React, { useState, useEffect } from 'react';
 import {
     Image, Download, Copy, PlayCircle, Loader2, Film, Wand2,
