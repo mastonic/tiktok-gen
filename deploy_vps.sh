@@ -40,7 +40,11 @@ read -p "Enter FAL_KEY [${FAL_KEY:-vide}]: " NEW_FAL
 FAL_KEY=${NEW_FAL:-$FAL_KEY}
 
 # 7. CONSTRUCTION URL
-VITE_API_URL="http://${BACKEND_DOMAIN}:${BACKEND_PORT}"
+if [[ $BACKEND_DOMAIN =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    VITE_API_URL="http://${BACKEND_DOMAIN}:${BACKEND_PORT}"
+else
+    VITE_API_URL="https://${BACKEND_DOMAIN}"
+fi
 
 # 8. Génération .env
 cat <<EOT > .env
