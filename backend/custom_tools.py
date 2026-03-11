@@ -87,12 +87,18 @@ def perplexity_tool(query: str) -> str:
     api_key = os.environ.get("PERPLEXITY_API_KEY")
     if not api_key:
         try:
+            print("🔍 [Perplexity] Key not in env, checking DB...")
             from database import SessionLocal, SystemConfig
             db = SessionLocal()
             conf = db.query(SystemConfig).first()
-            api_key = conf.perplexity_key if conf else None
+            if conf and conf.perplexity_key:
+                api_key = conf.perplexity_key
+                print("✅ [Perplexity] Key found in DB.")
+            else:
+                print("❌ [Perplexity] No key found in DB.")
             db.close()
-        except:
+        except Exception as e:
+            print(f"❌ [Perplexity] Error reading DB: {e}")
             pass
             
     if not api_key:
