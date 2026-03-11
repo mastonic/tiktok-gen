@@ -37,7 +37,7 @@ def generate_tts(text: str, output_path: str, mode: str = "f5-tts") -> bool:
     
     if mode == "f5-tts" and fal_key:
         try:
-            print(f"🎙️ [VoiceMaster] Generating narrative voice via fal-ai/f5-tts...")
+            print(f"🎙️ [VoiceMaster] Length: {len(clean_text)} chars. Generating via fal-ai/f5-tts...")
             # F5-TTS logic (via fal-ai)
             url = "https://fal.run/fal-ai/f5-tts"
             headers = {"Authorization": f"Key {fal_key}", "Content-Type": "application/json"}
@@ -45,7 +45,9 @@ def generate_tts(text: str, output_path: str, mode: str = "f5-tts") -> bool:
                 "gen_text": clean_text
             }
             response = requests.post(url, json=payload, headers=headers)
-            response.raise_for_status()
+            if response.status_code != 200:
+                print(f"❌ Fal.ai API Error ({response.status_code}): {response.text}")
+                response.raise_for_status()
         
             # Track cost
             try:
