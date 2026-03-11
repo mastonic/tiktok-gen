@@ -660,6 +660,36 @@ async def get_overview():
             "error": str(e)
         }
 
+def parse_ass_subtitles(ass_path):
+    if not os.path.exists(ass_path):
+        return []
+    subs = []
+    try:
+        with open(ass_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("Dialogue:"):
+                    parts = line.split(",", 9)
+                    if len(parts) >= 10:
+                        start_str = parts[1]
+                        end_str = parts[2]
+                        # Remove effects/tags like {\pos(540,1344)}{\t(0,50,...)}
+                        text = re.sub(r'\{.*?\}', '', parts[9]).strip()
+                        
+                        def to_frames(s):
+                            try:
+                                h, m, sec = s.split(":")
+                                return int((int(h)*3600 + int(m)*60 + float(sec)) * 30) # Assuming 30fps
+                            except: return 0
+                            
+                        subs.append({
+                            "text": text,
+                            "start": to_frames(start_str),
+                            "end": to_frames(end_str)
+                        })
+    except Exception as e:
+        print(f"Error parsing ASS for Studio: {e}")
+    return subs
+
 @app.get("/api/contents")
 async def get_contents():
     try:
@@ -696,15 +726,23 @@ async def get_contents():
                 imgs = [f for f in os.listdir(job_dir) if f.startswith("img_") and f.endswith((".jpg", ".png"))]
                 has_images = len(imgs) > 0
                 
-                # Videos (clips)
-                clips_dir = os.path.join(job_dir, "clips_video")
-                if os.path.exists(clips_dir):
-                    vids = [f for f in os.listdir(clips_dir) if f.endswith(".mp4")]
-                    has_videos = len(vids) > 0
-                    existing_clips = [f"/media/production/db_{s.id}/clips_video/{v}" for v in sorted(vids)]
+                # Videos (clips) - Check for normalized clips first (Better browser support)
+                norm_clips = sorted([f for f in os.listdir(job_dir) if f.startswith("norm_clip_") and f.endswith(".mp4")])
+                if norm_clips:
+                    has_videos = True
+                    existing_clips = [f"/media/production/db_{s.id}/{v}" for v in norm_clips]
+                else:
+                    clips_dir = os.path.join(job_dir, "clips_video")
+                    if os.path.exists(clips_dir):
+                        vids = [f for f in os.listdir(clips_dir) if f.endswith(".mp4")]
+                        has_videos = len(vids) > 0
+                        existing_clips = [f"/media/production/db_{s.id}/clips_video/{v}" for v in sorted(vids)]
                 
                 # Audio
                 has_audio = os.path.exists(os.path.join(job_dir, "voiceover.wav"))
+
+                # Subtitles (New: Parse for Studio)
+                subtitles = parse_ass_subtitles(os.path.join(job_dir, "subtitles.ass"))
 
                 # Final Video
                 has_final_video = os.path.exists(os.path.join(job_dir, "final_output.mp4"))
@@ -729,7 +767,8 @@ async def get_contents():
                 "hasImages": has_images,
                 "hasVideos": has_videos,
                 "hasAudio": has_audio,
-                "existingClips": existing_clips
+                "existingClips": existing_clips,
+                "subtitles": subtitles if 'subtitles' in locals() else []
             })
             
         db = SessionLocal()

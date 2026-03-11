@@ -72,7 +72,7 @@ const Studio = () => {
                     ? script.existingClips.map(c => `${apiUrl}${c}?t=${timestamp}`)
                     : (script.imagePrompts || []).map((_, i) => `${apiUrl}/media/production/${script.id}/img_${(i + 1).toString().padStart(2, '0')}.jpg?t=${timestamp}`),
                 audioUrl: script.hasAudio ? `${apiUrl}/media/production/${script.id}/voiceover.wav?t=${timestamp}` : "",
-                subtitles: []
+                subtitles: script.subtitles || []
             });
             setShowPlayer(true);
         } else {
