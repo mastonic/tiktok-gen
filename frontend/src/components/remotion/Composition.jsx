@@ -1,5 +1,4 @@
-import React from 'react';
-import { AbsoluteFill, Audio, Img, Sequence, useCurrentFrame, useVideoConfig } from 'remotion';
+import { AbsoluteFill, Audio, Img, Video, Sequence, useCurrentFrame, useVideoConfig } from 'remotion';
 
 const SubtitleText = ({ text }) => {
     const frame = useCurrentFrame();
@@ -16,6 +15,7 @@ const SubtitleText = ({ text }) => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
+            zIndex: 10
         }}>
             <span style={{
                 color: '#FFFF00', // Yellow
@@ -39,23 +39,25 @@ export const MyComposition = ({ clips, audioUrl, subtitles, isSquare = false }) 
     const { fps, width, height } = useVideoConfig();
     const clipDurationInFrames = 5 * fps; // 5 seconds per clip
 
+    const isMp4 = (url) => {
+        if (!url) return false;
+        return url.toLowerCase().split('?')[0].endsWith('.mp4');
+    };
+
     return (
         <AbsoluteFill style={{ backgroundColor: '#000' }}>
             {/* 1. Video Clips Sequence */}
             {clips && clips.length > 0 ? clips.map((clip, idx) => (
                 <Sequence key={idx} from={idx * clipDurationInFrames} durationInFrames={clipDurationInFrames}>
                     <AbsoluteFill style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        {clip.endsWith('.mp4') ? (
-                            <video
+                        {isMp4(clip) ? (
+                            <Video
                                 src={clip}
                                 style={{
                                     width: '100%',
                                     height: '100%',
                                     objectFit: 'cover'
                                 }}
-                                autoPlay
-                                loop
-                                muted
                             />
                         ) : (
                             <Img
@@ -70,7 +72,7 @@ export const MyComposition = ({ clips, audioUrl, subtitles, isSquare = false }) 
                     </AbsoluteFill>
                 </Sequence>
             )) : (
-                <AbsoluteFill className="bg-navy-900 flex items-center justify-center text-gray-600 text-sm">
+                <AbsoluteFill style={{ display: 'flex', backgroundColor: '#0a0f1c', alignItems: 'center', justifyContent: 'center', color: '#4b5563' }}>
                     Aucun clip disponible
                 </AbsoluteFill>
             )}
