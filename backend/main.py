@@ -733,18 +733,23 @@ async def get_contents():
                 if norm_clips:
                     has_videos = True
                     existing_clips = [f"/media/production/db_{s.id}/{v}" for v in norm_clips]
+                    print(f"🎬 [StudioData] Found {len(norm_clips)} normalized clips for {s.id}")
                 else:
                     clips_dir = os.path.join(job_dir, "clips_video")
                     if os.path.exists(clips_dir):
-                        vids = [f for f in os.listdir(clips_dir) if f.endswith(".mp4")]
+                        vids = sorted([f for f in os.listdir(clips_dir) if f.endswith(".mp4")])
                         has_videos = len(vids) > 0
-                        existing_clips = [f"/media/production/db_{s.id}/clips_video/{v}" for v in sorted(vids)]
+                        existing_clips = [f"/media/production/db_{s.id}/clips_video/{v}" for v in vids]
+                        print(f"🎞️ [StudioData] Found {len(vids)} raw clips for {s.id}")
                 
                 # Audio
                 has_audio = os.path.exists(os.path.join(job_dir, "voiceover.wav"))
 
                 # Subtitles (New: Parse for Studio)
-                subtitles = parse_ass_subtitles(os.path.join(job_dir, "subtitles.ass"))
+                sub_path = os.path.join(job_dir, "subtitles.ass")
+                subtitles = parse_ass_subtitles(sub_path)
+                if subtitles:
+                    print(f"📝 [StudioData] Parsed {len(subtitles)} subtitles for {s.id}")
 
                 # Final Video
                 has_final_video = os.path.exists(os.path.join(job_dir, "final_output.mp4"))

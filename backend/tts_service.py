@@ -38,32 +38,58 @@ def generate_tts(text: str, output_path: str, mode: str = "f5-tts") -> bool:
     if mode == "f5-tts" and fal_key:
         try:
             print(f"🎙️ [VoiceMaster] Length: {len(clean_text)} chars. Generating via fal-ai/f5-tts...")
-            # F5-TTS logic (via fal-ai)
-            url = "https://fal.run/fal-ai/f5-tts"
-            headers = {"Authorization": f"Key {fal_key}", "Content-Type": "application/json"}
-            payload = {
-                "gen_text": clean_text
-            }
-            response = requests.post(url, json=payload, headers=headers)
-            if response.status_code != 200:
-                print(f"❌ Fal.ai API Error ({response.status_code}): {response.text}")
-                response.raise_for_status()
-        
-            # Track cost
-            try:
-                from database import track_cost
-                track_cost(0.035)
-            except:
-                pass
             
-            data = response.json()
-            audio_url = data.get("audio", {}).get("url")
-            if audio_url:
-                r = requests.get(audio_url)
-                with open(output_path, "wb") as f:
-                    f.write(r.content)
+            # Fal.ai F5-TTS has a char limit (approx 1000). We chunk it if needed.
+            MAX_CHARS = 800
+            chunks = [clean_text[i:i+MAX_CHARS] for i in range(0, len(clean_text), MAX_CHARS)]
+            
+            audio_segments = []
+            
+            # Unified reference audio for the "Docu-Style" voice
+            REF_AUDIO = "https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham_essay.wav" # Generic placeholder or your own pro sample
+            
+            for i, chunk in enumerate(chunks):
+                print(f"   -> Processing chunk {i+1}/{len(chunks)}...")
+                url = "https://fal.run/fal-ai/f5-tts"
+                headers = {"Authorization": f"Key {fal_key}", "Content-Type": "application/json"}
+                payload = {
+                    "gen_text": chunk,
+                    "ref_audio_url": REF_AUDIO,
+                    "model_type": "F5-TTS"
+                }
+                response = requests.post(url, json=payload, headers=headers)
+                
+                if response.status_code != 200:
+                    print(f"❌ Fal.ai API Error ({response.status_code}): {response.text}")
+                    raise Exception(f"Fal.ai error: {response.text}")
+                
+                data = response.json()
+                audio_url = data.get("audio", {}).get("url")
+                if audio_url:
+                    r = requests.get(audio_url)
+                    segment_path = f"{output_path}.chunk_{i}.wav"
+                    with open(segment_path, "wb") as f:
+                        f.write(r.content)
+                    audio_segments.append(segment_path)
+            
+            if audio_segments:
+                # Concatenate segments using ffmpeg if multiple chunks
+                if len(audio_segments) > 1:
+                    import subprocess
+                    concat_file = f"{output_path}.concat.txt"
+                    with open(concat_file, "w") as f:
+                        for seg in audio_segments:
+                            f.write(f"file '{os.path.abspath(seg)}'\n")
+                    subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_file, "-c", "copy", output_path], check=True)
+                    # Cleanup
+                    for seg in audio_segments: os.remove(seg)
+                    os.remove(concat_file)
+                else:
+                    os.rename(audio_segments[0], output_path)
+                
                 print(f"✅ VoiceMaster (F5-TTS) generated: {output_path}")
                 return True
+                
         except Exception as e:
             print(f"❌ F5-TTS failed: {e}. Falling back...")
 

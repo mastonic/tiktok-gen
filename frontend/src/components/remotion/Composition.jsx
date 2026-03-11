@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { AbsoluteFill, Audio, Img, Video, Sequence, useCurrentFrame, useVideoConfig } from 'remotion';
 
 const SubtitleText = ({ text }) => {
@@ -15,15 +16,15 @@ const SubtitleText = ({ text }) => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 100
+            zIndex: 1000
         }}>
             <span style={{
                 color: '#FFFF00', // Yellow
-                fontFamily: 'system-ui, -apple-system, sans-serif',
+                fontFamily: 'system-ui, -apple-system, Arial, sans-serif',
                 fontWeight: '900',
                 fontSize: '85px',
                 textTransform: 'uppercase',
-                textShadow: '8px 8px 0px #000, -8px -8px 0px #000, 8px -8px 0px #000, -8px 8px 0px #000, 0 0 15px rgba(0,0,0,0.5)',
+                textShadow: '8px 8px 0px #000, -8px -8px 0px #000, 8px -8px 0px #000, -8px 8px 0px #000, 0 0 20px rgba(0,0,0,1)',
                 transform: `scale(${scale})`,
                 opacity: opacity,
                 padding: '20px',
@@ -39,6 +40,10 @@ const SubtitleText = ({ text }) => {
 export const MyComposition = ({ clips, audioUrl, subtitles, isSquare = false }) => {
     const { fps, width, height } = useVideoConfig();
     const clipDurationInFrames = 5 * fps; // 5 seconds per clip
+
+    useEffect(() => {
+        console.log("📺 Composition check:", { clipsCount: clips?.length, subsCount: subtitles?.length, audioUrl });
+    }, [clips, subtitles, audioUrl]);
 
     const isMp4 = (url) => {
         if (!url) return false;
