@@ -11,12 +11,6 @@ export default defineConfig({
         watch: {
             usePolling: true, // Crucial for Docker volumes on some VPS
         },
-        hmr: {
-            clientPort: 443,
-            protocol: 'wss',
-            // We remove the hardcoded host to let Vite detect it
-            // or we use the domain if known, but removing it is safer
-            overlay: false, // Disables the red screen overlay that reloads the page
-        },
+        hmr: false,
     },
 })
