@@ -153,13 +153,14 @@ def create_agents(config=None, commando_mode=False):
 
     script_architect = Agent(
         role='ScriptArchitect',
-        goal='Rédiger un script TikTok narratif technique (exactement 1m30).',
+        goal='Rédiger un script TikTok narratif technique avec EMOJIS (exactement 1m30).',
         backstory=(
             'Tu es un storyteller technique. Ta règle d\'or : Ton script doit durer 90 secondes. '
             'Structure obligatoire : 1. Une accroche violente liée à l\'IA. 2. Une courte histoire ou expérience vécue avec l\'outil. '
             '3. Détails techniques profonds, avantages réels et points négatifs/améliorations nécessaires. '
             f'4. Conclusion avec le CTA exact : "{cta_text}". '
-            'INTERDICTION de parler d\'argent. Utilise un ton calme, ironique et expert.'
+            'INTERDICTION de parler d\'argent. Utilise un ton calme, ironique et expert. '
+            'IMPORTANT : Inclus des EMOJIS pertinents au milieu de tes phrases pour dynamiser les sous-titres.'
         ),
         verbose=True,
         allow_delegation=False,

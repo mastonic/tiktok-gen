@@ -152,14 +152,18 @@ def generate_ass_subtitles(script, keywords, output_path, audio_path):
     try:
         with open(audio_path, "rb") as f:
             try:
+                # Use the original script as a prompt to help Whisper include emojis and match the text
+                prompt = script[:200] # Standard whisper prompt limit
                 transcript = client.audio.transcriptions.create(
-                    file=f, model="whisper-large-v3", response_format="verbose_json", timestamp_granularities=["word"]
+                    file=f, model="whisper-large-v3", response_format="verbose_json", 
+                    timestamp_granularities=["word"], prompt=prompt
                 )
             except Exception:
-                # Fallback to standard whisper if large-v3 endpoint is unavailable on this proxy/client
+                # Fallback to standard whisper
                 f.seek(0)
                 transcript = client.audio.transcriptions.create(
-                    file=f, model="whisper-1", response_format="verbose_json", timestamp_granularities=["word"]
+                    file=f, model="whisper-1", response_format="verbose_json", 
+                    timestamp_granularities=["word"], prompt=script[:200]
                 )
         words_data = getattr(transcript, 'words', [])
     except Exception as e:
@@ -174,15 +178,15 @@ PlayResY: 1920
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,The Bold Font,75,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,2,0,2,0,0,0,1
+Style: Default,Arial,75,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,2,1,2,0,0,0,1
 """
     events = "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
     
-    # Chunk by 1 word for Hormozi style (mot-par-mot)
-    for i in range(0, len(words_data)):
-        w = words_data[i]
-        text = w.word.upper().strip()
+    for i, w in enumerate(words_data):
+        text = w.word.strip() # Don't UPPERCASE to avoid messing with some emojis if they are special
         if not text: continue
+        
+        # Check if original script has emojis for this chunk (Optional, but let's at least keep what’s there)
         
         start_ts = format_ass_time(w.start)
         end_ts = format_ass_time(w.end)
