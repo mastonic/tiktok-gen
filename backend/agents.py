@@ -12,10 +12,18 @@ if os.path.exists(env_path):
     load_dotenv(dotenv_path=env_path)
 
 def get_llm(model_name="openai/gpt-4o-mini"):
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        print(f"WARNING: OPENAI_API_KEY not found in environment, falling back to gemini")
-        return ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=os.environ.get("GEMINI_API_KEY"))
+    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    if not api_key or api_key.lower() == "vide":
+        print(f"WARNING: OPENAI_API_KEY not found or invalid, falling back to gemini")
+        gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
+        if not gemini_key or gemini_key.lower() == "vide":
+             print("CRITICAL: GEMINI_API_KEY also missing or invalid! Please check .env")
+        return LLM(
+            model="gemini/gemini-1.5-flash",
+            api_key=gemini_key,
+            max_retries=5,
+            timeout=120,
+        )
     
     return LLM(
         model=model_name,
