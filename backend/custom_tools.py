@@ -6,20 +6,53 @@ from pytrends.request import TrendReq
 
 def _feed_parser_logic(feed_url: str) -> str:
     try:
-        agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-        feed = feedparser.parse(feed_url, agent=agent)
+        # Robust user agent to avoid blocks (especially for Reddit)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 iM-System-Bot/1.0"
+        }
+        
+        import requests
+        resp = requests.get(feed_url, headers=headers, timeout=15)
+        if resp.status_code != 200:
+            return f"Error: RSS source returned status {resp.status_code}"
+            
+        feed = feedparser.parse(resp.content)
         
         content = ""
-        for i, entry in enumerate(feed.entries[:8]):
-            content += f"{i+1}. Title: {entry.title}\nLink: {entry.link}\nSummary: {getattr(entry, 'summary', 'No summary')[:200]}\n\n"
-        return content or "No entries found."
+        for i, entry in enumerate(feed.entries[:10]):
+            title = getattr(entry, 'title', 'No Title')
+            link = getattr(entry, 'link', 'No Link')
+            summary = getattr(entry, 'summary', 'No summary')[:300]
+            content += f"{i+1}. [{title}]({link})\n{summary}\n\n"
+        return content or "No entries found in this feed."
     except Exception as e:
         return f"Error parsing feed: {e}"
 
 @tool("FeedParserTool")
 def feed_parser_tool(feed_url: str) -> str:
-    """Parses an RSS feed (Reddit, GitHub, etc.)"""
+    """Parses an RSS feed (Reddit, GitHub, Tech Blogs). Highly robust fallback."""
     return _feed_parser_logic(feed_url)
+
+@tool("HackerNewsTool")
+def hacker_news_tool(query: str = "") -> str:
+    """
+    Fetches the top stories from HackerNews.
+    If a query is provided, it use search; otherwise it returns current top tech trends.
+    """
+    try:
+        if query:
+            url = f"https://hn.algolia.com/api/v1/search?query={query}&tags=story&hitsPerPage=5"
+        else:
+            url = "https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=10"
+            
+        resp = requests.get(url, timeout=10)
+        data = resp.json()
+        results = "Top HackerNews Stories:\n"
+        for hit in data.get('hits', []):
+            results += f"- {hit['title']} ({hit['url']}) | Points: {hit['points']}\n"
+        return results
+    except Exception as e:
+        return f"HN Error: {e}"
 
 def _duckduckgo_logic(query: str) -> str:
     try:
@@ -127,10 +160,11 @@ def perplexity_tool(query: str) -> str:
             pass
             
     if not api_key:
-        print("⚠️ [Perplexity] Key not found, falling back to DuckDuckGo/RSS.")
+        print("⚠️ [Perplexity] Key not found, falling back to multi-source search.")
         ddg_results = _duckduckgo_logic(query)
-        rss_results = _feed_parser_logic("https://www.reddit.com/r/artificial/new/.rss")
-        return f"Note: Perplexity indisponible (Clé manquante). Résultats de secours :\n\n{ddg_results}\n\nFlux RSS :\n{rss_results}"
+        hn_results = hacker_news_tool(query)
+        reddit_rss = _feed_parser_logic("https://www.reddit.com/r/artificial/top/.rss?t=day")
+        return f"Note: Perplexity indisponible. Résultats combinés :\n\n-- DDG --\n{ddg_results}\n\n-- HackerNews --\n{hn_results}\n\n-- Reddit RSS --\n{reddit_rss}"
         
     url = "https://api.perplexity.ai/chat/completions"
     payload = {
