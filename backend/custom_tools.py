@@ -25,9 +25,17 @@ def _duckduckgo_logic(query: str) -> str:
     try:
         results = ""
         with DDGS() as ddgs:
-            for i, r in enumerate(ddgs.text(query, max_results=3)):
+            # Try original query
+            search_results = list(ddgs.text(query, max_results=5))
+            
+            # If no results, try a broader fallback
+            if not search_results:
+                print(f"⚠️ [DDG] No results for '{query}', trying broader search...")
+                search_results = list(ddgs.text("latest AI tools open source news 2026", max_results=5))
+                
+            for i, r in enumerate(search_results):
                 results += f"Source {i+1}: {r['title']}\nSnippet: {r['body']}\nLink: {r['href']}\n\n"
-        return results or "No results found."
+        return results or "No results found even after fallback."
     except Exception as e:
         return f"Error searching: {e}"
 
@@ -109,7 +117,7 @@ def perplexity_tool(query: str) -> str:
         
     url = "https://api.perplexity.ai/chat/completions"
     payload = {
-        "model": "sonar-reasoning", # Premium model with deep analysis
+        "model": "sonar", # More conservative model choice
         "messages": [
             {
                 "role": "user",
@@ -119,24 +127,26 @@ def perplexity_tool(query: str) -> str:
         "return_citations": True
     }
     headers = {
-        "Authorization": f"Bearer {api_key}",
+        "Authorization": f"Bearer {api_key.strip()}",
         "Content-Type": "application/json"
     }
     
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=60)
         
-        # Check for credit/balance issues (HTTP 402 Payment Required or specific body)
+        # Check for credit/balance issues
         if response.status_code == 402 or "insufficient_balance" in response.text.lower():
-            print("⚠️ [Perplexity] Pas de crédit !! Retour au format de base (DuckDuckGo/RSS)...")
-            # --- INTERNAL FALLBACK ---
-            ddg_results = _duckduckgo_logic("dernières tendances IA tech 24h")
+            print("⚠️ [Perplexity] Pas de crédit !! Pas de secours auto pour éviter les boucles.")
+            ddg_results = _duckduckgo_logic(query)
             rss_results = _feed_parser_logic("https://www.reddit.com/r/artificial/new/.rss")
-            return f"Note: Perplexity indisponible (Crédits épuisés). Résultats de secours :\n\n{ddg_results}\n\nFlux RSS :\n{rss_results}"
+            return f"Note: Perplexity indisponible (Crédits épuisés). Secours :\n{ddg_results}\n\n{rss_results}"
             
-        response.raise_for_status()
-        
-        # Track cost (Approx 0.01$ per Sonar Reasoning call)
+        if response.status_code != 200:
+             print(f"⚠️ [Perplexity] Status {response.status_code}: {response.text}")
+             ddg_results = _duckduckgo_logic(query)
+             return f"Perplexity Error ({response.status_code}). Secours DuckDuckGo :\n\n{ddg_results}"
+
+        # Track cost
         try:
             from database import track_cost
             track_cost(0.01)
@@ -153,5 +163,5 @@ def perplexity_tool(query: str) -> str:
         return content
     except Exception as e:
         print(f"❌ Error calling Perplexity: {e}. Falling back...")
-        ddg_results = _duckduckgo_logic("news IA tech actu")
+        ddg_results = _duckduckgo_logic(query)
         return f"Erreur Perplexity: {e}. Secours DuckDuckGo :\n\n{ddg_results}"
