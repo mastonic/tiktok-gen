@@ -19,7 +19,7 @@ services:
       - n8n_default
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.im-backend.rule=Host(`${BACKEND_DOMAIN}`) || Host(`www.${BACKEND_DOMAIN}`)"
+      - "traefik.http.routers.im-backend.rule=Host(`${BACKEND_DOMAIN}`)"
       - "traefik.http.routers.im-backend.entrypoints=web,websecure"
       - "traefik.http.routers.im-backend.tls=true"
       - "traefik.http.routers.im-backend.tls.certresolver=myresolver"
