@@ -62,32 +62,50 @@ class ViralFlow(Flow[SwarmState]):
     def phase_sourcing(self):
         if self._check_cancelled(): return "FLOW_STOPPED"
         print("📡 Phase 1: Sourcing & Filtering...")
+        
+        # 💥 STRATÉGIE ANTI-BOUCLE (Machine à Cash) 💥
+        recent_titles = []
+        try:
+            db = SessionLocal()
+            from database import ScriptInbox
+            recent_scripts = db.query(ScriptInbox).order_by(ScriptInbox.id.desc()).limit(15).all()
+            recent_titles = [s.title for s in recent_scripts if s.title]
+            db.close()
+        except Exception as e:
+            print(f"Error fetching recent titles: {e}")
+
+        recent_context = ""
+        if recent_titles:
+            recent_context = f"\n\n🚨 RÈGLE CRITIQUE : TU DOIS IGNORER CES SUJETS : {', '.join(recent_titles)}. TROUVE DU NOUVEAU !"
+
         now = datetime.now().strftime("%d/%m/%Y")
-        focus_topic = "IA/Tech"
+        # Dynamic focus based on run_type
+        focus_topic = "News IA, Outils gratuits, Nouveautés LLMs" if self.state.run_type == "matin" else "Tutoriels techniques, Self-hosting, Contours d'abonnements"
+        
         task_scout = Task(
             description=(
                 f"Ta mission 'TrendHunter' est d'identifier les 5 sujets IA/Tech les plus chauds des dernières 24h via TikTok Creative Center, Google Trends et Perplexity. "
-                f"Aujourd'hui nous sommes le {now}. Focus : {focus_topic}. "
+                f"Aujourd'hui nous sommes le {now}. Focus : {focus_topic}. {recent_context}\n"
                 "Identifie les recherches en hausse de >100% et croise-les avec AnswerThePublic pour trouver le Hook parfait."
             ),
             expected_output="Top 5 sujets explosifs avec Nom, URL, Killer Feature et Hook stratégique.",
             agent=self.trend_radar
         )
         task_filter = Task(
-            description="Kill switch : Vérifier la gratuité et la viralité.",
-            expected_output="Rapport de viabilité final.",
+            description="Vérifie la gratuité absolue des sujets. Rejeter immédiatement (kill switch) tout sujet 'mou', payant ou déjà traité.",
+            expected_output="Rapport de viabilité final. Sujet validé ou rejeté.",
             agent=self.viral_judge,
             context=[task_scout]
         )
         
         if self.state.run_id:
-            save_agent_message(self.state.run_id, "TrendRadar", "ViralJudge", "info", "📡 Sourcing de 5 outils IA 'Killer' en cours...")
+            save_agent_message(self.state.run_id, "TrendRadar", "ViralJudge", "info", f"📡 Recherche de nouveautés ({self.state.run_type})...")
         
         crew = Crew(agents=[self.trend_radar, self.viral_judge], tasks=[task_scout, task_filter], verbose=True, max_rpm=30)
         self.state.viability_report = str(crew.kickoff())
         
         if self.state.run_id:
-            save_agent_message(self.state.run_id, "ViralJudge", "System", "info", "✅ Viabilité confirmée. Filtrage terminé.")
+            save_agent_message(self.state.run_id, "ViralJudge", "System", "info", "✅ Sujet inédit validé.")
             
         return "SOURCING_DONE"
 
@@ -119,19 +137,22 @@ class ViralFlow(Flow[SwarmState]):
         if self._check_cancelled(): return "FLOW_STOPPED"
         print("✍️ Producing Script, ROI and Visuals...")
         task_roi = Task(
-            description="Calculer l'économie réelle réalisée par le spectateur.",
-            expected_output="Score de ROI /100.",
+            description=(
+                "Calcule la valeur ajoutée réelle pour le spectateur (gain de temps, argent économisé, ou productivité). "
+                "Adapte ton angle : ne parle PAS d'économie d'argent si l'outil sert à automatiser une tâche, parle de temps gagné."
+            ),
+            expected_output="Score de ROI sur 100 et explication du bénéfice majeur.",
             agent=self.monetization_scorer
         )
         
         cta = "Abonne-toi et mets un cœur pour ne rien rater !" if self.state.mode == "commando" else "J'ai cassé Internet... encore."
         task_script = Task(
             description=(
-                f"Rédiger un script TikTok narratif LONG d'exactement 90 à 100 secondes (Signature: {cta}). "
-                "Le script doit être dense, technique et ultra-captivant pour maintenir l'attention sur la durée. "
-                "Développe chaque point en profondeur."
+                f"Rédiger un script TikTok narratif d'EXACTEMENT 90 à 100 secondes (Signature: {cta}). "
+                "Le script doit être dense, technique et ultra-captivant. "
+                "DÉFENSE ABSOLUE de répéter les sujets 'Economie Numérique' si l'outil ne s'y prête pas."
             ),
-            expected_output="Script TikTok narratif simple et détaillé d'exactement 90-100 secondes.",
+            expected_output="Script TikTok narratif détaillé d'exactement 90-100 secondes.",
             agent=self.script_architect,
             context=[task_roi]
         )

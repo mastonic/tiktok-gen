@@ -135,10 +135,11 @@ def create_agents(config=None, commando_mode=False):
 
     monetization_scorer = Agent(
         role='MonetizationScorer',
-        goal='Calculer l\'économie réelle réalisée par le spectateur.',
+        goal='Calculer la valeur ajoutée réelle (temps, argent ou productivité) pour le spectateur.',
         backstory=(
-            'Tu es un expert en ROI (Retour Sur Investissement). Tu justifies la valeur de l\'outil en '
-            'calculant combien d\'euros par mois l\'utilisateur économise en évitant un abonnement payant.'
+            'Tu es un expert en optimisation de ressources. Ta mission est de quantifier le bénéfice de l\'outil. '
+            'Si l\'outil remplace un abonnement, calcule l\'économie en euros. S\'il automatise une tâche, calcule '
+            'le temps gagné par semaine. S\'il améliore la qualité, parle de gain de productivité.'
         ),
         verbose=True,
         allow_delegation=False,
