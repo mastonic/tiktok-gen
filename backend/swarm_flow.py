@@ -54,9 +54,9 @@ class ViralFlow(Flow[SwarmState]):
         self.agents_out = create_agents(config=self.state.agent_config, commando_mode=(self.state.mode == "commando"))
         # Distribute agents manually for easier access in listeners
         if self.state.mode == "commando":
-            self.trend_radar, self.viral_judge, self.monetization_scorer, self.script_architect, self.visual_promptist, self.quality_controller, self.tiktok_distributor, self.growth_commander = self.agents_out
+            self.trend_radar, self.viral_judge, self.tech_utility_expert, self.script_architect, self.visual_promptist, self.quality_controller, self.tiktok_distributor, self.growth_commander = self.agents_out
         else:
-            self.trend_radar, self.viral_judge, self.monetization_scorer, self.script_architect, self.visual_promptist, self.quality_controller = self.agents_out
+            self.trend_radar, self.viral_judge, self.tech_utility_expert, self.script_architect, self.visual_promptist, self.quality_controller = self.agents_out
 
     @listen(initialize)
     def phase_sourcing(self):
@@ -138,26 +138,26 @@ class ViralFlow(Flow[SwarmState]):
     @listen(or_("standard_strategy", phase_hook_commando))
     def phase_content_production(self):
         if self._check_cancelled(): return "FLOW_STOPPED"
-        print("✍️ Producing Script, ROI and Visuals...")
-        task_roi = Task(
+        print("✍️ Producing Script, Tech Utility and Visuals...")
+        task_utility = Task(
             description=(
-                "Calcule la valeur ajoutée réelle pour le spectateur (gain de temps, argent économisé, ou productivité). "
-                "Adapte ton angle : ne parle PAS d'économie d'argent si l'outil sert à automatiser une tâche, parle de temps gagné."
+                "Analyse la puissance technique de l'outil et le gain de productivité concret. "
+                "INTERDICTION de parler d'argent ou d'abonnement. Concentre-toi sur l'innovation logicielle."
             ),
-            expected_output="Score de ROI sur 100 et explication du bénéfice majeur.",
-            agent=self.monetization_scorer
+            expected_output="Score d'utilité technique sur 100 et explication de la performance.",
+            agent=self.tech_utility_expert
         )
         
         cta = "Abonne-toi et mets un cœur pour ne rien rater !" if self.state.mode == "commando" else "J'ai cassé Internet... encore."
         task_script = Task(
             description=(
                 f"Rédiger un script TikTok narratif d'EXACTEMENT 90 à 100 secondes (Signature: {cta}). "
-                "Le script doit être dense, technique et ultra-captivant. "
-                "DÉFENSE ABSOLUE de répéter les sujets 'Economie Numérique' si l'outil ne s'y prête pas."
+                "Le script doit être technique, fascinant et ultra-captivant. "
+                "INTERDICTION FORMELLE de parler d'économie numérique ou de gestion de budget."
             ),
-            expected_output="Script TikTok narratif détaillé d'exactement 90-100 secondes.",
+            expected_output="Script TikTok technique détaillé d'exactement 90-100 secondes.",
             agent=self.script_architect,
-            context=[task_roi]
+            context=[task_utility]
         )
         
         task_visuals = Task(
@@ -174,20 +174,20 @@ class ViralFlow(Flow[SwarmState]):
         )
         
         if self.state.run_id:
-            save_agent_message(self.state.run_id, "MonetizationScorer", "ScriptArchitect", "info", "💰 Calcul du ROI et des économies potentielles...")
-            save_agent_message(self.state.run_id, "ScriptArchitect", "VisualPromptist", "info", "✍️ Rédaction du script TikTok long (90s+)...")
+            save_agent_message(self.state.run_id, "TechUtilityExpert", "ScriptArchitect", "info", "⚙️ Analyse de la valeur technique et utilitaire...")
+            save_agent_message(self.state.run_id, "ScriptArchitect", "VisualPromptist", "info", "✍️ Rédaction du script technique (90s+)...")
             save_agent_message(self.state.run_id, "VisualPromptist", "QualityController", "info", "🎨 Génération des 18 prompts visuels cohérents...")
 
         crew = Crew(
-            agents=[self.monetization_scorer, self.script_architect, self.visual_promptist],
-            tasks=[task_roi, task_script, task_visuals],
+            agents=[self.tech_utility_expert, self.script_architect, self.visual_promptist],
+            tasks=[task_utility, task_script, task_visuals],
             verbose=True,
             max_rpm=30
         )
         result = crew.kickoff()
         
         # Save intermediate outputs to state to prevent QualityController hallucination
-        self.state.roi_report = getattr(task_roi.output, 'raw', str(task_roi.output)) if task_roi.output else ""
+        self.state.roi_report = getattr(task_utility.output, 'raw', str(task_utility.output)) if task_utility.output else ""
         self.state.script_content = getattr(task_script.output, 'raw', str(task_script.output)) if task_script.output else ""
         
         if hasattr(result, 'pydantic') and result.pydantic:

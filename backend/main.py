@@ -1422,7 +1422,7 @@ async def get_routes():
     task_mapping = {
         "TrendRadar": {"task": "Trend Analysis & Scraping", "reason": "Fast analysis of RSS/Search.", "icon": "⚡"},
         "ViralJudge": {"task": "Content Scoring & Filtering", "reason": "Consistent JSON and analytical reasoning.", "icon": "⚖️"},
-        "MonetizationScorer": {"task": "Profit Valuation", "reason": "Business logic & ROI.", "icon": "💰"},
+        "TechUtilityExpert": {"task": "Technical Utility Analysis", "reason": "Innovation & performance experts.", "icon": "⚙️"},
         "ScriptArchitect": {"task": "Creative Script Generation", "reason": "iM Style storytelling.", "icon": "🧠"},
         "VisualPromptist": {"task": "Visual Planning (FLUX)", "reason": "Photorealistic prompting.", "icon": "🎬"},
         "QualityController": {"task": "Final Validation & DB", "reason": "Data integrity check.", "icon": "✔️"},

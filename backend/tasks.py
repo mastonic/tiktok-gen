@@ -28,9 +28,9 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
         
     # Unpack agents
     if commando_mode:
-        trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, tiktok_distributor, growth_commander = args
+        trend_radar, viral_judge, tech_utility_expert, script_architect, visual_promptist, quality_controller, tiktok_distributor, growth_commander = args
     else:
-        trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller = args
+        trend_radar, viral_judge, tech_utility_expert, script_architect, visual_promptist, quality_controller = args
 
     task_scout = Task(
         description=(
@@ -68,11 +68,11 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
 
     task_scoring = Task(
         description=(
-            "Calcule la valeur ajoutée réelle pour le spectateur en utilisant cet outil (gain de temps, argent économisé, ou productivité décuplée). "
-            "Adapte ton angle en fonction de l'outil (ne parle pas d'économie si l'outil sert à automatiser une tâche, parle de temps gagné)."
+            "Analyse la puissance technique de l'outil et le gain de productivité concret pour l'utilisateur. "
+            "INTERDICTION de parler d'argent ou d'abonnement. Ton angle doit être 100% technique."
         ),
-        expected_output="Score de ROI sur 100 et explication courte du bénéfice majeur (temps, argent ou productivité).",
-        agent=monetization_scorer
+        expected_output="Score d'utilité sur 100 et explication courte de la performance technique.",
+        agent=tech_utility_expert
     )
     tasks.append(task_scoring)
 

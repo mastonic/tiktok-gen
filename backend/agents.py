@@ -133,18 +133,19 @@ def create_agents(config=None, commando_mode=False):
         tools=[pytrends_tool, trafilatura_scraper, duckduckgo_search_tool]
     )
 
-    monetization_scorer = Agent(
-        role='MonetizationScorer',
-        goal='Calculer l\'économie réelle et le gain de productivité en utilisant des outils IA gratuits ou Open-Source.',
+    tech_utility_expert = Agent(
+        role='TechUtilityExpert',
+        goal='Démontrer la puissance technique et le gain de productivité d\'un outil IA.',
         backstory=(
-            'Tu es un expert en ROI appliqué aux technologies IA. Tu justifies la valeur d\'un outil IA en '
-            'calculant combien d\'euros par mois l\'utilisateur économise en utilisant cette alternative '
-            'gratuite/open-source au lieu d\'un abonnement payant type ChatGPT Plus, Midjourney ou Jasper. '
-            'Tout ton calcul doit rester strictement ancré dans la niche Technologique et IA.'
+            'Tu es un expert en ingénierie logicielle et IA. Ta mission est de prouver pourquoi '
+            'cet outil est une révolution technique. Tu te concentres sur le gain de temps, '
+            'l\'automatisation de tâches complexes et la qualité du rendu. '
+            'INTERDICTION de parler d\'argent, d\'économie ou d\'abonnements. '
+            'Ton analyse doit être 100% technique et axée sur la performance.'
         ),
         verbose=True,
         allow_delegation=False,
-        llm=get_agent_llm('MonetizationScorer')
+        llm=get_agent_llm('TechUtilityExpert')
     )
 
     # Note: If commando_mode is ON, ScriptArchitect uses a harder CTA
@@ -187,7 +188,7 @@ def create_agents(config=None, commando_mode=False):
     )
 
     if not commando_mode:
-        return trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller
+        return trend_radar, viral_judge, tech_utility_expert, script_architect, visual_promptist, quality_controller
 
     tiktok_distributor = Agent(
         role='TikTokDistributor',
@@ -213,4 +214,4 @@ def create_agents(config=None, commando_mode=False):
         llm=get_agent_llm('ViralGrowthCommander')
     )
 
-    return trend_radar, viral_judge, monetization_scorer, script_architect, visual_promptist, quality_controller, tiktok_distributor, growth_commander
+    return trend_radar, viral_judge, tech_utility_expert, script_architect, visual_promptist, quality_controller, tiktok_distributor, growth_commander
