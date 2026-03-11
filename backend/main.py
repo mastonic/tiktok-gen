@@ -41,6 +41,7 @@ from production import automate_visual_production
 import comfyui_client
 import video_gen
 import tts_service
+from render_video import generate_ass_subtitles
 
 app = FastAPI(title="iM System API")
 
@@ -720,6 +721,7 @@ async def get_contents():
             has_audio = False
             has_final_video = False
             existing_clips = []
+            subtitles = []
             
             if os.path.exists(job_dir):
                 # Images
@@ -1142,6 +1144,15 @@ async def generate_voice(payload: dict):
     import tts_service
     tts_service.generate_tts(script.final_script, voice_path)
     
+    # NEW: Trigger Subtitle generation (Whisper) automatically for Studio
+    try:
+        ass_path = os.path.join(job_dir, "subtitles.ass")
+        keywords = [k.strip() for k in (script.keywords or "").split(",") if k.strip()]
+        generate_ass_subtitles(script.final_script, keywords, ass_path, voice_path)
+        print(f"📝 Subtitles generated for {script_id} in Studio.")
+    except Exception as e:
+        print(f"⚠️ Could not generate subtitles in Studio: {e}")
+
     return {"status": "success", "audioUrl": f"/{voice_path}"}
 
 @app.post("/api/workflows/assemblage-viral")

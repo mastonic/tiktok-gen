@@ -388,6 +388,7 @@ const Studio = () => {
                             {showPlayer && playerProps && (
                                 <div className={`mb-8 overflow-hidden rounded-xl border border-gray-700 bg-black ${isSquare ? 'aspect-square max-w-[400px]' : 'aspect-[9/16] max-w-[320px]'} mx-auto shadow-2xl relative group`}>
                                     <Player
+                                        key={`player-${selectedScript.id}`}
                                         component={MyComposition}
                                         inputProps={{ ...playerProps, isSquare }}
                                         durationInFrames={playerProps.clips.length * 150} // 5s * 30fps = 150 frames per clip

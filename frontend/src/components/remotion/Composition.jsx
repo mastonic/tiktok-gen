@@ -15,19 +15,20 @@ const SubtitleText = ({ text }) => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 10
+            zIndex: 100
         }}>
             <span style={{
                 color: '#FFFF00', // Yellow
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: 900,
-                fontSize: '80px',
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                fontWeight: '900',
+                fontSize: '85px',
                 textTransform: 'uppercase',
-                textShadow: '8px 8px 0px #000, -8px -8px 0px #000, 8px -8px 0px #000, -8px 8px 0px #000',
+                textShadow: '8px 8px 0px #000, -8px -8px 0px #000, 8px -8px 0px #000, -8px 8px 0px #000, 0 0 15px rgba(0,0,0,0.5)',
                 transform: `scale(${scale})`,
                 opacity: opacity,
                 padding: '20px',
-                lineHeight: '1.2'
+                lineHeight: '1.2',
+                WebkitTextStroke: '2px black'
             }}>
                 {text}
             </span>
@@ -58,6 +59,9 @@ export const MyComposition = ({ clips, audioUrl, subtitles, isSquare = false }) 
                                     height: '100%',
                                     objectFit: 'cover'
                                 }}
+                                crossOrigin="anonymous"
+                                muted
+                                playsInline
                             />
                         ) : (
                             <Img
@@ -67,6 +71,7 @@ export const MyComposition = ({ clips, audioUrl, subtitles, isSquare = false }) 
                                     height: '100%',
                                     objectFit: 'cover'
                                 }}
+                                crossOrigin="anonymous"
                             />
                         )}
                     </AbsoluteFill>
