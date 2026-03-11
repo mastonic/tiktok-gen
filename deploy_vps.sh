@@ -20,10 +20,17 @@ fi
 
 # 5. Config
 echo "⚙️  Configuration IP Directe"
-read -p "Domaine principal [${FRONTEND_DOMAIN:-$VPS_IP}]: " NEW_FRONT
+read -p "Domaine principal (ex: crewai972.xyz) [${FRONTEND_DOMAIN:-$VPS_IP}]: " NEW_FRONT
 FRONTEND_DOMAIN=${NEW_FRONT:-${FRONTEND_DOMAIN:-$VPS_IP}}
-read -p "Domaine API [${BACKEND_DOMAIN:-$VPS_IP}]: " NEW_BACK
-BACKEND_DOMAIN=${NEW_BACK:-${BACKEND_DOMAIN:-$VPS_IP}}
+
+# Suggest api.domain if frontend is not an IP
+SUGGESTED_BACK=${BACKEND_DOMAIN}
+if [[ ! $FRONTEND_DOMAIN =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    SUGGESTED_BACK="api.${FRONTEND_DOMAIN}"
+fi
+
+read -p "Domaine API (ex: api.crewai972.xyz) [${SUGGESTED_BACK:-$VPS_IP}]: " NEW_BACK
+BACKEND_DOMAIN=${NEW_BACK:-${SUGGESTED_BACK:-$VPS_IP}}
 read -p "Port API [${BACKEND_PORT:-5656}]: " NEW_PORT
 BACKEND_PORT=${NEW_PORT:-${BACKEND_PORT:-5656}}
 

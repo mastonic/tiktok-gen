@@ -9,9 +9,17 @@ const getBaseUrl = () => {
         return import.meta.env.VITE_API_URL;
     }
 
-    // 2. Fallback for VPS: If we are on crewai972.xyz, the API is on api.crewai972.xyz
-    if (window.location.hostname === 'crewai972.xyz' || window.location.hostname === 'www.crewai972.xyz') {
-        return 'https://api.crewai972.xyz';
+    // 2. Dynamic Detection for VPS/Production
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+        // If we are on a domain (crewai972.xyz), we assume API is on api.domain
+        // We preserve the protocol (https)
+        if (hostname.startsWith('www.')) {
+            return `${protocol}//api.${hostname.replace('www.', '')}`;
+        }
+        return `${protocol}//api.${hostname}`;
     }
 
     // 3. Fallback for local development
