@@ -43,7 +43,21 @@ class BentoBoxData(BaseModel):
 # ─────────────────────────────────────────────
 
 def _get_llm(model: str = "openai/gpt-4o-mini") -> LLM:
-    api_key = os.environ.get("OPENAI_API_KEY")
+    is_gemini = "gemini" in model.lower()
+    
+    if is_gemini:
+        api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+        if not api_key or api_key.lower() == "vide":
+            print("CRITICAL: GEMINI_API_KEY missing, but gemini model requested in blog squad!")
+    else:
+        api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+        if not api_key or api_key.lower() == "vide":
+            print("WARNING: OPENAI_API_KEY not found or invalid in blog squad, falling back to gemini")
+            api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+            model = "gemini/gemini-1.5-flash"
+            if not api_key or api_key.lower() == "vide":
+                 print("CRITICAL: GEMINI_API_KEY also missing or invalid in blog squad! Please check .env")
+
     return LLM(model=model, api_key=api_key, max_retries=5, timeout=120)
 
 
