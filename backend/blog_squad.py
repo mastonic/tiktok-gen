@@ -153,7 +153,7 @@ category: "{category}"
 [UTILISE DES H2 ET H3 UNIQUES ET DES PARAGRAPHES COURTS]
 [INCLUE IMPÉRATIVEMENT UN TABLEAU DE COMPARAISON OU UNE LISTE TECHNIQUE]
 
-[INSERT_BENTO_BOX_1]
+[BENTO_TOOLS]
 
 [FIN DE L'ARTICLE AVEC CONCLUSION ET CTA]{see_also}"""
 
@@ -168,7 +168,7 @@ category: "{category}"
                 "DIRECTIVES DE RÉDACTION :\n"
                 "- Titres (H2, H3) : Ils DOIVENT inclure des éléments spécifiques au sujet et ressembler à des titres de magazines Tech.\n"
                 "- Header : Commence par le titre H1, suivi du bloc Note de l'Expert.\n"
-                "- Affiliation : Insère le tag [INSERT_BENTO_BOX_1] naturellement après le premier paragraphe ou premier H2.\n"
+                "- Affiliation : Insère le tag [BENTO_TOOLS] au milieu de l'article pour le frontend.\n"
                 "- Paragraphes : Ultra-courts (3 lignes max).\n"
                 "- Ton : Expert, futuriste, Dark Tech.\n\n"
                 f"STRUCTURE À RESPECTER :\n\n{TEMPLATE_STRUCTURE}\n\n"
@@ -190,14 +190,10 @@ category: "{category}"
                 "- article_title : titre complet\n"
                 "- article_slug : le slug fourni ci-dessus\n"
                 "- seo_tags : 3-5 tags SEO issus du contenu (liste de strings)\n"
-                "- tools : liste de 2 objets avec id (\"tool_1\", \"tool_2\"), name, category, description (1 ligne), cta, affiliate_link_placeholder, gradient, relevance_score\n\n"
-                "IMPORTANT : Renvoie UNIQUEMENT un bloc ```json ... ``` valide. "
-                "Les 'id' des tools DOIVENT être exactement 'tool_1' et 'tool_2' pour correspondre aux balises AffiliateBento."
+                "- tools : liste de 2 objets avec id (\"tool_1\", \"tool_2\"), name, category, description (1 ligne), cta, affiliate_link_placeholder, gradient, relevance_score\n"
             ),
-            expected_output=(
-                "Un bloc ```json valide avec 'article_title', 'article_slug', 'seo_tags', et 'tools' (2 items avec id='tool_1' et id='tool_2'). "
-                "Gradients valides : 'from-cyan-400 to-emerald-400', 'from-violet-500 to-fuchsia-500', 'from-amber-400 to-orange-500'."
-            ),
+            expected_output="A perfectly formatted BentoBoxData object containing exactly 2 affiliate tools.",
+            output_pydantic=BentoBoxData,
             agent=self.affiliate_strategist,
             context=[task_write]
         )
@@ -297,20 +293,16 @@ tags:
 
                 # Extract BentoBox JSON (from task_monetize)
                 bento_data = {}
-                json_match = re.search(r'```json\s*(.*?)\s*```', raw_result, re.DOTALL | re.IGNORECASE)
-                if json_match:
-                    try:
-                        bento_data = json.loads(json_match.group(1))
-                    except json.JSONDecodeError:
-                        logger.warning(f"Could not parse bento JSON for concept: {concept_title}")
-
-                # Validate with Pydantic if possible
-                if bento_data:
-                    try:
-                        validated = BentoBoxData(**bento_data)
-                        bento_data = validated.model_dump()
-                    except Exception as e:
-                        logger.warning(f"Pydantic validation warning: {e}")
+                try:
+                    # CrewAI 0.50+ natively supports pydantic output extraction
+                    if hasattr(output, 'pydantic') and output.pydantic:
+                        bento_data = output.pydantic.model_dump()
+                    elif hasattr(output.tasks_output[-1], 'pydantic') and output.tasks_output[-1].pydantic:
+                        bento_data = output.tasks_output[-1].pydantic.model_dump()
+                    else:
+                        logger.warning(f"No pydantic output found for concept: {concept_title}")
+                except Exception as e:
+                    logger.warning(f"Failed to dump Pydantic object: {e}")
 
                 # Ensure required fields
                 if not bento_data.get("article_slug"):

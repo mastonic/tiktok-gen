@@ -4,47 +4,37 @@ from duckduckgo_search import DDGS
 import trafilatura
 from pytrends.request import TrendReq
 
-@tool("FeedParserTool")
-def feed_parser_tool(feed_url: str) -> str:
-    """
-    Parses an RSS feed (Reddit, GitHub, etc.) with a User-Agent to avoid blocks.
-    Args:
-        feed_url (str): The URL of the RSS feed to parse.
-    """
+def _feed_parser_logic(feed_url: str) -> str:
     try:
-        # Add User-Agent for feeds like Reddit that block bots
         agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         feed = feedparser.parse(feed_url, agent=agent)
         
         content = ""
-        for i, entry in enumerate(feed.entries[:8]): # Take top 8
+        for i, entry in enumerate(feed.entries[:8]):
             content += f"{i+1}. Title: {entry.title}\nLink: {entry.link}\nSummary: {getattr(entry, 'summary', 'No summary')[:200]}\n\n"
-        if not content:
-            return "No entries found in this feed. Try another source."
-        return content
+        return content or "No entries found."
     except Exception as e:
         return f"Error parsing feed: {e}"
 
-@tool("DuckDuckGoSearchTool")
-def duckduckgo_search_tool(query: str) -> str:
-    """
-    Searches the web using DuckDuckGo to find information.
-    Useful for researching specific trends or tools.
-    Args:
-        query (str): The search query.
-    """
+@tool("FeedParserTool")
+def feed_parser_tool(feed_url: str) -> str:
+    """Parses an RSS feed (Reddit, GitHub, etc.)"""
+    return _feed_parser_logic(feed_url)
+
+def _duckduckgo_logic(query: str) -> str:
     try:
         results = ""
         with DDGS() as ddgs:
             for i, r in enumerate(ddgs.text(query, max_results=3)):
                 results += f"Source {i+1}: {r['title']}\nSnippet: {r['body']}\nLink: {r['href']}\n\n"
-        
-        if not results:
-            return "No real-time results found for this specific query. Please try another search term or a different source."
-            
-        return results
+        return results or "No results found."
     except Exception as e:
         return f"Error searching: {e}"
+
+@tool("DuckDuckGoSearchTool")
+def duckduckgo_search_tool(query: str) -> str:
+    """Searches the web using DuckDuckGo."""
+    return _duckduckgo_logic(query)
 
 @tool("TrafilaturaScraper")
 def trafilatura_scraper(url: str) -> str:
@@ -80,6 +70,8 @@ def pytrends_tool(keyword: str) -> str:
             return f"Recent 3-day trend interest scores for '{keyword}': {list(recent_trend)}"
         return "No trend data found."
     except Exception as e:
+        if "429" in str(e):
+            return "Google Trends Rate Limit (429). Please use Perplexity or RSS sources instead for now."
         return f"Error fetching trends: {e}"
 import requests
 import os
@@ -101,12 +93,8 @@ def perplexity_tool(query: str) -> str:
         "model": "sonar-reasoning", # Premium model with deep analysis
         "messages": [
             {
-                "role": "system",
-                "content": "Tu es un expert en viralité TikTok et en recherche technologique. Fournis des informations sourcées, précises et structurées."
-            },
-            {
                 "role": "user",
-                "content": query
+                "content": "Tu es un expert en viralité TikTok et en recherche technologique. Fournis des informations sourcées, précises et structurées.\n\n" + query
             }
         ],
         "return_citations": True
@@ -118,7 +106,24 @@ def perplexity_tool(query: str) -> str:
     
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=60)
+        
+        # Check for credit/balance issues (HTTP 402 Payment Required or specific body)
+        if response.status_code == 402 or "insufficient_balance" in response.text.lower():
+            print("⚠️ [Perplexity] Pas de crédit !! Retour au format de base (DuckDuckGo/RSS)...")
+            # --- INTERNAL FALLBACK ---
+            ddg_results = _duckduckgo_logic("dernières tendances IA tech 24h")
+            rss_results = _feed_parser_logic("https://www.reddit.com/r/artificial/new/.rss")
+            return f"Note: Perplexity indisponible (Crédits épuisés). Résultats de secours :\n\n{ddg_results}\n\nFlux RSS :\n{rss_results}"
+            
         response.raise_for_status()
+        
+        # Track cost (Approx 0.01$ per Sonar Reasoning call)
+        try:
+            from database import track_cost
+            track_cost(0.01)
+        except:
+            pass
+            
         data = response.json()
         content = data["choices"][0]["message"]["content"]
         citations = data.get("citations", [])
@@ -128,4 +133,6 @@ def perplexity_tool(query: str) -> str:
             
         return content
     except Exception as e:
-        return f"Error calling Perplexity: {e}"
+        print(f"❌ Error calling Perplexity: {e}. Falling back...")
+        ddg_results = _duckduckgo_logic("news IA tech actu")
+        return f"Erreur Perplexity: {e}. Secours DuckDuckGo :\n\n{ddg_results}"

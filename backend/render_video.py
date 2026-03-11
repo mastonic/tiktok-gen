@@ -1,3 +1,9 @@
+import os
+import argparse
+import subprocess
+import json
+from pathlib import Path
+
 def generate_video(job_dir: str):
     """
     BudgetOptimizer/StudioManager: Montage 90s sync sur l'audio.
@@ -73,9 +79,14 @@ def generate_video(job_dir: str):
             conn.close()
         except: pass
 
+    # Clean script for subtitle fallback
+    import re
+    clean_script = re.sub(r'\[\*\*Visuel\*\*.*?\]', '', final_script, flags=re.IGNORECASE | re.DOTALL)
+    clean_script = clean_script.replace('**Narration** :', '').replace('**Narration**', '').replace('"', '').strip()
+
     # Subtitles: Force stylization (Correction 2)
     ass_file = job_path / "subtitles.ass"
-    generate_ass_subtitles(final_script, keywords, str(ass_file), str(voice_in))
+    generate_ass_subtitles(clean_script, keywords, str(ass_file), str(voice_in))
 
     # Main Rendering FFmpeg
     has_bgm = bgm_in.exists()
@@ -91,7 +102,7 @@ def generate_video(job_dir: str):
     
     if has_bgm:
         cmd.extend(["-i", str(bgm_in)])
-        cmd.extend(["-filter_complex", f"[0:v]{video_filter}[v];[2:a]volume=0.1[bgm];[1:a][bgm]amix=inputs=2:duration=first[a]"])
+        cmd.extend(["-filter_complex", f"[0:v]{video_filter}[v];[2:a]volume=-22dB[bgm];[1:a][bgm]amix=inputs=2:duration=first[a]"])
         cmd.extend(["-map", "[v]", "-map", "[a]"])
     else:
         cmd.extend(["-filter_complex", f"[0:v]{video_filter}[v]"])
@@ -129,15 +140,22 @@ def generate_ass_subtitles(script, keywords, output_path, audio_path):
 
     try:
         with open(audio_path, "rb") as f:
-            transcript = client.audio.transcriptions.create(
-                file=f, model="whisper-1", response_format="verbose_json", timestamp_granularities=["word"]
-            )
+            try:
+                transcript = client.audio.transcriptions.create(
+                    file=f, model="whisper-large-v3", response_format="verbose_json", timestamp_granularities=["word"]
+                )
+            except Exception:
+                # Fallback to standard whisper if large-v3 endpoint is unavailable on this proxy/client
+                f.seek(0)
+                transcript = client.audio.transcriptions.create(
+                    file=f, model="whisper-1", response_format="verbose_json", timestamp_granularities=["word"]
+                )
         words_data = getattr(transcript, 'words', [])
     except Exception as e:
         print(f"Transcription failed: {e}")
         return
 
-    # &H0000FFFF = Yellow, Bold: -1, Outline: 2, Position Y: 1344 (70% of 1920)
+    # &H0000FFFF = Yellow (ABGR format), Bold: -1, Outline: 2, Position Y: 1344 (70% of 1920)
     ass_header = """[Script Info]
 ScriptType: v4.00+
 PlayResX: 1080
@@ -145,19 +163,22 @@ PlayResY: 1920
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,90,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,2,0,2,0,0,0,1
+Style: Default,The Bold Font,75,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,2,0,2,0,0,0,1
 """
     events = "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
     
-    # Chunk by 2 words for maximum impact
-    for i in range(0, len(words_data), 2):
-        chunk = words_data[i:i+2]
-        text = " ".join([w.word.upper() for w in chunk])
-        start_ts = format_ass_time(chunk[0].start)
-        end_ts = format_ass_time(chunk[-1].end)
+    # Chunk by 1 word for Hormozi style (mot-par-mot)
+    for i in range(0, len(words_data)):
+        w = words_data[i]
+        text = w.word.upper().strip()
+        if not text: continue
         
-        # Pop-up Effect: Scale from 100% to 110% in 100ms
-        ani = "{\\t(0,100,\\fscx110\\fscy110)}"
+        start_ts = format_ass_time(w.start)
+        end_ts = format_ass_time(w.end)
+        
+        # Pop-up / Bounce Effect: Scale from 100% to 115% back to 100%
+        ani = "{\\t(0,50,\\fscx115\\fscy115)\\t(50,150,\\fscx100\\fscy100)}"
+        
         # Position at 70% height (1344)
         pos = "{\\pos(540,1344)}"
         

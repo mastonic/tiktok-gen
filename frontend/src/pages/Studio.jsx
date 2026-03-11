@@ -12,6 +12,8 @@ const Studio = () => {
     const [showPlayer, setShowPlayer] = useState(false);
     const [playerProps, setPlayerProps] = useState(null);
     const [videoProgress, setVideoProgress] = useState(null);
+    const [isAvailable, setIsAvailable] = useState(false);
+    const [finalVideoUrl, setFinalVideoUrl] = useState('');
 
     useEffect(() => {
         fetchScripts();
@@ -55,7 +57,7 @@ const Studio = () => {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
         const timestamp = Date.now();
         if (script.hasImages) {
-            const imgs = script.imagePrompts.map((_, i) =>
+            const imgs = (script.imagePrompts || []).map((_, i) =>
                 `${apiUrl}/media/production/${script.id}/img_${(i + 1).toString().padStart(2, '0')}.jpg?t=${timestamp}`
             );
             setGeneratedImages(imgs);
@@ -68,7 +70,7 @@ const Studio = () => {
             setPlayerProps({
                 clips: script.existingClips && script.existingClips.length > 0
                     ? script.existingClips.map(c => `${apiUrl}${c}?t=${timestamp}`)
-                    : script.imagePrompts.map((_, i) => `${apiUrl}/media/production/${script.id}/img_${(i + 1).toString().padStart(2, '0')}.jpg?t=${timestamp}`),
+                    : (script.imagePrompts || []).map((_, i) => `${apiUrl}/media/production/${script.id}/img_${(i + 1).toString().padStart(2, '0')}.jpg?t=${timestamp}`),
                 audioUrl: `${apiUrl}/media/production/${script.id}/voiceover.wav?t=${timestamp}`,
                 subtitles: []
             });
@@ -176,6 +178,9 @@ const Studio = () => {
         if (!selectedScript) return;
         try {
             setIsGenerating(true); // Re-use loading state for rendering
+            setIsAvailable(false);
+            setFinalVideoUrl('');
+
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5656';
             const response = await fetch(`${apiUrl}/api/workflows/publish`, {
                 method: 'POST',
@@ -183,6 +188,7 @@ const Studio = () => {
                 body: JSON.stringify({ script_id: selectedScript.id })
             });
             const data = await response.json();
+
             if (data.status === 'success' && data.videoUrl) {
                 // Refresh script list to get newest hasFinalVideo status
                 await fetchScripts();
@@ -190,8 +196,8 @@ const Studio = () => {
                 const updated = scripts.find(s => s.id === selectedScript.id);
                 const downloadUrl = updated?.finalVideoUrl ? `${apiUrl}${updated.finalVideoUrl}` : `${apiUrl}${data.videoUrl}`;
 
-                alert("Rendu 1m30 (90s) terminé avec succès ! Cliquez sur OK pour ouvrir le lien.");
-                window.open(downloadUrl, '_blank');
+                setFinalVideoUrl(downloadUrl);
+                setIsAvailable(true);
             } else {
                 alert(`Erreur de rendu: ${data.message || "Fichier non généré"}`);
             }
@@ -336,20 +342,33 @@ const Studio = () => {
                                         loop
                                     />
                                     <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
-                                        <button
-                                            onClick={handlePublish}
-                                            className="p-3 bg-pink-600 rounded-full text-white shadow-xl hover:scale-110 transition-transform"
-                                            title="Exporter & Publier"
-                                        >
-                                            <Download className="h-5 w-5" />
-                                        </button>
+                                        {isAvailable && finalVideoUrl ? (
+                                            <a
+                                                href={finalVideoUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-3 bg-green-500 rounded-full text-white shadow-xl hover:scale-110 transition-transform flex items-center justify-center"
+                                                title="Télécharger la Vidéo Finale"
+                                            >
+                                                <Download className="h-5 w-5" />
+                                            </a>
+                                        ) : (
+                                            <button
+                                                onClick={handlePublish}
+                                                disabled={isGenerating}
+                                                className={`p-3 rounded-full text-white shadow-xl flex items-center justify-center transition-transform ${isGenerating ? 'bg-gray-500 cursor-not-allowed' : 'bg-pink-600 hover:scale-110'}`}
+                                                title={isGenerating ? "Rendu en cours..." : "Exporter & Publier"}
+                                            >
+                                                {isGenerating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Film className="h-5 w-5" />}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             )}
 
                             {/* Storyboard Grid */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {selectedScript.imagePrompts.map((prompt, i) => (
+                                {(selectedScript.imagePrompts || []).map((prompt, i) => (
                                     <div key={i} className="group relative bg-navy-900 rounded-xl overflow-hidden border border-gray-800 transition-all hover:border-pink-500/50">
                                         <div className="aspect-[9/16] bg-gray-800">
                                             {generatedImages[i] ? (

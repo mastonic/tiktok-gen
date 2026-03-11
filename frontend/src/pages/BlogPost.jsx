@@ -71,8 +71,7 @@ function parseMarkdownFile(rawContent) {
  */
 function splitBodyByBento(body) {
     const parts = [];
-    // Catch [INSERT_VIDEO_PLAYER], [INSERT_BENTO_BOX_1] and old <AffiliateBento />
-    const tagRegex = /\[INSERT_VIDEO_PLAYER\]|\[INSERT_BENTO_BOX_1\]|<AffiliateBento\s+id="([^"]+)"\s*\/>/g;
+    const tagRegex = /\[INSERT_VIDEO_PLAYER\]|\[INSERT_BENTO_BOX_1\]|\[BENTO_TOOLS\]|<AffiliateBento\s+id="([^"]+)"\s*\/>/g;
     let lastIndex = 0;
     let match;
 
@@ -84,7 +83,7 @@ function splitBodyByBento(body) {
         const fullTag = match[0];
         if (fullTag === '[INSERT_VIDEO_PLAYER]') {
             parts.push({ type: 'video_player' });
-        } else if (fullTag === '[INSERT_BENTO_BOX_1]') {
+        } else if (fullTag === '[INSERT_BENTO_BOX_1]' || fullTag === '[BENTO_TOOLS]') {
             parts.push({ type: 'bento_multi' });
         } else {
             parts.push({ type: 'bento', toolId: match[1] });

@@ -8,6 +8,7 @@ from agents import create_agents
 from tasks import create_tasks
 from crewai import Crew, Process, Task
 from models import AgentOutcome, VisualPrompts, TikTokMetadata
+from database import save_agent_message
 
 class SwarmState(BaseModel):
     mode: str = "standard" # "standard" or "commando"
@@ -59,7 +60,6 @@ class ViralFlow(Flow[SwarmState]):
         )
         
         if self.state.run_id:
-            from database import save_agent_message
             save_agent_message(self.state.run_id, "TrendRadar", "ViralJudge", "info", "📡 Sourcing de 5 outils IA 'Killer' en cours...")
         
         crew = Crew(agents=[self.trend_radar, self.viral_judge], tasks=[task_scout, task_filter], verbose=True, max_rpm=30)
@@ -110,18 +110,17 @@ class ViralFlow(Flow[SwarmState]):
         )
         
         task_visuals = Task(
-            description="Créer 15 prompts cinématiques pour FLUX.",
-            expected_output="Exactly 15 prompts.",
+            description="Créer 18 prompts cinématiques pour FLUX.",
+            expected_output="Exactly 18 prompts.",
             agent=self.visual_promptist,
             output_pydantic=VisualPrompts,
             context=[task_script]
         )
         
         if self.state.run_id:
-            from database import save_agent_message
             save_agent_message(self.state.run_id, "MonetizationScorer", "ScriptArchitect", "info", "💰 Calcul du ROI et des économies potentielles...")
             save_agent_message(self.state.run_id, "ScriptArchitect", "VisualPromptist", "info", "✍️ Rédaction du script TikTok long (90s+)...")
-            save_agent_message(self.state.run_id, "VisualPromptist", "QualityController", "info", "🎨 Génération des 15 prompts visuels cohérents...")
+            save_agent_message(self.state.run_id, "VisualPromptist", "QualityController", "info", "🎨 Génération des 18 prompts visuels cohérents...")
 
         crew = Crew(
             agents=[self.monetization_scorer, self.script_architect, self.visual_promptist],
@@ -135,11 +134,11 @@ class ViralFlow(Flow[SwarmState]):
         else:
             print("⚠️ [FLOW] VisualPromptist failed to produce Pydantic output. Using fallback.")
             # Fallback will be handled in main.py or next steps
-            from models import VisualPrompts
-            self.state.visual_prompts = VisualPrompts(prompts=["Prompt fallback 1", "Prompt fallback 2"])
+            placeholder_prompts = [f"Cinematic prompt for scene {i+1} of AI documentary" for i in range(18)]
+            self.state.visual_prompts = VisualPrompts(prompts=placeholder_prompts)
         
         if self.state.run_id:
-            save_agent_message(self.state.run_id, "VisualPromptist", "System", "success", "✨ Pack créatif terminé (Script 90s + 15 Prompts).")
+            save_agent_message(self.state.run_id, "VisualPromptist", "System", "success", "✨ Pack créatif terminé (Script 90s + 18 Prompts).")
             
         return "CONTENT_READY"
 
@@ -184,7 +183,6 @@ class ViralFlow(Flow[SwarmState]):
             output_pydantic=AgentOutcome
         )
         if self.state.run_id:
-            from database import save_agent_message
             save_agent_message(self.state.run_id, "QualityController", "System", "info", "🛡️ Revue finale de la qualité et du scoring...")
 
         crew = Crew(agents=[self.quality_controller], tasks=[task_qa], verbose=True, max_rpm=30)

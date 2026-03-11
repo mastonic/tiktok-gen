@@ -1,7 +1,7 @@
 import os
 import json
 import time
-from fal_client import generate_flux_image, generate_video_from_image, download_video
+from video_gen import generate_flux_image, generate_wan_video, generate_ltx_video, download_video
 from tts_service import generate_tts
 from notifications import send_telegram_message, send_telegram_video
 from database import SessionLocal, ScriptInbox
@@ -24,7 +24,7 @@ def automate_visual_production(script_id_num: int):
         return
 
     # --- BUDGET OPTIMIZER: CHECK CREDITS ---
-    from fal_client import check_fal_balance
+    from video_gen import check_fal_balance
     balance = check_fal_balance()
     if balance < 5.0:
          send_telegram_message(f"⚠️ <b>BUDGET CRITIQUE : {balance:.2f}$</b>\nLe pipeline continue à vos risques et périls.")
@@ -66,18 +66,22 @@ def automate_visual_production(script_id_num: int):
                 agent=visual_promptist
             )
             result = str(visual_promptist.execute_task(prompt_task))
-            # Extract prompts (simple split by line or number if it's a string)
-            fallback_prompts = re.findall(r'"([^"]*)"', result) # Try to find quoted strings
+            # Extract prompts (More robust: look for lines starting with numbers or just strings in quotes)
+            fallback_prompts = re.findall(r'"([^"]{30,})"', result) # Quoted strings > 30 chars
             if not fallback_prompts:
-                 fallback_prompts = [p.strip() for p in result.split('\n') if len(p.strip()) > 30][:prompt_count]
+                 # Try splitting by lines and filtering
+                 lines = [p.strip().lstrip('0123456789.- ') for p in result.split('\n')]
+                 fallback_prompts = [p for p in lines if len(p) > 30]
             
-            if fallback_prompts:
-                image_prompts = fallback_prompts
+            # Ensure we have enough or take what we have, up to prompt_count
+            image_prompts = fallback_prompts[:prompt_count]
+            
+            if image_prompts:
                 print(f"✅ Generated {len(image_prompts)} fallback image prompts. Updating DB for Studio visibility...")
                 
                 # Update script record in DB (Correction: persistence for Studio visibility)
                 db = SessionLocal()
-                s = db.get(ScriptInbox, script_id_num)
+                s = db.query(ScriptInbox).filter(ScriptInbox.id == script_id_num).first()
                 if s:
                     s.image_prompts = json.dumps(image_prompts)
                     db.commit()
@@ -136,25 +140,21 @@ def automate_visual_production(script_id_num: int):
         send_telegram_message("❌ <b>PROBLÈME BUDGET</b>\nLes images générées sont insuffisantes ou de mauvaise qualité. Arrêt de la production pour sauver les crédits.")
         return
 
-    send_telegram_message(f"📹 <b>Phase 2: Animation sélective (BudgetOptimizer)</b>\n1 Kling (Hook) + {len(images_paths)-1} Wan (Décor/Transition)")
+    send_telegram_message(f"📹 <b>Phase 2: Animation sélective (BudgetOptimizer)</b>\n1 Wan (Hook) + {len(images_paths)-1} LTX (Décor/Transition)")
 
-    # 2. Convert Images to Video Clips (Selective Animation)
+    # 2. Generative Video Clips (Text-to-Video Selective Animation)
     video_clips_paths = []
     for i, img_path in enumerate(images_paths):
         print(f"Generating video clip {i+1}/{len(images_paths)}...")
         
-        # BudgetOptimizer Rule:
-        # Clip 1: Kling ($0.045) for High Action Hook
-        # Clips 2-18: Wan ($0.08) or fallback for budget environment
-        target_model = "kling" if i == 0 else "wan"
-        
+        # BudgetOptimizer Rule (Wan -> LTX)
         prompt = f"Automated cinematic clip: {script.title}"
         if i == 0:
             prompt += ", extreme cinematic action, viral hook motion"
+            vid_url = generate_wan_video(prompt)
         else:
             prompt += ", cinematic background movement, subtle atmosphere"
-
-        vid_url = generate_video_from_image(img_path, prompt, model=target_model)
+            vid_url = generate_ltx_video(prompt)
         if vid_url:
             clip_path = os.path.join(clips_dir, f"clip_{i+1:02d}.mp4")
             if download_video(vid_url, clip_path):

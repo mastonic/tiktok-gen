@@ -155,10 +155,10 @@ def create_agents(config=None, commando_mode=False):
 
     visual_promptist = Agent(
         role='VisualPromptist',
-        goal='Créer exactement 15 prompts ultra-réalistes en anglais pour le générateur FLUX.',
+        goal='Créer exactement 18 prompts ultra-réalistes en anglais pour le générateur FLUX.',
         backstory=(
             'Tu es un directeur artistique de haut vol. Tu garantis une narration visuelle parfaite pour une vidéo longue. '
-            'Tes prompts doivent être cinématiques et cohérents pour que les 15 images racontent une histoire complète de 90s.'
+            'Tes prompts doivent être cinématiques et cohérents pour que les 18 images racontent une histoire complète de 90s.'
         ),
         verbose=True,
         allow_delegation=False,

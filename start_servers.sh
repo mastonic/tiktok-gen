@@ -14,6 +14,8 @@ echo "------------------------------------------------"
 echo "🧹 Cleaning up old processes..."
 pkill -f "uvicorn main:app" > /dev/null 2>&1
 pkill -f "vite" > /dev/null 2>&1
+sleep 2
+pkill -9 -f "uvicorn main:app" > /dev/null 2>&1
 sleep 1
 
 # 2. Start Backend

@@ -1,4 +1,5 @@
 import os
+import json
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Float
 from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime
@@ -434,5 +435,41 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
+    finally:
+        db.close()
+def track_cost(amount: float):
+    db = SessionLocal()
+    try:
+        conf = db.query(SystemConfig).first()
+        if not conf:
+            return
+            
+        # Optional: Reset if day is fresh (simplified)
+        now = datetime.utcnow()
+        if conf.last_reset and conf.last_reset.date() < now.date():
+             conf.today_spend = 0.0
+             conf.last_reset = now
+             
+        conf.today_spend += amount
+        db.commit()
+    except Exception as e:
+        print(f"Error tracking cost: {e}")
+    finally:
+        db.close()
+def save_agent_message(content_id, from_agent, to_agent, msg_type, summary, payload={}):
+    db = SessionLocal()
+    try:
+        msg = AgentMessage(
+            content_id=content_id,
+            from_agent=from_agent,
+            to_agent=to_agent,
+            message_type=msg_type,
+            summary=summary,
+            payload=json.dumps(payload)
+        )
+        db.add(msg)
+        db.commit()
+    except Exception as e:
+        print(f"Error saving agent message: {e}")
     finally:
         db.close()

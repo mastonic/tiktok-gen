@@ -70,9 +70,9 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
 
     task_visuals = Task(
         description=(
-            "Crée exactement 7 prompts cinématiques en anglais pour FLUX. Raconte une histoire visuelle cohérente."
+            "Crée exactement 18 prompts cinématiques en anglais pour FLUX. Raconte une histoire visuelle cohérente pour un format LONG de 90s."
         ),
-        expected_output="Exactly 7 cinematically consistent image prompts.",
+        expected_output="Exactly 18 cinematically consistent image prompts.",
         agent=visual_promptist,
         output_pydantic=VisualPrompts
     )

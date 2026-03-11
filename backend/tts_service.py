@@ -12,18 +12,29 @@ def generate_tts(text: str, output_path: str, mode: str = "f5-tts") -> bool:
     """
     if mode == "f5-tts" and FAL_KEY:
         try:
+            # Clean up the script: Remove visual descriptions and formatting
+            import re
+            clean_text = re.sub(r'\[\*\*Visuel\*\*.*?\]', '', text, flags=re.IGNORECASE | re.DOTALL)
+            clean_text = clean_text.replace('**Narration** :', '').replace('**Narration**', '').replace('"', '').strip()
+            
             print(f"🎙️ [VoiceMaster] Generating narrative voice via fal-ai/f5-tts...")
             # F5-TTS logic (via fal-ai)
             # Reference: https://fal.ai/models/fal-ai/f5-tts
             url = "https://fal.run/fal-ai/f5-tts"
             headers = {"Authorization": f"Key {FAL_KEY}", "Content-Type": "application/json"}
             payload = {
-                "gen_text": text,
-                "speed": 1.1, # TikTok Dynamic Speed
-                "remove_silence": True
+                "gen_text": clean_text
             }
             response = requests.post(url, json=payload, headers=headers)
             response.raise_for_status()
+        
+            # Track cost (F5-TTS on Fal is approx 0.035$ per long request)
+            try:
+                from database import track_cost
+                track_cost(0.035)
+            except:
+                pass
+            
             data = response.json()
             audio_url = data.get("audio", {}).get("url")
             if audio_url:
@@ -64,10 +75,33 @@ def generate_tts(text: str, output_path: str, mode: str = "f5-tts") -> bool:
     try:
         import edge_tts
         VOICE = "fr-FR-VivienneMultilingualNeural" 
+        
+        # Clean text for Edge-TTS fallback as well
+        import re
+        clean_text = re.sub(r'\[\*\*Visuel\*\*.*?\]', '', text, flags=re.IGNORECASE | re.DOTALL)
+        clean_text = clean_text.replace('**Narration** :', '').replace('**Narration**', '').replace('"', '').strip()
+        
         async def run_edge_tts():
-            communicate = edge_tts.Communicate(text, VOICE, rate="+10%")
+            communicate = edge_tts.Communicate(clean_text, VOICE, rate="-10%")
             await communicate.save(output_path)
-        asyncio.run(run_edge_tts())
+            
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = None
+            
+        if loop and loop.is_running():
+            import threading
+            def _thread_run():
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                new_loop.run_until_complete(run_edge_tts())
+                new_loop.close()
+            t = threading.Thread(target=_thread_run)
+            t.start()
+            t.join()
+        else:
+            asyncio.run(run_edge_tts())
         print(f"✅ VoiceMaster (Edge-TTS Fallback) generated: {output_path}")
         return True
     except Exception as e:

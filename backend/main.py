@@ -19,32 +19,15 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from crewai import Crew, Process
 from agents import create_agents
 from tasks import create_tasks
-from database import SessionLocal, ScriptInbox, PendingQuestion, RunHistory, SystemAlert, AgentConfig, AgentMessage, GrowthRecommendation, SystemConfig, AffiliateLink
+from database import SessionLocal, ScriptInbox, PendingQuestion, RunHistory, SystemAlert, AgentConfig, AgentMessage, GrowthRecommendation, SystemConfig, AffiliateLink, save_agent_message
 from datetime import datetime, timezone
 import uuid
 from apscheduler.schedulers.background import BackgroundScheduler
 from notifications import send_telegram_message, send_telegram_video
 from production import automate_visual_production
 
-def save_agent_message(content_id, from_agent, to_agent, msg_type, summary, payload={}):
-    db = SessionLocal()
-    try:
-        msg = AgentMessage(
-            content_id=content_id,
-            from_agent=from_agent,
-            to_agent=to_agent,
-            message_type=msg_type,
-            summary=summary,
-            payload=json.dumps(payload)
-        )
-        db.add(msg)
-        db.commit()
-    except Exception as e:
-        print(f"Error saving agent message: {e}")
-    finally:
-        db.close()
 import comfyui_client
-import fal_client
+import video_gen
 import tts_service
 
 # Ensure environment variables are loaded
@@ -242,7 +225,13 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
                 verbose=True,
                 max_rpm=30
             )
-            result = str(crew.kickoff())
+            crew_result = crew.kickoff()
+            if hasattr(crew_result, "pydantic") and crew_result.pydantic:
+                result = crew_result.pydantic.model_dump_json() if hasattr(crew_result.pydantic, "model_dump_json") else crew_result.pydantic.json()
+            elif hasattr(crew_result, "json_dict") and crew_result.json_dict:
+                result = json.dumps(crew_result.json_dict)
+            else:
+                result = str(crew_result)
 
         update_run_progress(run_id, 85, "Optimisation du script final")
         send_telegram_message(f"✅ <b>Script généré</b>\nAnalyse et scoring terminé par le Swarm.")
@@ -252,12 +241,22 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
         # --- NEW ROBUST PARSING & AUTOMATION TRIGGER ---
         data = {}
         try:
-            json_str = result
-            match = re.search(r'(\{[\s\S]*\})', result)
+            # Clean up markdown formatting (e.g., ```json)
+            json_str = result.strip()
+            if json_str.startswith("```json"):
+                json_str = json_str.replace("```json\n", "", 1)
+            if json_str.endswith("```"):
+                json_str = json_str.rsplit("```", 1)[0]
+                
+            match = re.search(r'(\{[\s\S]*\})', json_str)
             if match:
                 json_str = match.group(1)
+            
+            if not json_str.strip():
+                raise ValueError("Extracted JSON string is empty.")
+                
             data = json.loads(json_str)
-            print(f"✅ Successfully parsed result as JSON.")
+            print("✅ Successfully parsed result as JSON.")
         except Exception as parse_e:
             print(f"⚠️ Could not parse final output as JSON: {parse_e}. Using raw strings.")
             # Extract a title from the first line or first sentence
@@ -589,25 +588,21 @@ async def get_overview():
         db = SessionLocal()
         scripts = db.query(ScriptInbox).all()
         videos = sum(1 for s in scripts if s.status == "posted")
-        runs = db.query(RunHistory).all()
+        # Get real spend from SystemConfig
+        conf = db.query(SystemConfig).first()
+        today_spend = conf.today_spend if conf else 0.0
+        daily_cap = conf.daily_cap if conf else 15.0
+        
         db.close()
         
-        total_cost = 0.0
-        for r in runs:
-            try:
-                if r.cost and str(r.cost).replace('.', '', 1).isdigit():
-                    total_cost += float(r.cost)
-            except:
-                continue
-                
         profit_score = sum(s.money_score or 0 for s in scripts) / max(len(scripts), 1)
 
         return {
             "activeAgents": "5/5",
             "videosToday": f"{videos}/{max(videos, 2)}",
-            "aiCostToday": f"${total_cost:.2f}",
+            "aiCostToday": f"${today_spend:.2f}",
             "estProfitScore": f"{profit_score:.1f}",
-            "budgetRemaining": f"${max(0.0, 15.0 - total_cost):.2f}"
+            "budgetRemaining": f"${max(0.0, daily_cap - today_spend):.2f}"
         }
     except Exception as e:
         print(f"Error in get_overview: {traceback.format_exc()}")
@@ -648,6 +643,7 @@ async def get_contents():
             has_images = False
             has_videos = False
             has_audio = False
+            has_final_video = False
             existing_clips = []
             
             if os.path.exists(job_dir):
@@ -709,7 +705,12 @@ async def get_contents():
                 "finalScore": 0,
                 "costEstimate": cost_val,
                 "column": "Script",
-                "assignedAgent": "Swarm"
+                "assignedAgent": "Swarm",
+                "imagePrompts": [],
+                "hasImages": False,
+                "hasVideos": False,
+                "hasAudio": False,
+                "existingClips": []
             })
         
         return db_contents
@@ -944,7 +945,7 @@ def generate_flux_images(request: FluxPromptRequest):
     job_dir = f"media/production/{request.job_id}"
     os.makedirs(job_dir, exist_ok=True)
     
-    from fal_client import generate_flux_image
+    from video_gen import generate_flux_image
     
     generated_images = []
     for i, prompt in enumerate(request.prompts):
@@ -978,9 +979,9 @@ def process_image_to_video(job_dir_name, images, job_dir, clips_dir, prompt):
             video_generation_progress[job_dir_name]["completed"] = success_count
             continue
 
-        url = fal_client.generate_video_from_image(img_path, prompt)
+        url = video_gen.generate_ltx_video(prompt)
         if url:
-            if fal_client.download_video(url, clip_path):
+            if video_gen.download_video(url, clip_path):
                 success_count += 1
                 print(f"Successfully generated and downloaded {clip_name}")
             else:
