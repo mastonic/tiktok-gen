@@ -12,5 +12,6 @@ export default defineConfig({
             usePolling: true, // Crucial for Docker volumes on some VPS
         },
         hmr: false,
+        middlewareMode: false,
     },
 })

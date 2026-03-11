@@ -82,8 +82,10 @@ FAL_KEY=$FAL_KEY
 EOT
 
 # 9. Relance
-echo "🏗️  Relance avec GOOGLE_API_VERSION=v1..."
+echo "🏗️  Nettoyage et Relance..."
 docker compose down || true
+# Force removal of frontend/backend images to ensure fresh build
+docker rmi im-system-frontend im-system-backend || true
 docker compose up --build -d
 
 echo "----------------------------------------------------------------"
