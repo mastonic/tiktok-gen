@@ -1161,7 +1161,8 @@ video_generation_progress = {}
 def process_image_to_video(job_dir_name, job_dir, clips_dir, prompt, is_square=False):
     import subprocess
     success_count = 0
-    total_clips = 18
+    # Cyberpunk 2026 Standard: 15 clips
+    total_clips = 15
     video_generation_progress[job_dir_name] = {"total": total_clips, "completed": 0, "status": "running"}
     
     for i in range(1, total_clips + 1):
@@ -1176,12 +1177,22 @@ def process_image_to_video(job_dir_name, job_dir, clips_dir, prompt, is_square=F
             video_generation_progress[job_dir_name]["completed"] = success_count
             continue
 
-        # Try to generate animation clip
+        # Try to generate animation clip (STRICT I2V)
         vid_generated = False
         if os.path.exists(img_path):
-            url = video_gen.generate_ltx_video(prompt, is_square=is_square)
-            if url and video_gen.download_video(url, clip_path):
-                vid_generated = True
+            print(f"Uploading {img_path} to Fal for Studio I2V...")
+            img_url = video_gen.upload_to_fal(img_path)
+            if img_url:
+                # Use Wan for the first clip (Hook), LTX for the rest
+                if i == 1:
+                    url = video_gen.generate_wan_video(prompt="", image_url=img_url, is_square=is_square)
+                else:
+                    url = video_gen.generate_ltx_video(prompt="", image_url=img_url, is_square=is_square)
+                    
+                if url and video_gen.download_video(url, clip_path):
+                    vid_generated = True
+            else:
+                print(f"❌ Failed to upload {img_path} to Fal.")
         
         # FAILOVER logic: If animation fails OR image is missing
         if not vid_generated:
@@ -1211,7 +1222,7 @@ def process_image_to_video(job_dir_name, job_dir, clips_dir, prompt, is_square=F
         video_generation_progress[job_dir_name]["completed"] = success_count
         
     video_generation_progress[job_dir_name]["status"] = "completed"
-    print(f"Workflow Image-to-Video terminé. Sync complète sur 18 clips.")
+    print(f"Workflow Image-to-Video terminé. Sync complète sur 15 clips.")
 
 @app.post("/api/workflows/image-to-video")
 async def run_image_to_video(background_tasks: BackgroundTasks, payload: Optional[dict] = None):
@@ -1237,10 +1248,10 @@ async def run_image_to_video(background_tasks: BackgroundTasks, payload: Optiona
     is_square = payload.get("is_square", False) if payload else False
     prompt = "Cinematic video of the prompt, high movement, high quality" # Default
     
-    print(f"Generating 18 clips in {job_dir}. Background production started...")
+    print(f"Generating 15 clips in {job_dir}. Background production started...")
     background_tasks.add_task(process_image_to_video, job_dir_name, job_dir, clips_dir, prompt, is_square=is_square)
     
-    return {"status": "success", "message": "Génération de 18 clips démarrée en arrière-plan (avec failover)..."}
+    return {"status": "success", "message": "Génération de 15 clips démarrée en arrière-plan (I2V Stricte)..."}
 
 @app.get("/api/workflows/progress/{job_id}")
 async def get_video_progress(job_id: str):

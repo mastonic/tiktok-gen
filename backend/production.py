@@ -1,7 +1,7 @@
 import os
 import json
 import time
-from video_gen import generate_flux_image, generate_wan_video, generate_ltx_video, download_video
+from video_gen import generate_flux_image, generate_wan_video, generate_ltx_video, download_video, upload_to_fal
 from tts_service import generate_tts
 from notifications import send_telegram_message, send_telegram_video
 from database import SessionLocal, ScriptInbox
@@ -109,8 +109,14 @@ def automate_visual_production(script_id_num: int):
 
     # ... (Blog cover update logic) ...
 
-    # 2. Generative Video Clips (Text-to-Video Selective Animation)
+    # 2. Generative Video Clips (STRICT Image-to-Video Animation)
     video_clips_paths = []
+    # BLOCKING RULE: Do not proceed if no images were generated
+    if not images_paths:
+        print("❌ CRITICAL: No images available under preview. Blocking video generation.")
+        send_telegram_message("❌ <b>ERREUR CRITICAL :</b> Aucune image générée. Production vidéo stoppée (Règle I2V Stricte).")
+        return
+
     # We iterate over the FULL intended count to ensure no gaps or shifts
     for i in range(len(image_prompts[:prompt_count])):
         print(f"Processing clip {i+1}...")
@@ -119,16 +125,21 @@ def automate_visual_production(script_id_num: int):
         # Try to animate if the image was successfully generated
         vid_generated = False
         if i in images_paths:
-            base_prompt = image_prompts[i]
+            img_local_path = images_paths[i]
+            print(f"Uploading image {i+1} to Fal for I2V...")
+            img_url = upload_to_fal(img_local_path)
             
-            # Animation Logic (Wan for hook, LTX for the rest)
-            if i == 0:
-                vid_url = generate_wan_video(f"{base_prompt}, high motion, cinematic")
+            if img_url:
+                # Animation Logic (Wan for hook, LTX for the rest)
+                if i == 0:
+                    vid_url = generate_wan_video(prompt="", image_url=img_url)
+                else:
+                    vid_url = generate_ltx_video(prompt="", image_url=img_url)
+                    
+                if vid_url and download_video(vid_url, clip_path):
+                    vid_generated = True
             else:
-                vid_url = generate_ltx_video(f"{base_prompt}, subtle motion")
-                
-            if vid_url and download_video(vid_url, clip_path):
-                vid_generated = True
+                 print(f"❌ Failed to upload image {i+1} to Fal.")
         
         # FAILOVER: If video generation failed or image was missing, 
         # create a 5s static clip from the image or a placeholder

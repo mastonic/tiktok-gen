@@ -1,8 +1,47 @@
-import os
-import requests
-import time
 import base64
+import json
 from typing import Optional
+
+def upload_to_fal(file_path: str) -> Optional[str]:
+    """
+    BudgetOptimizer: Uploads a local file to Fal.ai CDN to be used as I2V reference.
+    """
+    fal_key = (os.environ.get("FAL_KEY") or "").strip()
+    if not fal_key:
+        return None
+
+    try:
+        # 1. Initiate upload
+        url = "https://rest.alpha.fal.ai/storage/upload/initiate"
+        headers = {
+            "Authorization": f"Key {fal_key}",
+            "Content-Type": "application/json"
+        }
+        file_name = os.path.basename(file_path)
+        # Simplified content type detection
+        content_type = "image/jpeg" if file_name.endswith(".jpg") or file_name.endswith(".jpeg") else "image/png"
+        
+        payload = {
+            "file_name": file_name,
+            "content_type": content_type
+        }
+        
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        upload_data = response.json()
+        
+        upload_url = upload_data.get("upload_url")
+        file_url = upload_data.get("file_url")
+        
+        # 2. Upload file content
+        with open(file_path, "rb") as f:
+            upload_resp = requests.put(upload_url, data=f, headers={"Content-Type": content_type})
+            upload_resp.raise_for_status()
+            
+        return file_url
+    except Exception as e:
+        print(f"❌ Fal Upload Error: {e}")
+        return None
 
 def generate_flux_image(prompt: str, save_path: str, is_square: bool = False) -> bool:
     """
@@ -87,28 +126,39 @@ def generate_flux_image(prompt: str, save_path: str, is_square: bool = False) ->
         traceback.print_exc()
         return False
 
-def generate_wan_video(prompt: str, is_square: bool = False, webhook_url: Optional[str] = None) -> Optional[str]:
+def generate_wan_video(prompt: str, image_url: Optional[str] = None, is_square: bool = False, webhook_url: Optional[str] = None) -> Optional[str]:
     """
-    BudgetOptimizer: High-quality Hook animation with Wan-Video v2.1 (9:16 vertical).
-    Replaces Kling for 40% lower cost.
+    BudgetOptimizer: Image-to-Video animation with Wan-Video v2.1.
+    If image_url is provided, it uses the I2V endpoint.
     """
     fal_key = (os.environ.get("FAL_KEY") or "").strip()
     if not fal_key:
         print("WARNING: fal_key not found in environment.")
         return "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_5mb.mp4"
 
-    url = "https://queue.fal.run/fal-ai/wan/v2.1/t2v"
+    # I2V vs T2V
+    if image_url:
+        url = "https://queue.fal.run/fal-ai/wan/v2.1/i2v"
+        # Force animation prompt as requested
+        final_prompt = "The camera zooms in slowly, the subject comes to life and turns their head, cinematic movement, high quality"
+    else:
+        url = "https://queue.fal.run/fal-ai/wan/v2.1/t2v"
+        final_prompt = prompt
+
     headers = {
         "Authorization": f"Key {fal_key}",
         "Content-Type": "application/json"
     }
     payload = {
-        "prompt": prompt,
+        "prompt": final_prompt,
         "aspect_ratio": "1:1" if is_square else "9:16",
         "num_frames": 81,
         "resolution": "720p",
         "guidance_scale": 6.0
     }
+    
+    if image_url:
+        payload["image_url"] = image_url
     
     if webhook_url:
         payload["webhook_url"] = webhook_url
@@ -136,7 +186,7 @@ def generate_wan_video(prompt: str, is_square: bool = False, webhook_url: Option
                 # Real-time cost tracking
                 try:
                     from database import track_cost
-                    track_cost(0.08) # Wan t2v cost approx
+                    track_cost(0.08) # Wan cost
                 except:
                     pass
                 
@@ -161,27 +211,39 @@ def generate_wan_video(prompt: str, is_square: bool = False, webhook_url: Option
         print(f"Error calling Wan API: {e}")
         return None
 
-def generate_ltx_video(prompt: str, is_square: bool = False, webhook_url: Optional[str] = None) -> Optional[str]:
+def generate_ltx_video(prompt: str, image_url: Optional[str] = None, is_square: bool = False, webhook_url: Optional[str] = None) -> Optional[str]:
     """
-    BudgetOptimizer: Cost-effective B-Roll animation with LTX-Video (25 steps).
+    BudgetOptimizer: Cost-effective B-Roll animation with LTX-Video.
+    If image_url is provided, it leverages Image-to-Video.
     """
     fal_key = (os.environ.get("FAL_KEY") or "").strip()
     if not fal_key:
         print("WARNING: fal_key not found in environment.")
         return "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_5mb.mp4"
 
-    url = "https://queue.fal.run/fal-ai/ltx-video"
+    # I2V vs T2V
+    if image_url:
+        url = "https://queue.fal.run/fal-ai/ltx-video/image-to-video"
+        final_prompt = "Subtle cinematic movement, subject sways gently, highly detailed animation"
+    else:
+        url = "https://queue.fal.run/fal-ai/ltx-video"
+        final_prompt = prompt
+
     headers = {
         "Authorization": f"Key {fal_key}",
         "Content-Type": "application/json"
     }
     payload = {
-        "prompt": prompt,
+        "prompt": final_prompt,
         "resolution": "768x768" if is_square else "768x512",
         "num_frames": 65,
         "steps": 25,
         "cfg_scale": 3.0
     }
+    
+    if image_url:
+        payload["image_url"] = image_url
+        
     if webhook_url:
         payload["webhook_url"] = webhook_url
 

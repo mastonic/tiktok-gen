@@ -380,8 +380,8 @@ const Studio = () => {
                             <div className="mb-6 p-4 bg-navy-900/50 rounded-xl border border-gray-700 text-xs text-gray-400 flex items-start gap-3">
                                 <AlertCircle className="h-4 w-4 text-cyan-400 shrink-0" />
                                 <div>
-                                    <p className="font-semibold text-gray-200 mb-1">Narration Longue (90s)</p>
-                                    <p>Ce script nécessite 18 images FLUX pour une synchronisation parfaite à 5s par clip. Assurez-vous de générer tous les éléments avant l'exportation finale.</p>
+                                    <p className="font-semibold text-gray-200 mb-1">Standard Cyberpunk 2026 (15 Clips)</p>
+                                    <p>Ce script nécessite 15 images FLUX pour une synchronisation parfaite. Le système utilise strictement l'Image-to-Video (I2V) pour animer vos créations.</p>
                                 </div>
                             </div>
 
