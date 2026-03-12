@@ -88,15 +88,49 @@ def github_trending_tool(language: str = "") -> str:
             raise ValueError(f"GitHub API Error {resp.status_code}")
             
     except Exception as e:
-        print(f"⚠️ [GitHub] API Failed ({e}), trying secondary source...")
+        print(f"⚠️ [GitHub] API Primary Failed ({e}), trying secondary mirror...")
         try:
-             # Secondary fallback: parse the trending page directly or via another proxy
+             # Secondary fallback: Scraper Mirror
              url = f"https://github-trending-api.mirror.workers.dev/repositories"
-             resp = requests.get(url, timeout=10)
+             params = {"language": language.lower()} if language else {}
+             resp = requests.get(url, params=params, timeout=15)
              if resp.status_code == 200:
-                 return str(resp.json())[:1000]
-        except: pass
-        return hacker_news_tool("github")
+                 data = resp.json()
+                 results = f"Trending GitHub Repos (Mirror - {language or 'all'}):\n"
+                 for repo in data[:8]:
+                     results += f"- {repo.get('name')} | Stars: {repo.get('stars')} | {repo.get('url')}\n"
+                 return results
+        except Exception as e2:
+            print(f"⚠️ [GitHub] Secondary Mirror Failed ({e2}), falling back to Official Search API...")
+            
+        try:
+            # Tertiary fallback: Official GitHub Search API (Most stars in last 7 days)
+            from datetime import datetime, timedelta
+            last_week = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+            query = f"created:>{last_week}"
+            if language:
+                query += f" language:{language}"
+            
+            search_url = f"https://api.github.com/search/repositories"
+            search_params = {
+                "q": query,
+                "sort": "stars",
+                "order": "desc",
+                "per_page": 8
+            }
+            
+            resp = requests.get(search_url, params=search_params, timeout=15)
+            if resp.status_code == 200:
+                data = resp.json()
+                results = f"Trending GitHub Repos (Official Search - {language or 'all'}):\n"
+                for repo in data.get('items', []):
+                    results += f"- {repo['name']} by {repo['owner']['login']} | ⭐ {repo['stargazers_count']} | {repo['html_url']}\n"
+                    results += f"  Desc: {repo.get('description', 'No description')}\n\n"
+                return results
+        except Exception as e3:
+             print(f"⚠️ [GitHub] Official Search Failed ({e3})")
+
+        return hacker_news_tool(f"github {language}")
 
 @tool("ArxivTool")
 def arxiv_tool(query: str = "Artificial Intelligence") -> str:
