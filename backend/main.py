@@ -1898,16 +1898,17 @@ async def get_blog_post_raw(slug: str):
                 video_url = f"/media/production/db_{target_script.id}/final_output.mp4"
                 video_tag = "[INSERT_VIDEO_PLAYER]" if os.path.exists(os.path.join(os.path.dirname(__file__), "media", "production", f"db_{target_script.id}", "final_output.mp4")) else ""
                 
-                content = f"""---
-title: "{target_script.title}"
-excerpt: "{target_script.title} — Découverte en avant-première de notre dernière production."
-cover_image: "{target_script.cover_image or '/media/production/db_' + str(target_script.id) + '/img_01.jpg'}"
+                # Use a template to avoid f-string KeyError if script contains { }
+                template = """---
+title: "{title}"
+excerpt: "{title} — Découverte en avant-première de notre dernière production."
+cover_image: "{cover}"
 category: "Avant-Première"
-date: "{target_script.created_at.strftime('%Y-%m-%d') if target_script.created_at else ''}"
-video_url: "{video_url}"
+date: "{date}"
+video_url: "{video}"
 ---
 
-# {target_script.title}
+# {title}
 
 Bienvenue dans cet article généré automatiquement pour accompagner notre dernière vidéo. 
 
@@ -1915,13 +1916,21 @@ Bienvenue dans cet article généré automatiquement pour accompagner notre dern
 
 ## Le Script de l'épisode
 
-{target_script.final_script}
+{script}
 
 [BENTO_TOOLS]
 
 ---
 *Cet article a été généré par l'iM-System en attendant la revue complète de la BlogSquad.*
 """
+                content = template.format(
+                    title=target_script.title,
+                    cover=target_script.cover_image or f"/media/production/db_{target_script.id}/img_01.jpg",
+                    date=target_script.created_at.strftime('%Y-%m-%d') if target_script.created_at else '',
+                    video=video_url,
+                    video_tag=video_tag,
+                    script=target_script.final_script or "Script en cours de rédaction..."
+                )
                 db.close()
                 from fastapi.responses import PlainTextResponse
                 return PlainTextResponse(content=content, media_type="text/plain; charset=utf-8")
@@ -1956,6 +1965,9 @@ Bienvenue dans cet article généré automatiquement pour accompagner notre dern
             content=content,
             media_type="text/plain; charset=utf-8"
         )
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 404) so FastAPI handles them correctly
+        raise
     except Exception as e:
         print(f"❌ ERROR serving blog post {slug}: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
