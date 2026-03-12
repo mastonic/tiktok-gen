@@ -9,17 +9,39 @@ import { TrendingUp, Users, Clock, Eye, MessageCircle, AlertCircle, Sparkles, Vi
 const Analytics = () => {
     const [runMetrics, setRunMetrics] = useState([]);
 
-    useEffect(() => {
-        const fetchMetrics = async () => {
-            try {
-                const apiUrl = API_URL;
-                const response = await fetch(`${apiUrl}/api/metrics`);
-                const data = await response.json();
-                setRunMetrics(data);
-            } catch (error) {
-                console.error("Failed to fetch metrics:", error);
+    const handleApplyRecommendation = async (recId) => {
+        try {
+            const apiUrl = API_URL;
+            const response = await fetch(`${apiUrl}/api/recs/${recId}/apply`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                alert(`✅ Succès : ${data.message}`);
+                // Refresh metrics to reflect potential changes (like budget)
+                fetchMetrics();
+            } else {
+                alert(`❌ Erreur : ${data.message}`);
             }
-        };
+        } catch (error) {
+            console.error("Failed to apply recommendation:", error);
+            alert("Erreur de connexion au serveur.");
+        }
+    };
+
+    const fetchMetrics = async () => {
+        try {
+            const apiUrl = API_URL;
+            const response = await fetch(`${apiUrl}/api/metrics`);
+            const data = await response.json();
+            setRunMetrics(data);
+        } catch (error) {
+            console.error("Failed to fetch metrics:", error);
+        }
+    };
+
+    useEffect(() => {
         fetchMetrics();
     }, []);
     return (
@@ -98,6 +120,7 @@ const Analytics = () => {
                                     </p>
                                     <Button
                                         variant={rec.type === 'scale' ? 'primary' : 'outline'}
+                                        onClick={() => handleApplyRecommendation(rec.id)}
                                         className={`mt-3 text-[10px] uppercase tracking-wider font-bold !py-2 w-full ${rec.type === 'scale'
                                                 ? 'bg-emerald-600 hover:bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-900/20'
                                                 : 'border-gray-700 text-gray-400 hover:text-white'

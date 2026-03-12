@@ -1652,6 +1652,58 @@ async def finalize_script(payload: FinalizeScriptPayload):
     db.close()
     return {"status": "success", "message": "Script saved to Inbox"}
 
+@app.post("/api/recs/{rec_id}/apply")
+async def apply_recommendation(rec_id: int):
+    """
+    BudgetOptimizer: Applies a growth recommendation to the system.
+    Dynamically updates configurations or agent backstories based on the suggestion.
+    """
+    db = SessionLocal()
+    rec = db.query(GrowthRecommendation).filter(GrowthRecommendation.id == rec_id).first()
+    if not rec:
+        db.close()
+        raise HTTPException(status_code=404, detail="Recommendation not found")
+        
+    conf = db.query(SystemConfig).first()
+    
+    status_msg = "Recommandation appliquée."
+    
+    try:
+        if rec.type == "scale":
+            # Scale usually means increasing budget or frequency
+            if conf:
+                conf.daily_cap += 5.0
+                status_msg = f"Budget quotidien augmenté à ${conf.daily_cap}."
+        
+        elif rec.type == "pivot":
+            # Pivot usually means changing the creative direction
+            architect = db.query(AgentConfig).filter(AgentConfig.role == "ScriptArchitect").first()
+            if architect:
+                if "45s" in rec.description:
+                    architect.backstory += " RÈGLE PIVOT : Scripts limités à 45s (env. 100-110 mots) pour maximiser la rétention."
+                    status_msg = "Règle de durée (45s) injectée dans l'Architecte."
+        
+        elif rec.type == "alert":
+             # Optimization suggestion
+             commander = db.query(AgentConfig).filter(AgentConfig.role == "ViralGrowthCommander").first()
+             if commander:
+                 commander.backstory += " NOUVEAU HOOK : Utilise des Curiosity Gaps ('J'ai testé X...') au lieu de Listicles."
+                 status_msg = "Stratégie de Hook mise à jour."
+
+        db.commit()
+        
+        # Log the action
+        from database import save_agent_message
+        save_agent_message("system", "Human", "QualityController", "recommendation_applied", 
+                           f"Applied: {rec.title}", {"id": rec_id, "type": rec.type})
+                           
+        return {"status": "success", "message": status_msg}
+    except Exception as e:
+        db.rollback()
+        return {"status": "error", "message": str(e)}
+    finally:
+        db.close()
+
 # --- Scheduler Setup ---
 from pytz import timezone as pytz_timezone
 
