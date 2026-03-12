@@ -98,6 +98,7 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
         ),
         expected_output="Exactly 18 cinematically consistent image prompts.",
         agent=visual_promptist,
+        context=[task_scripting], # Connect to script
         output_pydantic=VisualPrompts
     )
     tasks.append(task_visuals)

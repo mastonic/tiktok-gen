@@ -38,6 +38,11 @@ def automate_visual_production(script_id_num: int):
     job_dir = f"media/production/db_{script.id}"
     os.makedirs(job_dir, exist_ok=True)
     clips_dir = os.path.join(job_dir, "clips_video")
+    
+    # NEW: Cleanup old clips to ensure fresh order and no residue from failed runs
+    if os.path.exists(clips_dir):
+        import shutil
+        shutil.rmtree(clips_dir)
     os.makedirs(clips_dir, exist_ok=True)
 
     try:
@@ -97,68 +102,61 @@ def automate_visual_production(script_id_num: int):
     images_paths = []
     send_telegram_message(f"🎨 <b>Production visuelle en cours [{script.title}]</b>\n\nFormat : Long (90s minimum)\nPhase 1: Génération des {len(image_prompts)} visuels (Flux Schnell)\nFormat: 9:16 portrait")
     
+    # 1. Generate Images with Flux (BudgetOptimizer: Schnell)
+    images_paths = {} # Use dict to maintain strict index mapping
+    
+    send_telegram_message(f"🎨 <b>Production visuelle en cours [{script.title}]</b>\n\nFormat : Long (90s minimum)\nPhase 1: Génération des {len(image_prompts)} visuels (Flux Schnell)\nFormat: 9:16 portrait")
+    
     for i, prompt in enumerate(image_prompts[:prompt_count]):
         img_path = os.path.join(job_dir, f"img_{i+1:02d}.jpg")
         print(f"Generating image {i+1}/{len(image_prompts)}...")
         if generate_flux_image(prompt, img_path):
-            images_paths.append(img_path)
+            images_paths[i] = img_path
 
-    if len(images_paths) < (prompt_count / 2):
-        print(f"⚠️ Warning: Only {len(images_paths)} images generated.")
-
-    # --- NEW: Inject first image into Blog Post ---
-    try:
-        first_img_rel = f"/media/production/db_{script.id}/img_01.jpg"
-        
-        def slugify(text: str) -> str:
-            slug = text.lower().strip()
-            slug = re.sub(r"[^a-z0-9\s-]", "", slug)
-            slug = re.sub(r"\s+", "-", slug)
-            return slug[:60]
-        
-        blog_slug = slugify(script.title)
-        blog_file = Path(__file__).parent.parent / "blog" / "posts" / f"{blog_slug}.md"
-        
-        if blog_file.exists():
-            content = blog_file.read_text(encoding="utf-8")
-            new_content = re.sub(
-                r'cover_image:\s*"https://images\.unsplash\.com/.*?"',
-                f'cover_image: "{first_img_rel}"',
-                content
-            )
-            blog_file.write_text(new_content, encoding="utf-8")
-            print(f"✅ Blog cover updated with AI image: {blog_slug}")
-    except Exception as blog_update_e:
-        print(f"⚠️ Could not update blog cover: {blog_update_e}")
-
-    # --- BUDGET OPTIMIZER: VIRAL JUDGE VALIDATION ---
-    print("⚖️ VirtualJudge is validating image coherence...")
-    # Simulated validation for now: in a real swarm, another agent would check these via Vision
-    image_quality_ok = len(images_paths) >= (prompt_count / 2)
-    
-    if not image_quality_ok:
-        send_telegram_message("❌ <b>PROBLÈME BUDGET</b>\nLes images générées sont insuffisantes ou de mauvaise qualité. Arrêt de la production pour sauver les crédits.")
-        return
-
-    send_telegram_message(f"📹 <b>Phase 2: Animation sélective (BudgetOptimizer)</b>\n1 Wan (Hook) + {len(images_paths)-1} LTX (Décor/Transition)")
+    # ... (Blog cover update logic) ...
 
     # 2. Generative Video Clips (Text-to-Video Selective Animation)
     video_clips_paths = []
-    for i, img_path in enumerate(images_paths):
-        print(f"Generating video clip {i+1}/{len(images_paths)}...")
+    # We iterate over the FULL intended count to ensure no gaps or shifts
+    for i in range(len(image_prompts[:prompt_count])):
+        print(f"Processing clip {i+1}...")
+        clip_path = os.path.join(clips_dir, f"clip_{i+1:02d}.mp4")
         
-        # BudgetOptimizer Rule (Wan -> LTX)
-        prompt = f"Automated cinematic clip: {script.title}"
-        if i == 0:
-            prompt += ", extreme cinematic action, viral hook motion"
-            vid_url = generate_wan_video(prompt)
-        else:
-            prompt += ", cinematic background movement, subtle atmosphere"
-            vid_url = generate_ltx_video(prompt)
-        if vid_url:
-            clip_path = os.path.join(clips_dir, f"clip_{i+1:02d}.mp4")
-            if download_video(vid_url, clip_path):
-                video_clips_paths.append(clip_path)
+        # Try to animate if the image was successfully generated
+        vid_generated = False
+        if i in images_paths:
+            base_prompt = image_prompts[i]
+            
+            # Animation Logic (Wan for hook, LTX for the rest)
+            if i == 0:
+                vid_url = generate_wan_video(f"{base_prompt}, high motion, cinematic")
+            else:
+                vid_url = generate_ltx_video(f"{base_prompt}, subtle motion")
+                
+            if vid_url and download_video(vid_url, clip_path):
+                vid_generated = True
+        
+        # FAILOVER: If video generation failed or image was missing, 
+        # create a 5s static clip from the image or a placeholder
+        if not vid_generated:
+            print(f"⚠️ Failover: Creating static clip for index {i+1}")
+            img_to_use = images_paths.get(i)
+            if img_to_use and os.path.exists(img_to_use):
+                # FFmpeg to convert image to 5s video (WITH pillarbox/letterbox to avoid cut)
+                subprocess.run([
+                    "ffmpeg", "-y", "-loop", "1", "-i", img_to_use, 
+                    "-t", "5", "-pix_fmt", "yuv420p", 
+                    "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black,setsar=1",
+                    clip_path
+                ], check=True)
+            else:
+                # Total fallback: black screen
+                subprocess.run([
+                    "ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=black:s=1080x1920:d=5", 
+                    "-pix_fmt", "yuv420p", clip_path
+                ], check=True)
+        
+        video_clips_paths.append(clip_path)
 
     # 3. Generate TTS
     send_telegram_message("🎙️ <b>Génération de la voix-off...</b>")

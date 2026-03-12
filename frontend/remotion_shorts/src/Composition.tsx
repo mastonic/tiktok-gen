@@ -53,9 +53,9 @@ export const MyComposition: React.FC<ShortsProps> = ({ clips, audioUrl, subtitle
           <AbsoluteFill style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             {/* If it's an image for now, display as image, else use <Video> if MP4. For fal.ai it's MP4 */}
             {clip.endsWith('.mp4') ? (
-              <video src={clip} style={{ width: '100%', height: '100%', objectFit: 'cover' }} autoPlay loop muted />
+              <video src={clip} style={{ width: '100%', height: '100%', objectFit: 'contain' }} autoPlay loop muted />
             ) : (
-              <Img src={clip} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <Img src={clip} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             )}
           </AbsoluteFill>
         </Sequence>

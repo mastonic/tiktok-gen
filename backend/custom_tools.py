@@ -61,25 +61,41 @@ def github_trending_tool(language: str = "") -> str:
     Can filter by language (e.g. 'python', 'javascript').
     """
     try:
-        url = "https://github-trending-api.mirror.workers.dev/repositories"
-        if language:
-            url += f"?language={language}"
+        # Use a more reliable mirror or public scraper API
+        url = "https://gtrend.yapie.me/repositories"
+        params = {"language": language.lower()} if language else {}
             
-        headers = {"User-Agent": "Mozilla/5.0"}
-        resp = requests.get(url, headers=headers, timeout=10)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Accept": "application/json"
+        }
+        resp = requests.get(url, params=params, headers=headers, timeout=15)
         
-        if resp.status_code == 200 and "application/json" in resp.headers.get("Content-Type", ""):
+        if resp.status_code == 200:
             data = resp.json()
             results = f"Trending GitHub Repos ({language or 'all'}):\n"
             for repo in data[:8]:
-                results += f"- {repo['name']} by {repo['author']} | Stars: {repo['stars']} | {repo['url']}\n"
-                results += f"  Desc: {repo['description']}\n\n"
+                name = repo.get('name', 'Unknown')
+                author = repo.get('author', 'Unknown')
+                stars = repo.get('stars', '?')
+                url_repo = repo.get('url', '')
+                desc = repo.get('description', 'No description')
+                results += f"- {name} by {author} | Stars: {stars} | {url_repo}\n"
+                results += f"  Desc: {desc}\n\n"
             return results
         else:
-            raise ValueError(f"Invalid response format or status {resp.status_code}")
+            # Fallback to another mirror or secondary method
+            raise ValueError(f"GitHub API Error {resp.status_code}")
             
     except Exception as e:
-        print(f"⚠️ [GitHub] API Failed ({e}), falling back to HN Trending...")
+        print(f"⚠️ [GitHub] API Failed ({e}), trying secondary source...")
+        try:
+             # Secondary fallback: parse the trending page directly or via another proxy
+             url = f"https://github-trending-api.mirror.workers.dev/repositories"
+             resp = requests.get(url, timeout=10)
+             if resp.status_code == 200:
+                 return str(resp.json())[:1000]
+        except: pass
         return hacker_news_tool("github")
 
 @tool("ArxivTool")
