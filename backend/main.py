@@ -2176,3 +2176,4 @@ async def telegram_webhook(request: Request):
     except Exception as e:
         print(f"Telegram Webhook Error: {e}")
         return {"status": "error", "message": str(e)}
+# Force reload Thu Mar 12 02:33:39 AM AST 2026

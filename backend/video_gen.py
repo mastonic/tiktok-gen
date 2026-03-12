@@ -51,6 +51,7 @@ def generate_flux_image(prompt: str, save_path: str, is_square: bool = False) ->
     Generates a high-fidelity image using Flux.1 Schnell via Fal.ai.
     BudgetOptimizer: $0.003/img.
     """
+    import os, requests, time
     fal_key = (os.environ.get("FAL_KEY") or "").strip()
     if not fal_key:
         print("WARNING: fal_key not found in environment.")
@@ -134,6 +135,7 @@ def generate_wan_video(prompt: str, image_url: Optional[str] = None, is_square: 
     BudgetOptimizer: Image-to-Video animation with Wan-Video v2.1.
     If image_url is provided, it uses the I2V endpoint.
     """
+    import os, requests, time
     fal_key = (os.environ.get("FAL_KEY") or "").strip()
     if not fal_key:
         print("WARNING: fal_key not found in environment.")
@@ -219,6 +221,7 @@ def generate_ltx_video(prompt: str, image_url: Optional[str] = None, is_square: 
     BudgetOptimizer: Cost-effective B-Roll animation with LTX-Video.
     If image_url is provided, it leverages Image-to-Video.
     """
+    import os, requests, time
     fal_key = (os.environ.get("FAL_KEY") or "").strip()
     if not fal_key:
         print("WARNING: fal_key not found in environment.")
