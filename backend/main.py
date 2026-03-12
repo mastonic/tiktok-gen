@@ -274,15 +274,27 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
             if json_str.endswith("```"):
                 json_str = json_str.rsplit("```", 1)[0]
                 
-            match = re.search(r'(\{[\s\S]*\})', json_str)
-            if match:
-                json_str = match.group(1)
-            
-            if not json_str.strip():
-                raise ValueError("Extracted JSON string is empty.")
+            # Handle the "title='...' script='...'" format (pydantic repr fallback)
+            if json_str.startswith("title=") and "script=" in json_str:
+                print("⚠️ [PARSER] Detected pydantic-like string instead of JSON. Extracting fields...")
+                t_match = re.search(r"title=['\"]([\s\S]*?)['\"],?\s+script=", json_str)
+                s_match = re.search(r"script=['\"]([\s\S]*?)['\"],?\s+mots_cles=", json_str) or re.search(r"script=['\"]([\s\S]*?)['\"]", json_str)
+                k_match = re.search(r"mots_cles=['\"]([\s\S]*?)['\"]", json_str)
+                data = {
+                    "title": t_match.group(1) if t_match else "Sans titre",
+                    "script": s_match.group(1) if s_match else json_str,
+                    "mots_cles": k_match.group(1) if k_match else "AI, Tech"
+                }
+            else:
+                match = re.search(r'(\{[\s\S]*\})', json_str)
+                if match:
+                    json_str = match.group(1)
                 
-            data = json.loads(json_str)
-            print("✅ Successfully parsed result as JSON.")
+                if not json_str.strip():
+                    raise ValueError("Extracted JSON string is empty.")
+                    
+                data = json.loads(json_str)
+            print("✅ Successfully parsed result.")
         except Exception as parse_e:
             print(f"⚠️ Could not parse final output as JSON: {parse_e}. Using raw strings.")
             # Extract a title from the first line or first sentence
@@ -1676,6 +1688,21 @@ async def get_latest_blog():
         headers={"Access-Control-Allow-Origin": "*"}
     )
 
+def _slugify(text):
+    """Transforme un titre en slug de fichier propre."""
+    slug = text.lower().strip()
+    import re
+    slug = re.sub(r"[àáâãäå]", "a", slug)
+    slug = re.sub(r"[èéêë]", "e", slug)
+    slug = re.sub(r"[ìíîï]", "i", slug)
+    slug = re.sub(r"[òóôõö]", "o", slug)
+    slug = re.sub(r"[ùúûü]", "u", slug)
+    slug = re.sub(r"[ç]", "c", slug)
+    slug = re.sub(r"[^a-z0-9\s-]", "", slug)
+    slug = re.sub(r"\s+", "-", slug)
+    slug = re.sub(r"-+", "-", slug).strip("-")
+    return slug[:60]
+
 @app.get("/api/blog/{script_id}")
 async def get_blog_data(script_id: int):
     """Returns the data needed for the Public Blog page for a given script."""
@@ -1709,21 +1736,6 @@ async def get_blog_data(script_id: int):
         if fallback_img and fallback_img.startswith("http://localhost:5656"):
             fallback_img = fallback_img.replace("http://localhost:5656", "")
 
-    # Unify slug generation with BlogSquad
-    def _slugify(text):
-        slug = text.lower().strip()
-        import re
-        slug = re.sub(r"[àáâãäå]", "a", slug)
-        slug = re.sub(r"[èéêë]", "e", slug)
-        slug = re.sub(r"[ìíîï]", "i", slug)
-        slug = re.sub(r"[òóôõö]", "o", slug)
-        slug = re.sub(r"[ùúûü]", "u", slug)
-        slug = re.sub(r"[ç]", "c", slug)
-        slug = re.sub(r"[^a-z0-9\s-]", "", slug)
-        slug = re.sub(r"\s+", "-", slug)
-        slug = re.sub(r"-+", "-", slug).strip("-")
-        return slug[:60]
-    
     slug = _slugify(script.title)
     
     # Check if a blog post MD actually exists, if not, try another script
@@ -1863,6 +1875,46 @@ async def get_blog_post_raw(slug: str):
     file_path = posts_dir / f"{slug}.md"
 
     if not file_path.exists():
+        # FALLBACK: Try to find a script with this slug to serve a "virtual" markdown
+        db = SessionLocal()
+        all_scripts = db.query(ScriptInbox).all()
+        target_script = None
+        for s in all_scripts:
+            if _slugify(s.title) == slug:
+                target_script = s
+                break
+        
+        if target_script:
+            print(f"🎬 [VIRTUAL BLOG] Serving virtual MD for slug: {slug}")
+            content = f"""---
+title: "{target_script.title}"
+excerpt: "{target_script.title} — Découverte en avant-première de notre dernière production."
+cover_image: "{target_script.cover_image or '/media/production/db_' + str(target_script.id) + '/img_01.jpg'}"
+category: "Avant-Première"
+date: "{target_script.created_at.strftime('%Y-%m-%d') if target_script.created_at else ''}"
+video_url: "/media/production/db_{target_script.id}/final_output.mp4"
+---
+
+# {target_script.title}
+
+Bienvenue dans cet article généré automatiquement pour accompagner notre dernière vidéo. 
+
+[INSERT_VIDEO_PLAYER]
+
+## Le Script de l'épisode
+
+{target_script.final_script}
+
+[BENTO_TOOLS]
+
+---
+*Cet article a été généré par l'iM-System en attendant la revue complète de la BlogSquad.*
+"""
+            db.close()
+            from fastapi.responses import PlainTextResponse
+            return PlainTextResponse(content=content, media_type="text/plain; charset=utf-8")
+        
+        db.close()
         raise HTTPException(status_code=404, detail=f"Article '{slug}' introuvable.")
 
     content = file_path.read_text(encoding="utf-8").replace("http://localhost:5656", "")
