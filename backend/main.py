@@ -1740,7 +1740,8 @@ async def get_blog_data(script_id: int):
     fallback_img = f"/media/production/db_{script.id}/img_01.jpg"
     base_dir_local = os.path.dirname(os.path.abspath(__file__))
     if not os.path.exists(os.path.join(base_dir_local, "media", "production", f"db_{script.id}", "img_01.jpg")):
-        fallback_img = script.cover_image or "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1200"
+        cover_attr = getattr(script, "cover_image", None)
+        fallback_img = cover_attr or "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1200"
         if fallback_img and fallback_img.startswith("http://localhost:5656"):
             fallback_img = fallback_img.replace("http://localhost:5656", "")
 
@@ -1898,7 +1899,7 @@ async def get_blog_post_raw(slug: str):
                 video_url = f"/media/production/db_{target_script.id}/final_output.mp4"
                 video_tag = "[INSERT_VIDEO_PLAYER]" if os.path.exists(os.path.join(os.path.dirname(__file__), "media", "production", f"db_{target_script.id}", "final_output.mp4")) else ""
                 
-                # Use a template to avoid f-string KeyError if script contains { }
+                # Use a safer replacement to avoid f-string KeyError if script contains { }
                 template = """---
 title: "{title}"
 excerpt: "{title} — Découverte en avant-première de notre dernière production."
@@ -1923,14 +1924,13 @@ Bienvenue dans cet article généré automatiquement pour accompagner notre dern
 ---
 *Cet article a été généré par l'iM-System en attendant la revue complète de la BlogSquad.*
 """
-                content = template.format(
-                    title=target_script.title,
-                    cover=target_script.cover_image or f"/media/production/db_{target_script.id}/img_01.jpg",
-                    date=target_script.created_at.strftime('%Y-%m-%d') if target_script.created_at else '',
-                    video=video_url,
-                    video_tag=video_tag,
-                    script=target_script.final_script or "Script en cours de rédaction..."
-                )
+                content = template.replace("{title}", str(target_script.title))
+                cover_url = getattr(target_script, "cover_image", None) or f"/media/production/db_{target_script.id}/img_01.jpg"
+                content = content.replace("{cover}", str(cover_url))
+                content = content.replace("{date}", target_script.created_at.strftime('%Y-%m-%d') if target_script.created_at else '')
+                content = content.replace("{video}", video_url)
+                content = content.replace("{video_tag}", video_tag)
+                content = content.replace("{script}", str(target_script.final_script or "Script en cours de rédaction..."))
                 db.close()
                 from fastapi.responses import PlainTextResponse
                 return PlainTextResponse(content=content, media_type="text/plain; charset=utf-8")

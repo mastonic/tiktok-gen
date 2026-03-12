@@ -58,6 +58,7 @@ def migrate_db():
             "shares": "INTEGER DEFAULT 0",
             "retention_rate": "INTEGER DEFAULT 0",
             "blog_summary": "TEXT",
+            "cover_image": "TEXT",
             "selected_tools": "TEXT"
         }
         for col, type_def in needed_script.items():
@@ -140,6 +141,7 @@ class ScriptInbox(Base):
     shares = Column(Integer, default=0)
     retention_rate = Column(Integer, default=0)
     blog_summary = Column(String, nullable=True)
+    cover_image = Column(String, nullable=True)
     selected_tools = Column(String, nullable=True) # JSON list of tool IDs or data
     created_at = Column(DateTime, default=datetime.utcnow)
 
