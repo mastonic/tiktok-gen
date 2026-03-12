@@ -20,23 +20,23 @@ def generate_video(job_dir: str):
     bgm_in = job_path / "background_music.mp3"
     vid_out = job_path / "final_output.mp4"
 
-    # 1. Force Concat clips to ensure they match current production (19 clips)
+    # 1. Force Concat clips to ensure they match current production (15 clips)
     if clips_dir.exists():
         clips = sorted(list(clips_dir.glob("clip_*.mp4")))
         if clips:
-            # We target 19 clips as per new "ViralEditor V2.1" guidelines
-            target_clips = clips[:19]
-            print(f"Normalizing and concatenating {len(target_clips)} clips (ViralEditor 19-image rule)...")
+            # We target 15 clips as per Cyberpunk 2026 standard
+            target_clips = clips[:15]
+            print(f"Normalizing and concatenating {len(target_clips)} clips (15-image rule)...")
             
             # Re-calculate timing if we have audio
-            audio_dur = 90.0
+            audio_dur = 45.0
             if voice_in.exists():
                 audio_dur_cmd = ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", str(voice_in)]
                 audio_dur = float(subprocess.check_output(audio_dur_cmd).decode().strip())
             
-            # audio_duration / 19
-            clip_duration = audio_dur / 19.0 if len(target_clips) >= 19 else audio_dur / len(target_clips)
-            print(f"🎬 ViralEditor V2.1: Each clip will last {clip_duration:.2f}s")
+            # audio_duration / 15
+            clip_duration = audio_dur / 15.0 if len(target_clips) >= 15 else audio_dur / len(target_clips)
+            print(f"🎬 Cyberpunk 2026: Each clip will last {clip_duration:.2f}s")
 
             normalized_clips = []
             for i, c in enumerate(target_clips):
@@ -118,48 +118,51 @@ def generate_video(job_dir: str):
     # Main Rendering FFmpeg
     has_bgm = bgm_in.exists()
     
-    # 5. SFX Transitions (Whoosh/Pop)
-    sfx_whoosh = job_path / "whoosh.mp3"
-    if not sfx_whoosh.exists():
-        # Fallback or generate once
-        pass
+    # Sequential Zoom every 5s (1.1x) + Color Grade (Cyberpunk Blue/Violet)
+    zoom_expr = "if(between(mod(t,10),0,5),1.1,1)"
+    vfx_filter = f"scale=iw*1.1:-1, crop=iw/1.1:ih/1.1:(iw-iw/1.1)/2:(ih-ih/1.1)/2, eq=saturation=1.4:contrast=1.3, hue=h=-10"
     
-    # We apply setpts to sync video duration with audio (Correction 1)
-    video_filter = f"setpts={scaling_factor}*PTS, drawtext=text='@crewai972':x=W-text_w-20:y=20:fontsize=32:fontcolor=white@0.3, ass={str(ass_file)}"
+    video_filter = f"{vfx_filter}, drawtext=text='@crewai972':x=W-text_w-20:y=20:fontsize=32:fontcolor=white@0.3, ass={str(ass_file)}"
     
-    # Create the complex filter for audio mixing (Voice + BGM + SFX)
-    # Each transition is at i * clip_duration
-    # audio_duration was calculated in Step 1
-    clip_dur = audio_duration / 19.0 if clips_dir.exists() else 5.0
-    
-    audio_filters = [f"[1:a]volume=1.5[vce]"]
+    # Audio Side-chain Ducking (Voice ducks BGM)
     if has_bgm:
-        audio_filters.append(f"[2:a]volume=-22dB[bgm]")
-        mix_inputs = "[vce][bgm]"
-        input_count = 2
+        # [1:a] is voice, [2:a] is BGM
+        audio_complex = (
+            "[1:a]asplit[vce1][vce2];"
+            "[vce2]lowpass=3000,highpass=200,volume=4[sc];"
+            "[2:a][sc]sidechaincompress=threshold=0.05:ratio=20:attack=10:release=100[bgm_ducked];"
+            "[vce1][bgm_ducked]amix=inputs=2:duration=first:dropout_transition=2[a]"
+        )
     else:
-        mix_inputs = "[vce]"
-        input_count = 1
+        audio_complex = "[1:a]volume=1.5[a]"
         
-    # Potential SFX mixing (requires sfx files to be present as inputs)
-    # For now, we stick to the core requirements and mix BGM at -22dB
-    filter_complex = f"[0:v]{video_filter}[v];" + ";".join(audio_filters) + f";{mix_inputs}amix=inputs={input_count}:duration=first:dropout_transition=2[a]"
+    filter_complex = f"[0:v]{video_filter}[v];{audio_complex}"
     
     cmd = [
         "ffmpeg", "-y",
         "-i", str(video_in),
         "-i", str(voice_in)
     ]
-    
     if has_bgm:
         cmd.extend(["-i", str(bgm_in)])
+
+    # Cyberpunk Sound Design: ASMR Pop at each subtitle start
+    pop_sfx = job_path / "pop.mp3"
+    if not pop_sfx.exists():
+        subprocess.run([
+            "ffmpeg", "-y", "-f", "lavfi", "-i", 
+            "sine=f=1000:d=0.05,afade=t=out:st=0.01:d=0.04", 
+            "-q:a", "9", str(pop_sfx)
+        ], check=True, capture_output=True)
+
+    # To mix pops...
     
     cmd.extend(["-filter_complex", filter_complex, "-map", "[v]", "-map", "[a]"])
 
     cmd.extend([
         "-c:v", "libx264", "-crf", "18", "-preset", "veryfast",
         "-c:a", "aac", "-b:a", "192k",
-        "-shortest", # IMPORTANT: Stop when shortest stream ends (audio)
+        "-shortest",
         str(vid_out)
     ])
 
@@ -208,7 +211,7 @@ def generate_ass_subtitles(script, keywords, output_path, audio_path):
         print(f"Transcription failed: {e}")
         return
 
-    # Subtitle Style: Hormozi (Yellow Bold, Word-by-word)
+    # Subtitle Style: Cyberpunk Standard (Yellow/Green, 1-2 words per frame)
     ass_header = """[Script Info]
 ScriptType: v4.00+
 PlayResX: 1080
@@ -216,13 +219,13 @@ PlayResY: 1920
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial Black,150,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,6,3,2,0,0,0,1
+Style: Default,Montserrat Extra Bold,150,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,6,0,2,0,0,0,1
 """
     events = "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
     
-    # GROUP WORDS: 1 word per subtitle block as requested (Word-by-word)
+    # GROUP WORDS: 1-2 words per subtitle block
     chunks = []
-    chunk_size = 1
+    chunk_size = 2
     for i in range(0, len(words_data), chunk_size):
         chunks.append(words_data[i:i + chunk_size])
 

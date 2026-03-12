@@ -50,8 +50,8 @@ def automate_visual_production(script_id_num: int):
     except:
         image_prompts = []
     
-    # Production mode: 19 frames (ViralEditor V2.1)
-    prompt_count = 19
+    # Production mode: 15 frames (Cyberpunk 2026 Standard)
+    prompt_count = 15
 
     # --- FALLBACK: Generate prompts if they are missing ---
     if not image_prompts or len(image_prompts) < 1:

@@ -96,19 +96,29 @@ def generate_tts(text: str, output_path: str, mode: str = "openai") -> bool:
                 for s in audio_segments:
                     f.write(f"file '{os.path.abspath(s)}'\n")
             
+            # 3. Concatenate all segments (text + pauses)
             subprocess.run([
                 "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_file, 
                 "-c", "copy", output_path
             ], check=True, capture_output=True)
             
-            # Cleanup
+            # 4. Final Pass: Remove silences > 0.1s (Cyberpunk 2026 Standard)
+            print(f"✂️ [VoiceMaster] Cutting silences > 0.1s...")
+            subprocess.run([
+                "ffmpeg", "-y", "-i", output_path,
+                "-af", "silenceremove=stop_periods=-1:stop_duration=0.1:stop_threshold=-50dB",
+                output_path + ".tmp"
+            ], check=True, capture_output=True)
+            os.replace(output_path + ".tmp", output_path)
+            
+            # 5. Cleanup
             for s in audio_segments: 
                 try: os.remove(s)
                 except: pass
             try: os.remove(concat_file)
             except: pass
             
-            print(f"✅ VoiceMaster (OpenAI TTS + Pauses) generated: {output_path}")
+            print(f"✅ VoiceMaster (Cyberpunk Standard) generated: {output_path}")
             return True
             
     except Exception as e:
