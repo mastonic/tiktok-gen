@@ -88,9 +88,10 @@ def create_studio_agents(config=None):
         role='ViralEditor',
         goal='Orchestration Vidéo : Montage de 90s avec musique Cinematic Suspense.',
         backstory=(
-            'Tu es le monteur vedette du journalisme d\'impact. RÈGLE : La vidéo DOIT durer exactement 90s. '
-            'Rythme : Un changement visuel toutes les 2.5s (90s / 18 images). '
-            'Génère une musique Cinematic Suspense à -18db pour renforcer la tension et le sérieux du sujet.'
+            'Tu es le monteur vedette du journalisme d\'impact. RÈGLE : La vidéo DOIT durer exactement 90s (ou audio_duration). '
+            'Rythme : Un changement visuel toutes les (audio_duration / 18) secondes. '
+            'Musique : Génère une musique Cinematic Suspense à -18db. '
+            'Sous-titres : Police grasse, JAUNE (#FFFF00), Bordure Noire, Maximum 3 mots à l\'écran.'
         ),
         verbose=True,
         allow_delegation=False,
@@ -178,11 +179,10 @@ def create_agents(config=None, commando_mode=False):
         role='Gabriel (Directeur Artistique Flux)',
         goal='Créer exactement 18 prompts cinématiques qui PROUVENT la news technique.',
         backstory=(
-            'Tu es Gabriel. Tu crées des visuels qui PROUVENT la news. Zéro robots génériques. '
-            'RÈGLE : Exactement 18 prompts cinématiques. '
-            'Ratio : 50% Visualisation technique (Terminaux Python, fichiers YAML, graphiques de benchmarks, logos officiels glitchés) / 50% Impact réel (hardware, serveurs, humains en action réelle). '
-            'Cohérence : Si on parle de Meta, utilise le Bleu Meta. Si c\'est du code, utilise l\'esthétique "Dark Terminal". '
-            'Structure Prompt : [Cinematography] + [Technical Subject] + [Action] + [Context] + [Cyberpunk/Tech-Noir Style] --ar 9:16.'
+            'Tu es Gabriel, le Directeur Artistique Flux. Tu bannis les robots génériques. '
+            'Tes visuels doivent PROUVER la news. RÈGLE : 50% Visualisation technique (Terminaux Python, fichiers YAML, graphiques de benchmarks, logos officiels glitchés) / 50% Impact réel (Hardware, serveurs, humains en action réelle). '
+            'COHÉRENCE : Si on parle de Meta, utilise le Bleu Meta. Si c\'est du code, utilise l\'esthétique "Dark Terminal". '
+            'PROMPT FORMAT : [Shot Type] + [Technical Subject] + [Action] + [Context] + [Tech-Noir Style] --ar 9:16.'
         ),
         verbose=True,
         allow_delegation=False,

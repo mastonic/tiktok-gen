@@ -100,12 +100,12 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
 
     task_visuals = Task(
         description=(
-            "Crée exactement 18 prompts cinématiques en anglais pour FLUX qui PROUVENT la news. "
-            "Ratio : 50% Visualisation technique (Terminaux Python, fichiers YAML, graphiques de benchmarks, logos officiels glitchés) / 50% Impact réel (hardware, serveurs, humains en action réelle). "
-            "Cohérence : Meta Blue pour Meta, Dark Terminal pour le code. "
-            "Structure : [Cinematography] + [Technical Subject] + [Action] + [Context] + [Cyberpunk/Tech-Noir Style] --ar 9:16."
+            "Crée exactement 18 prompts cinématiques en anglais pour FLUX qui PROUVENT la news technique. "
+            "RÈGLE : 50% Visualisation technique (Terminaux Python, fichiers YAML, graphiques de benchmarks, logos officiels glitchés) / 50% Impact réel. "
+            "COHÉRENCE : Meta Blue pour Meta, Dark Terminal pour le code. "
+            "FORMAT : [Shot Type] + [Technical Subject] + [Action] + [Context] + [Tech-Noir Style] --ar 9:16."
         ),
-        expected_output="Exactly 18 cinematic prompts following the technical journalism aesthetic splitting 50/50 tech/impact.",
+        expected_output="Exactly 18 cinematic prompts (50/50 split) following the Visual Evidence rule.",
         agent=visual_promptist,
         context=[task_scripting], # Connect to script
         output_pydantic=VisualPrompts
