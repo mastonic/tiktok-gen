@@ -51,16 +51,18 @@ def generate_video(job_dir: str):
     try:
         audio_dur_cmd = ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", str(voice_in)]
         audio_duration = float(subprocess.check_output(audio_dur_cmd).decode().strip())
+        
         video_dur_cmd = ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", str(video_in)]
         video_duration = float(subprocess.check_output(video_dur_cmd).decode().strip())
         
-        # Scaling factor: video_pts * (audio_dur / video_dur)
-        # This stretches the video to match the audio exactly (Correction 1)
+        # We need the video to match the audio EXACTLY.
+        # scaling_factor will stretch or shrink the video to match audio.
         scaling_factor = audio_duration / video_duration if video_duration > 0 else 1.0
-        print(f"Syncing: Audio={audio_duration}s, Video={video_duration}s. Factor={scaling_factor}")
+        print(f"🎬 SYNC: Audio={audio_duration}s, Video={video_duration}s. Factor={scaling_factor}")
     except Exception as e:
         print(f"Duration probe failed: {e}")
         scaling_factor = 1.0
+        audio_duration = 90.0 # Default fallback
 
     # Parse Keywords and Script
     keywords = []
@@ -113,7 +115,8 @@ def generate_video(job_dir: str):
     
     if has_bgm:
         cmd.extend(["-i", str(bgm_in)])
-        cmd.extend(["-filter_complex", f"[0:v]{video_filter}[v];[2:a]volume=-22dB[bgm];[1:a][bgm]amix=inputs=2:duration=first[a]"])
+        # Use amix with duration=first (which is the voice track) or -shortest
+        cmd.extend(["-filter_complex", f"[0:v]{video_filter}[v];[2:a]volume=-22dB[bgm];[1:a][bgm]amix=inputs=2:duration=first:dropout_transition=2[a]"])
         cmd.extend(["-map", "[v]", "-map", "[a]"])
     else:
         cmd.extend(["-filter_complex", f"[0:v]{video_filter}[v]"])
@@ -122,6 +125,7 @@ def generate_video(job_dir: str):
     cmd.extend([
         "-c:v", "libx264", "-crf", "18", "-preset", "veryfast",
         "-c:a", "aac", "-b:a", "192k",
+        "-shortest", # IMPORTANT: Stop when shortest stream ends (audio)
         str(vid_out)
     ])
 
@@ -170,7 +174,7 @@ def generate_ass_subtitles(script, keywords, output_path, audio_path):
         print(f"Transcription failed: {e}")
         return
 
-    # &H0000FFFF = Yellow (ABGR format), Bold: -1, Outline: 2, Position Y: 1344 (70% of 1920)
+    # Subtitle Style: Yellow Bold, 3 words max per line for readability
     ass_header = """[Script Info]
 ScriptType: v4.00+
 PlayResX: 1080
@@ -178,21 +182,25 @@ PlayResY: 1920
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,75,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,2,1,2,0,0,0,1
+Style: Default,Arial,85,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,3,2,2,0,0,0,1
 """
     events = "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
     
-    for i, w in enumerate(words_data):
-        text = w.word.strip() # Don't UPPERCASE to avoid messing with some emojis if they are special
+    # GROUP WORDS: 3 words per subtitle block for optimal reading speed
+    chunks = []
+    chunk_size = 3
+    for i in range(0, len(words_data), chunk_size):
+        chunks.append(words_data[i:i + chunk_size])
+
+    for chunk in chunks:
+        text = " ".join([w.word.strip().upper() for w in chunk])
         if not text: continue
         
-        # Check if original script has emojis for this chunk (Optional, but let's at least keep what’s there)
+        start_ts = format_ass_time(chunk[0].start)
+        end_ts = format_ass_time(chunk[-1].end)
         
-        start_ts = format_ass_time(w.start)
-        end_ts = format_ass_time(w.end)
-        
-        # Pop-up / Bounce Effect: Scale from 100% to 115% back to 100%
-        ani = "{\\t(0,50,\\fscx115\\fscy115)\\t(50,150,\\fscx100\\fscy100)}"
+        # Pop-up / Bounce Effect: Scale from 100% to 110% back to 100%
+        ani = "{\\t(0,50,\\fscx110\\fscy110)\\t(50,150,\\fscx100\\fscy100)}"
         
         # Position at 70% height (1344)
         pos = "{\\pos(540,1344)}"
