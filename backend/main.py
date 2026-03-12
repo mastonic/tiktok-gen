@@ -1963,7 +1963,8 @@ Bienvenue dans cet article généré automatiquement pour accompagner notre dern
         from fastapi.responses import PlainTextResponse
         return PlainTextResponse(
             content=content,
-            media_type="text/plain; charset=utf-8"
+            media_type="text/plain; charset=utf-8",
+            headers={"X-Backend-Hardened": "v1.4-getattr-safety"}
         )
     except HTTPException:
         # Re-raise HTTP exceptions (like 404) so FastAPI handles them correctly
