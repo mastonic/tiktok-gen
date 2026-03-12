@@ -45,13 +45,22 @@ from render_video import generate_ass_subtitles
 
 app = FastAPI(title="iM System API")
 
-# Allow all origins for VPS deployment flexibility
+# Strict CORS for deployment
+origins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://crewai972.xyz",
+    "https://www.crewai972.xyz",
+    "https://api.crewai972.xyz"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Ensure media directory exists before mounting
@@ -1675,18 +1684,15 @@ async def delete_affiliate(link_id: int):
 
 @app.get("/api/blog/latest")
 async def get_latest_blog():
-    """Returns blog data for the most recently generated script."""
+    """Returns blog data for the most recently generated script WITHOUT redirect to avoid CORS issues."""
     db = SessionLocal()
     script = db.query(ScriptInbox).order_by(ScriptInbox.created_at.desc()).first()
     db.close()
     if not script:
         raise HTTPException(status_code=404, detail="No scripts yet")
-    from fastapi.responses import RedirectResponse
-    # Ensure CORS is applied even on redirects
-    return RedirectResponse(
-        url=f"/api/blog/{script.id}",
-        headers={"Access-Control-Allow-Origin": "*"}
-    )
+    
+    # Call the actual data getter internally
+    return await get_blog_data(script.id)
 
 def _slugify(text):
     """Transforme un titre en slug de fichier propre."""
