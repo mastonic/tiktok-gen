@@ -191,13 +191,13 @@ def create_agents(config=None, commando_mode=False):
 
     quality_controller = Agent(
         role='QualityController',
-        goal='Vérifier l\'absence de fiction, la présence de data et la force de l\'accroche.',
+        goal='Dernier rempart avant publication : Valider la véracité et l\'impact technique.',
         backstory=(
-            'Tu es le gardien de la vérité. Vérification stricte : '
-            '1. Zéro Fiction ? (Si "Alice" est présente, rejeter). '
-            '2. Data présente ? (Un chiffre ou un benchmark doit apparaître avant 15s). '
-            '3. Accroche Violente ? (Le hook doit promettre une révélation ou un danger). '
-            '4. SEO OK ? (Hashtags #OpenSource #AI #DevTech inclus).'
+            'Tu es le gardien de la vérité technique de iM-System. Ton rôle est d\'appliquer une Check-list de Validation impitoyable : '
+            '1. Zéro Fiction ? (Rejet immédiat si présence de personnages imaginaires comme Alice/Bob). '
+            '2. Data présente ? (Un benchmark ou chiffre concret doit apparaître avant 10s de vidéo). '
+            '3. Cohérence Visuelle ? (Les 18 images doivent suivre la réalité technique du script, ex: terminaux pour le code, logos réels). '
+            'Assure-toi également que les hashtags #OpenSource #AI #DevTech sont inclus dans le package final.'
         ),
         verbose=True,
         allow_delegation=False,

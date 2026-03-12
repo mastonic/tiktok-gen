@@ -126,14 +126,14 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
 
     task_review = Task(
         description=(
-            "Revue finale critique (Vérification stricte) : "
-            "1. Zéro Fiction ? (Si 'Alice' est présente, rejeter). "
-            "2. Data présente ? (Un chiffre ou un benchmark doit apparaître avant 15s). "
-            "3. Accroche Violente ? (Le hook doit promettre une révélation ou un danger). "
-            "4. SEO OK ? (Hashtags #OpenSource #AI #DevTech inclus). "
-            "Assemble toutes les données pour la production finale."
+            "Revue finale impitoyable (Dernier rempart) :\n"
+            "1. Zéro Fiction ? (Rejet immédiat si personnages imaginaires).\n"
+            "2. Data présente ? (Un benchmark ou chiffre doit apparaître AVANT 10s).\n"
+            "3. Cohérence Visuelle ? (Les 18 images suivent la réalité technique du script).\n"
+            "4. SEO OK ? (Hashtags #OpenSource #AI #DevTech inclus).\n"
+            "Assemble toutes les données validées pour la production finale."
         ),
-        expected_output="Full agent outcome in JSON format for Technical Journalism.",
+        expected_output="Package final validé (Zero-Fiction / 10s-Data / Visual-Evidence).",
         agent=quality_controller,
         output_pydantic=AgentOutcome
     )

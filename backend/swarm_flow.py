@@ -260,14 +260,14 @@ Voici le contenu généré par tes collègues. Tu DOIS assembler ce contenu EXAC
 """
         task_qa = Task(
             description=(
-                f"Revue finale critique (Vérification stricte) :\n"
-                "1. Zéro Fiction ? (Si 'Alice' est présente, rejeter).\n"
-                "2. Data présente ? (Un chiffre ou un benchmark doit apparaître avant 15s).\n"
-                "3. Accroche Violente ? (Le hook doit promettre une révélation ou un danger).\n"
-                "4. SEO OK ? (Hashtags #OpenSource #AI #DevTech inclus).\n"
+                f"Revue finale impitoyable (Dernier rempart) :\n"
+                "1. Zéro Fiction ? (Absence totale de personnages fictifs).\n"
+                "2. Data présente ? (Benchmark ou chiffre AVANT 10s).\n"
+                "3. Cohérence Visuelle ? (Les 18 images suivent la réalité technique).\n"
+                "4. SEO ? (#OpenSource #AI #DevTech).\n"
                 f"Contenu à assembler : {context_data}"
             ),
-            expected_output="AgentOutcome validated for Technical Journalism.",
+            expected_output="Package final validé (Architecture Anti-Gravity).",
             agent=self.quality_controller,
             output_pydantic=AgentOutcome
         )
