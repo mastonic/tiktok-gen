@@ -84,15 +84,16 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
     cta = "Abonnez-vous et like ! J'ai cassé internet Encore. 🚀"
     task_scripting = Task(
         description=(
-            f"Rédiger un script TikTok de Journalisme d'Impact (environ 220-250 mots pour 90s). "
-            "RÈGLE D'OR : ZÉRO FICTION. Pas d'Alice ou d'histoires inventées. "
-            "CONTEXT INJECTION : Basé uniquement sur les Data Points de TrendRadar. "
+            f"Rédiger un script TikTok de Journalisme d'Impact de 90s. "
+            "RÈGLE DE VÉRITÉ : INTERDICTION FORMELLE d\'inventer des personnages (Alice, Bob, etc.). "
+            "Sujet : L'outil ou le dev réel identifié par TrendRadar. "
+            "STRUCTURE COMMANDO (Choisis l'un des deux) :\n"
+            "1. T5 (Benchmark Killer) : Hook violent (ex: 'L'Open Source a tué [X]') -> Comparaison chiffres réels -> Preuve -> CTA.\n"
+            "2. T6 (Repo GitHub) : Hook (ex: 'Ce repo change votre dev') -> Analyse feature -> Démo technique -> CTA.\n"
             "TON : Calme, ironique, expert. "
-            "Utilise l'un des TEMPLATES : T1 (Contrarian), T5 (Benchmark Killer) ou T6 (Repo GitHub). "
-            f"Signature FINALE OBLIGATOIRE : {cta}. "
-            "INTERDICTION FORMELLE de parler d'argent. Uniquement le texte parlé."
+            f"Signature FINALE OBLIGATOIRE : {cta}."
         ),
-        expected_output="Script technique 100% Data sans fiction avec le CTA demandé.",
+        expected_output="Script technique 100% Data sans fiction utilisant la structure T5 ou T6.",
         agent=script_architect
     )
     tasks.append(task_scripting)

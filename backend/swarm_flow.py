@@ -159,16 +159,14 @@ class ViralFlow(Flow[SwarmState]):
         task_script = Task(
             description=(
                 f"Rédiger un script TikTok de Journalisme d'Impact (90s). "
-                "RÈGLE D'OR : ZÉRO FICTION. Pas d'Alice ou d'histoires inventées. "
-                "CONTEXT INJECTION : Ton script se base UNIQUEMENT sur les Data Points de TrendRadar. "
-                "TON : Calme, ironique, expert. "
-                "Utilise l'un des TEMPLATES COMMANDO suivants :\n"
-                "T1 (Contrarian) : Hook violent / Preuve technique / Twist / Action / CTA.\n"
-                "T5 (Benchmark Killer) : Hook / Comparaison chiffres réels / Preuve / CTA.\n"
-                "T6 (Repo GitHub) : Hook / Analyse feature / Démo technique / CTA.\n\n"
-                f"CTA OBLIGATOIRE FINAL : {cta}."
+                "RÈGLE DE VÉRITÉ : INTERDICTION FORMELLE d'inventer des personnages (pas d'Alice/Bob). "
+                "Sujet : L'outil ou le dev réel identifié par TrendRadar. "
+                "STRUCTURE COMMANDO :\n"
+                "- T5 (Benchmark Killer) : Hook violent -> Chiffres réels -> Preuve -> CTA.\n"
+                "- T6 (Repo GitHub) : Hook -> Analyse feature -> Démo technique -> CTA.\n"
+                f"TON : Calme, ironique, expert. CTA OBLIGATOIRE FINAL : {cta}."
             ),
-            expected_output="Script technique 100% Data sans fiction avec le CTA demandé.",
+            expected_output="Script technique 100% Data sans fiction (Structure T5 ou T6).",
             agent=self.script_architect,
             context=[task_utility]
         )
