@@ -115,12 +115,13 @@ def generate_video(job_dir: str):
     
     if has_bgm:
         cmd.extend(["-i", str(bgm_in)])
-        # Use amix with duration=first (which is the voice track) or -shortest
-        cmd.extend(["-filter_complex", f"[0:v]{video_filter}[v];[2:a]volume=-22dB[bgm];[1:a][bgm]amix=inputs=2:duration=first:dropout_transition=2[a]"])
+        # Increase voice volume (1.5x) and keep BGM low
+        cmd.extend(["-filter_complex", f"[0:v]{video_filter}[v];[1:a]volume=1.5[vce];[2:a]volume=-25dB[bgm];[vce][bgm]amix=inputs=2:duration=first:dropout_transition=2[a]"])
         cmd.extend(["-map", "[v]", "-map", "[a]"])
     else:
-        cmd.extend(["-filter_complex", f"[0:v]{video_filter}[v]"])
-        cmd.extend(["-map", "[v]", "-map", "1:a"])
+        # Increase voice volume even without BGM
+        cmd.extend(["-filter_complex", f"[0:v]{video_filter}[v];[1:a]volume=1.5[a]"])
+        cmd.extend(["-map", "[v]", "-map", "[a]"])
 
     cmd.extend([
         "-c:v", "libx264", "-crf", "18", "-preset", "veryfast",
