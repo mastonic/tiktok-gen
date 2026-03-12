@@ -163,7 +163,13 @@ def automate_visual_production(script_id_num: int):
     voice_path = os.path.join(job_dir, "voiceover.wav")
     generate_tts(script.final_script, voice_path)
 
-    # 4. Generate TikTok Caption (New)
+    # 4. Generate AI Background Music (New)
+    from video_gen import generate_background_music
+    send_telegram_message("🎵 <b>Création d'une musique d'ambiance sur-mesure (IA)...</b>")
+    bgm_path = os.path.join(job_dir, "background_music.mp3")
+    generate_background_music(script.title, bgm_path)
+
+    # 5. Generate TikTok Caption (New)
     try:
         from agents import create_agents
         from crewai import Task

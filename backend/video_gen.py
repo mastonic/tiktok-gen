@@ -227,6 +227,70 @@ def generate_ltx_video(prompt: str, is_square: bool = False) -> Optional[str]:
         print(f"Error calling LTX API: {e}")
         return None
 
+def generate_background_music(prompt: str, save_path: str) -> bool:
+    """
+    Generates background music using stable-audio via Fal.ai.
+    """
+    fal_key = (os.environ.get("FAL_KEY") or "").strip()
+    if not fal_key:
+        return False
+
+    url = "https://queue.fal.run/fal-ai/stable-audio"
+    headers = {
+        "Authorization": f"Key {fal_key}",
+        "Content-Type": "application/json"
+    }
+    
+    # Generic cinematic prompt + specific subject
+    full_prompt = f"Cinematic, dark suspense, electronic atmospheric background music for: {prompt}. High quality, 44.1kHz, no vocals."
+    
+    payload = {
+        "prompt": full_prompt,
+        "seconds_total": 95 # Slightly longer than voice to ensure coverage
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        res_data = response.json()
+        
+        status_url = res_data.get("status_url")
+        result_url = res_data.get("response_url")
+        
+        for _ in range(40):
+            time.sleep(3)
+            status_res = requests.get(status_url, headers=headers)
+            status_data = status_res.json()
+            
+            if status_data.get("status") == "COMPLETED":
+                # Cost tracking
+                try:
+                    from database import track_cost
+                    track_cost(0.05) # Est. cost for 90s audio
+                except: pass
+                
+                audio_url = None
+                # Fetch result
+                res = requests.get(result_url, headers=headers)
+                if res.status_code == 200:
+                    audio_data = res.json().get("audio_file")
+                    if audio_data and isinstance(audio_data, dict):
+                        audio_url = audio_data.get("url")
+                
+                if audio_url:
+                    audio_res = requests.get(audio_url)
+                    if audio_res.status_code == 200:
+                        with open(save_path, "wb") as f:
+                            f.write(audio_res.content)
+                        return True
+                return False
+            elif status_data.get("status") in ["FAILED", "CANCELED"]:
+                return False
+        return False
+    except Exception as e:
+        print(f"Music generation error: {e}")
+        return False
+
 def check_fal_balance() -> float:
     return 12.50 # Placeholder
 
