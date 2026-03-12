@@ -1,10 +1,10 @@
 import { API_URL } from '../api';
 import React, { useState, useEffect } from 'react';
-import { Card, Button } from '../components/ui';
+import { Card, Button, Badge } from '../components/ui';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { TrendingUp, Users, Clock, Eye, MessageCircle, AlertCircle, Sparkles } from 'lucide-react';
+import { TrendingUp, Users, Clock, Eye, MessageCircle, AlertCircle, Sparkles, Video } from 'lucide-react';
 
 const Analytics = () => {
     const [runMetrics, setRunMetrics] = useState([]);
@@ -124,7 +124,7 @@ const Analytics = () => {
                         <Video className="w-5 h-5 text-pink-500" />
                         Analyses des Vidéos en Direct
                     </h3>
-                    <Badge variant="outline" className="text-gray-400 border-gray-700">Suivi Temps Réel</Badge>
+                    <Badge variant="cyber" className="text-gray-400 border-gray-700">Suivi Temps Réel</Badge>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">

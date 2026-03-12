@@ -1367,6 +1367,46 @@ async def run_assemblage_viral(payload: Optional[dict] = None):
         "subtitles": subtitles
     }
 
+# ─────────────────────────────────────────────
+# FAL.AI WEBHOOK LISTENER
+# ─────────────────────────────────────────────
+
+@app.post("/api/fal/webhook")
+async def fal_webhook(request: Request):
+    """
+    BudgetOptimizer: Optimized listener for Fal.ai asynchronous jobs.
+    Saves the generated video to the correct production path once ready.
+    """
+    data = await request.json()
+    request_id = data.get("request_id")
+    status = data.get("status")
+    
+    # Payload from Fal might contain custom metadata if we passed it
+    # For now, we use a mapping or filename passed in the callback URL query params
+    params = request.query_params
+    dest_path = params.get("dest")
+    
+    if status == "COMPLETED" and dest_path:
+        video_url = None
+        # Handle different output structures (LTX vs Wan vs MusicGen)
+        video_info = data.get("payload", {}).get("video") or data.get("payload", {}).get("audio")
+        if video_info and isinstance(video_info, dict):
+            video_url = video_info.get("url")
+        elif "url" in data.get("payload", {}):
+            video_url = data["payload"]["url"]
+            
+        if video_url:
+            print(f"📥 [Webhook] Job {request_id} completed. Downloading to {dest_path}...")
+            import requests
+            res = requests.get(video_url)
+            if res.status_code == 200:
+                os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                with open(dest_path, "wb") as f:
+                    f.write(res.content)
+                return {"status": "ok"}
+                
+    return {"status": "processed"}
+
 class UpdateSystemConfigPayload(BaseModel):
     daily_cap: Optional[float] = None
     auto_stop: Optional[bool] = None

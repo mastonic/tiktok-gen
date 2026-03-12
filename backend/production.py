@@ -49,11 +49,9 @@ def automate_visual_production(script_id_num: int):
         image_prompts = json.loads(script.image_prompts) if script.image_prompts else []
     except:
         image_prompts = []
-
-    # Standard mode is now 1m30 (90s)
-    is_smart_loop = False
-    target_duration = 90
-    prompt_count = 18
+    
+    # Production mode: 19 frames (ViralEditor V2.1)
+    prompt_count = 19
 
     # --- FALLBACK: Generate prompts if they are missing ---
     if not image_prompts or len(image_prompts) < 1:
@@ -99,17 +97,13 @@ def automate_visual_production(script_id_num: int):
         return
 
     # 1. Generate Images with Flux (BudgetOptimizer: Schnell)
-    images_paths = []
-    send_telegram_message(f"🎨 <b>Production visuelle en cours [{script.title}]</b>\n\nFormat : Long (90s minimum)\nPhase 1: Génération des {len(image_prompts)} visuels (Flux Schnell)\nFormat: 9:16 portrait")
-    
-    # 1. Generate Images with Flux (BudgetOptimizer: Schnell)
     images_paths = {} # Use dict to maintain strict index mapping
     
-    send_telegram_message(f"🎨 <b>Production visuelle en cours [{script.title}]</b>\n\nFormat : Long (90s minimum)\nPhase 1: Génération des {len(image_prompts)} visuels (Flux Schnell)\nFormat: 9:16 portrait")
+    send_telegram_message(f"🎨 <b>Production visuelle en cours [{script.title}]</b>\n\nFormat : Long (90s minimum)\nPhase 1: Génération des {prompt_count} visuels (Flux Schnell)\nFormat: 9:16 portrait")
     
     for i, prompt in enumerate(image_prompts[:prompt_count]):
         img_path = os.path.join(job_dir, f"img_{i+1:02d}.jpg")
-        print(f"Generating image {i+1}/{len(image_prompts)}...")
+        print(f"Generating image {i+1}/{prompt_count}...")
         if generate_flux_image(prompt, img_path):
             images_paths[i] = img_path
 

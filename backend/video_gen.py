@@ -87,9 +87,10 @@ def generate_flux_image(prompt: str, save_path: str, is_square: bool = False) ->
         traceback.print_exc()
         return False
 
-def generate_wan_video(prompt: str, is_square: bool = False) -> Optional[str]:
+def generate_wan_video(prompt: str, is_square: bool = False, webhook_url: Optional[str] = None) -> Optional[str]:
     """
-    Implémentation de la fonction generate_wan_video (Qualité Cinématique 720p).
+    BudgetOptimizer: High-quality Hook animation with Wan-Video v2.1 (9:16 vertical).
+    Replaces Kling for 40% lower cost.
     """
     fal_key = (os.environ.get("FAL_KEY") or "").strip()
     if not fal_key:
@@ -108,6 +109,9 @@ def generate_wan_video(prompt: str, is_square: bool = False) -> Optional[str]:
         "resolution": "720p",
         "guidance_scale": 6.0
     }
+    
+    if webhook_url:
+        payload["webhook_url"] = webhook_url
 
     try:
         response = requests.post(url, headers=headers, json=payload)
@@ -157,9 +161,9 @@ def generate_wan_video(prompt: str, is_square: bool = False) -> Optional[str]:
         print(f"Error calling Wan API: {e}")
         return None
 
-def generate_ltx_video(prompt: str, is_square: bool = False) -> Optional[str]:
+def generate_ltx_video(prompt: str, is_square: bool = False, webhook_url: Optional[str] = None) -> Optional[str]:
     """
-    Implémentation de la fonction generate_ltx_video (Économique, 768x512, Steps réduits).
+    BudgetOptimizer: Cost-effective B-Roll animation with LTX-Video (25 steps).
     """
     fal_key = (os.environ.get("FAL_KEY") or "").strip()
     if not fal_key:
@@ -178,6 +182,8 @@ def generate_ltx_video(prompt: str, is_square: bool = False) -> Optional[str]:
         "steps": 25,
         "cfg_scale": 3.0
     }
+    if webhook_url:
+        payload["webhook_url"] = webhook_url
 
     try:
         response = requests.post(url, headers=headers, json=payload)
@@ -229,24 +235,24 @@ def generate_ltx_video(prompt: str, is_square: bool = False) -> Optional[str]:
 
 def generate_background_music(prompt: str, save_path: str) -> bool:
     """
-    Generates background music using stable-audio via Fal.ai.
+    Generates background music using MusicGen via Fal.ai.
     """
     fal_key = (os.environ.get("FAL_KEY") or "").strip()
     if not fal_key:
         return False
 
-    url = "https://queue.fal.run/fal-ai/stable-audio"
+    url = "https://queue.fal.run/fal-ai/basic-music-gen"
     headers = {
         "Authorization": f"Key {fal_key}",
         "Content-Type": "application/json"
     }
     
     # Generic cinematic prompt + specific subject
-    full_prompt = f"Cinematic, dark suspense, electronic atmospheric background music for: {prompt}. High quality, 44.1kHz, no vocals."
+    full_prompt = f"Cinematic suspense, dark atmospheric background music, 120bpm, HQ: {prompt}"
     
     payload = {
         "prompt": full_prompt,
-        "seconds_total": 95 # Slightly longer than voice to ensure coverage
+        "duration": 95 
     }
 
     try:
@@ -266,16 +272,18 @@ def generate_background_music(prompt: str, save_path: str) -> bool:
                 # Cost tracking
                 try:
                     from database import track_cost
-                    track_cost(0.05) # Est. cost for 90s audio
+                    track_cost(0.04)
                 except: pass
                 
                 audio_url = None
                 # Fetch result
                 res = requests.get(result_url, headers=headers)
                 if res.status_code == 200:
-                    audio_data = res.json().get("audio_file")
-                    if audio_data and isinstance(audio_data, dict):
-                        audio_url = audio_data.get("url")
+                    audio_res_data = res.json()
+                    # MusicGen output structure: {'audio': {'url': '...', ...}}
+                    audio_info = audio_res_data.get("audio")
+                    if audio_info and isinstance(audio_info, dict):
+                        audio_url = audio_info.get("url")
                 
                 if audio_url:
                     audio_res = requests.get(audio_url)

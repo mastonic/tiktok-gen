@@ -34,7 +34,7 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
 
     task_scout = Task(
         description=(
-            f"Ta mission 'TrendHunter' est d'identifier les 5 sujets IA/Tech les plus chauds des dernières 24h via TikTok Creative Center, Google Trends et Perplexity. "
+            f"Ta mission 'TrendHunter' est d'identifier les 5 sujets IA/Tech les plus chauds des 7 DERNIERS JOURS via TikTok Creative Center, Google Trends et Perplexity. "
             f"Aujourd'hui nous sommes le {now}. Focus : {focus_topic}. {recent_context}\n"
             "Identifie les recherches en hausse de >100% et croise-les avec AnswerThePublic pour trouver le Hook parfait."
         ),
@@ -81,10 +81,10 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
     cta = "Abonnez-vous et like ! J'ai cassé internet Encore."
     task_scripting = Task(
         description=(
-            "Rédige un script TikTok narratif d'EXACTEMENT 90 à 100 secondes. "
-            "Structure obligatoire : 1. Hook. 2. Storytelling technique/histoire vécue. 3. Avantages, Inconvénients et détails techniques réels. "
+            "Rédige un script TikTok narratif d'EXACTEMENT 190 à 210 MOTS. "
+            "Structure obligatoire : 1. Hook violent. 2. Storytelling technique/histoire vécue. 3. Avantages, Inconvénients et détails techniques réels. "
             f"Signature FINALE IMPÉRATIVE : {cta}. "
-            "INTERDICTION FORMELLE de parler d'argent."
+            "INTERDICTION FORMELLE de parler d'argent. PAS DE BALISES (ex: [Visuel]), uniquement le texte parlé."
         ),
         expected_output="Un script TikTok technique et narratif long avec le CTA demandé.",
         agent=script_architect
@@ -93,10 +93,10 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
 
     task_visuals = Task(
         description=(
-            "Crée exactement 18 prompts cinématiques en anglais pour FLUX. "
-            "Raconte une histoire visuelle cohérente pour un format LONG de 90 secondes (1 clip de 5s par prompt)."
+            "Crée exactement 19 prompts cinématiques en anglais pour FLUX. "
+            "Raconte une histoire visuelle cohérente pour une vidéo complète (1 clip par prompt)."
         ),
-        expected_output="Exactly 18 cinematically consistent image prompts.",
+        expected_output="Exactly 19 cinematically consistent image prompts.",
         agent=visual_promptist,
         context=[task_scripting], # Connect to script
         output_pydantic=VisualPrompts
