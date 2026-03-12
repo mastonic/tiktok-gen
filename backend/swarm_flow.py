@@ -87,16 +87,22 @@ class ViralFlow(Flow[SwarmState]):
         
         task_scout = Task(
             description=(
-                f"Ta mission 'TrendHunter' est d'identifier les 5 sujets IA/Tech les plus chauds des dernières 24h via TikTok Creative Center, Google Trends et Perplexity. "
+                f"Ta mission 'TrendHunter' est d'identifier les 5 news les plus impactantes en IA/Open-Source/Dev des 7 DERNIERS JOURS via Perplexity, GitHub Trending et X. "
                 f"Aujourd'hui nous sommes le {now}. Focus : {focus_topic}. {recent_context}\n"
-                "Identifie les recherches en hausse de >100% et croise-les avec AnswerThePublic pour trouver le Hook parfait."
+                "RÈGLE DE SORTIE (Fiche Technique) :\n"
+                "1. Innovation : Gap technique précis (ex: Context window, tokens/sec, architecture MoE).\n"
+                "2. La Preuve : Lien GitHub, benchmark (MMLU, HumanEval) ou citation source.\n"
+                "3. L'Angle 'Drama' : Qui est menacé ? (ex: 'Ça tue l'abonnement ChatGPT Plus')."
             ),
-            expected_output="Top 5 sujets explosifs avec Nom, URL, Killer Feature et Hook stratégique.",
+            expected_output="Top 5 Fiches Techniques d'Actualité (Innovation, Preuve, Drama).",
             agent=self.trend_radar
         )
         task_filter = Task(
-            description="Vérifie la gratuité absolue des sujets. Rejeter immédiatement (kill switch) tout sujet 'mou', payant ou déjà traité.",
-            expected_output="Rapport de viabilité final. Sujet validé ou rejeté.",
+            description=(
+                "Filtre impitoyable. RÈGLE : Rejet immédiat (Kill Switch) de tout sujet 'mou' ou payant. "
+                "Seule la tech disruptive et gratuite passe. Ce module remplace la 'créativité' par de l'extraction de données pure."
+            ),
+            expected_output="Rapport de viabilité final. Sujet validé ou rejeté (Kill Switch).",
             agent=self.viral_judge,
             context=[task_scout]
         )
@@ -149,27 +155,32 @@ class ViralFlow(Flow[SwarmState]):
             agent=self.tech_utility_expert
         )
         
-        cta = "Abonnez-vous et like ! J'ai cassé internet Encore."
+        cta = "Abonnez-vous et like ! J'ai cassé internet Encore. 🚀"
         task_script = Task(
             description=(
-                f"Rédiger un script TikTok narratif d'EXACTEMENT 90 à 100 secondes (Signature: {cta}). "
-                "Structure obligatoire : 1. Hook. 2. Storytelling technique/histoire vécue. 3. Avantages, Inconvénients et détails techniques réels. "
-                "Le script doit être technique, fascinant et ultra-captivant. "
-                "INTERDICTION FORMELLE de parler d'économie numérique, de budget ou d'argent."
+                f"Rédiger un script TikTok de Journalisme d'Impact (90s). "
+                "RÈGLE D'OR : ZÉRO FICTION. Pas d'Alice ou d'histoires inventées. "
+                "CONTEXT INJECTION : Ton script se base UNIQUEMENT sur les Data Points de TrendRadar. "
+                "TON : Calme, ironique, expert. "
+                "Utilise l'un des TEMPLATES COMMANDO suivants :\n"
+                "T1 (Contrarian) : Hook violent / Preuve technique / Twist / Action / CTA.\n"
+                "T5 (Benchmark Killer) : Hook / Comparaison chiffres réels / Preuve / CTA.\n"
+                "T6 (Repo GitHub) : Hook / Analyse feature / Démo technique / CTA.\n\n"
+                f"CTA OBLIGATOIRE FINAL : {cta}."
             ),
-            expected_output="Script TikTok technique détaillé d'exactement 90-100 secondes avec le CTA demandé.",
+            expected_output="Script technique 100% Data sans fiction avec le CTA demandé.",
             agent=self.script_architect,
             context=[task_utility]
         )
         
         task_visuals = Task(
             description=(
-                "Créer *strictement et exactement* 18 prompts cinématiques en anglais pour le générateur FLUX. "
-                "C'est impératif : ni 17, ni 19, mais exactement 18 prompts. "
-                "Chaque prompt correspond à une scène de 5 secondes, pour une vidéo totale de 90 secondes (1m30). "
-                "Assure une cohérence visuelle parfaite, scénaristique et chronologique entre les 18 scènes, qui doivent se suivre."
+                "Créer exactement 18 prompts cinématiques en anglais pour FLUX qui PROUVENT la news. "
+                "Ratio : 50% Visualisation technique (Terminaux Python, fichiers YAML, graphiques de benchmarks, logos officiels glitchés) / 50% Impact réel (hardware, serveurs, humains en action réelle). "
+                "Structure : [Cinematography] + [Technical Subject] + [Action] + [Context] + [Cyberpunk/Tech-Noir Style] --ar 9:16. "
+                "Assure une cohérence visuelle parfaite (ex: Meta Blue pour Meta, Dark Terminal pour le code)."
             ),
-            expected_output="A list of exactly 18 cinematic prompts in English, creating a logical story.",
+            expected_output="Exactly 18 cinematic prompts following the technical journalism aesthetic splitting 50/50 tech/impact.",
             agent=self.visual_promptist,
             output_pydantic=VisualPrompts,
             context=[task_script]
@@ -250,8 +261,15 @@ Voici le contenu généré par tes collègues. Tu DOIS assembler ce contenu EXAC
 - Prompts d'images générés (DOIVENT RESTER EXACTEMENT CES PROMPTS, y en a {len(self.state.visual_prompts.prompts) if self.state.visual_prompts else 0}) : {self.state.visual_prompts.prompts if self.state.visual_prompts else 'Aucun'}
 """
         task_qa = Task(
-            description=f"Revue finale et assemblage JSON AgentOutcome. {context_data}",
-            expected_output="Final AgentOutcome validated.",
+            description=(
+                f"Revue finale critique (Vérification stricte) :\n"
+                "1. Zéro Fiction ? (Si 'Alice' est présente, rejeter).\n"
+                "2. Data présente ? (Un chiffre ou un benchmark doit apparaître avant 15s).\n"
+                "3. Accroche Violente ? (Le hook doit promettre une révélation ou un danger).\n"
+                "4. SEO OK ? (Hashtags #OpenSource #AI #DevTech inclus).\n"
+                f"Contenu à assembler : {context_data}"
+            ),
+            expected_output="AgentOutcome validated for Technical Journalism.",
             agent=self.quality_controller,
             output_pydantic=AgentOutcome
         )

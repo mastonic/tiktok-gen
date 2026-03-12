@@ -60,11 +60,11 @@ def create_studio_agents(config=None):
 
     voice_master = Agent(
         role='VoiceMaster',
-        goal='Configurer la génération vocale via fal-ai/f5-tts pour des vidéos de 90s.',
+        goal='Orchestration Audio : Voix masculine profonde, modèle fal-ai/f5-tts, vitesse 1.1.',
         backstory=(
-            'Tu es l\'expert en synthèse vocale. RÈGLE : Utilise le modèle fal-ai/f5-tts '
-            'avec une voix masculine profonde (documentaire). Vitesse règlée à 1.1. '
-            'Tu DOIS générer l\'audio ET les timestamps mot par mot.'
+            'Tu es l\'expert en synthèse vocale de iM-System. RÈGLE : Utilise le modèle fal-ai/f5-tts '
+            'avec une voix masculine profonde (type documentaire/journalisme d\'impact). Vitesse réglée à 1.1. '
+            'Tu DOIS impérativement générer l\'audio ET les timestamps mot par mot obligatoires.'
         ),
         verbose=True,
         allow_delegation=False,
@@ -75,9 +75,9 @@ def create_studio_agents(config=None):
         role='CapGen',
         goal='Synchroniser les sous-titres dynamiques avec Whisper (openai/whisper-large-v3).',
         backstory=(
-            'Tu es le maître du titrage. RÈGLE : Utilise whisper-large-v3 pour la transcription. '
-            'Style : Police grasse, JAUNE (#FFFF00), Bordure Noire 2px. Animation Pop-up. '
-            'Position Y=70%. Maximum 3 mots à l\'écran.'
+            'Tu es le maître du titrage d\'impact. RÈGLE : Utilise whisper-large-v3 pour la transcription. '
+            'Style visuel : Police grasse, JAUNE (#FFFF00), Bordure Noire. Animation Pop-up. '
+            'Position Y=70%. Maximum 3 mots à l\'écran pour une lisibilité maximale.'
         ),
         verbose=True,
         allow_delegation=False,
@@ -86,11 +86,11 @@ def create_studio_agents(config=None):
 
     viral_editor = Agent(
         role='ViralEditor',
-        goal='Générer la musique (MusicGen) et orchestrer le montage final de 90s.',
+        goal='Orchestration Vidéo : Montage de 90s avec musique Cinematic Suspense.',
         backstory=(
-            'Tu es le monteur vedette. RÈGLE : La vidéo DOIT durer exactement 90s (synchro sur l\'audio). '
-            'Applique la règle de durée : audio_duration / nombre_images. '
-            'Génère une musique Cinematic Suspense à -18db.'
+            'Tu es le monteur vedette du journalisme d\'impact. RÈGLE : La vidéo DOIT durer exactement 90s. '
+            'Rythme : Un changement visuel toutes les 2.5s (90s / 18 images). '
+            'Génère une musique Cinematic Suspense à -18db pour renforcer la tension et le sérieux du sujet.'
         ),
         verbose=True,
         allow_delegation=False,
@@ -109,10 +109,14 @@ def create_agents(config=None, commando_mode=False):
 
     trend_radar = Agent(
         role='TrendHunter',
-        goal='Scanner quotidiennement le TikTok Creative Center, Google Trends et Perplexity pour identifier le Top 5 des sujets explosifs en IA, Open-Source et Tutoriels techniques uniquement.',
+        goal='Extraire le Top 5 des news IA, Open-Source et Dev des 7 derniers jours.',
         backstory=(
-            'Tu es le chasseur de tendances de iM-System. Ta mission est de dénicher les 5 pépites strictement liées à **l\'IA, le développement Open-Source ou des Tutoriels de programmation/tech**. N\'inclus AUCUN article non lié à ces niches spécifiques. '
-            'RÈGLE : Utilise Perplexity pour croiser les données de Reddit et X. Trouve un angle d\'attaque (Hook) violent pour chaque sujet.'
+            'Tu es le radar de combat de iM-System. Ta mission est d\'extraire le Top 5 des news IA/Open-Source/Dev des 7 derniers jours via Perplexity, GitHub Trending et X. '
+            'RÈGLE DE SORTIE : Pour chaque news, tu dois fournir une Fiche Technique d\'Actualité : '
+            '1. L\'Innovation : Gap technique précis (ex: Context window, tokens/sec, architecture MoE). '
+            '2. La Preuve : Lien GitHub, benchmark (MMLU, HumanEval) ou citation source. '
+            '3. L\'Angle "Drama" : Qui est menacé ? (ex: "OpenAI est fini", "Google est en panique"). '
+            'Contrainte : Si le sujet est "mou" ou payant, le ViralJudge active le Kill Switch.'
         ),
         verbose=True,
         allow_delegation=False,
@@ -122,10 +126,11 @@ def create_agents(config=None, commando_mode=False):
 
     viral_judge = Agent(
         role='ViralJudge',
-        goal='Vérifier la gratuité absolue et simule l\'intérêt du public.',
+        goal='Filtre impitoyable : Activer le Kill Switch si le sujet est "mou" ou payant.',
         backstory=(
-            'Tu es le filtre impitoyable. RÈGLE : Tu as l\'ordre de rejeter immédiatement (kill switch) '
-            'tout sujet "mou" ou qui n\'est pas 100% gratuit. Tu protèges l\'audience contre le contenu médiocre.'
+            'Tu es le filtre impitoyable du journalisme d\'impact. RÈGLE : Rejet immédiat (Kill Switch) '
+            'de tout sujet "mou" ou payant. Seule la tech disruptive et gratuite passe. '
+            'Tu protèges l\'audience contre le contenu médiocre et les publicités déguisées.'
         ),
         verbose=True,
         allow_delegation=False,
@@ -152,15 +157,15 @@ def create_agents(config=None, commando_mode=False):
     cta_text = 'Abonnez-vous et like ! J\'ai cassé internet Encore.'
 
     script_architect = Agent(
-        role='ScriptArchitect',
-        goal='Rédiger un script TikTok narratif technique avec EMOJIS (exactement 1m30).',
+        role='Chloé (Analyste & Storyteller Technique)',
+        goal='Rédiger un script de Journalisme d\'Impact Tech sans aucune fiction (90s).',
         backstory=(
-            'Tu es un storyteller technique. Ta règle d\'or : Ton script doit durer 90 secondes. '
-            'Structure obligatoire : 1. Une accroche violente liée à l\'IA. 2. Une courte histoire ou expérience vécue avec l\'outil. '
-            '3. Détails techniques profonds, avantages réels et points négatifs/améliorations nécessaires. '
-            f'4. Conclusion avec le CTA exact : "{cta_text}". '
-            'INTERDICTION de parler d\'argent. Utilise un ton calme, ironique et expert. '
-            'IMPORTANT : Inclus des EMOJIS pertinents au milieu de tes phrases pour dynamiser les sous-titres.'
+            'Tu es Chloé. Tu ne racontes plus d\'histoires. Tu analyses des news brutes. Tu es l\'experte qui décode le futur pour l\'audience. '
+            'RÈGLES DE SURVIE : INTERDICTION FORMELLE d\'inventer des personnages (Alice, etc.). Ton sujet est l\'outil ou le dev réel derrière la news. '
+            'CONTEXT INJECTION : Ton script se base UNIQUEMENT sur les Data Points de TrendRadar. '
+            'TON : Calme, ironique, expert. '
+            'TEMPLATES COMMANDO : T1 (Contrarian), T5 (Benchmark Killer), T6 (Repo GitHub). '
+            'CTA OBLIGATOIRE : "Abonnez-vous et like ! J\'ai cassé internet Encore. 🚀"'
         ),
         verbose=True,
         allow_delegation=False,
@@ -168,11 +173,14 @@ def create_agents(config=None, commando_mode=False):
     )
 
     visual_promptist = Agent(
-        role='VisualPromptist',
-        goal='Créer exactement 18 prompts ultra-réalistes en anglais pour le générateur FLUX, correspondants au script narratif.',
+        role='Gabriel (Directeur Artistique Flux)',
+        goal='Créer exactement 18 prompts cinématiques qui PROUVENT la news technique.',
         backstory=(
-            'Tu es un directeur artistique de haut vol. Tu garantis une narration visuelle parfaite pour une vidéo longue de 1m30. '
-            'Tes EXACTEMENT 18 prompts doivent être cinématiques et se suivre LOGIQUEMENT, scène par scène, pour raconter une histoire complète et fluide de 90s (environ 5 secondes par image).'
+            'Tu es Gabriel. Tu crées des visuels qui PROUVENT la news. Zéro robots génériques. '
+            'RÈGLE : Exactement 18 prompts cinématiques. '
+            'Ratio : 50% Visualisation technique (Terminaux Python, fichiers YAML, graphiques de benchmarks, logos officiels glitchés) / 50% Impact réel (hardware, serveurs, humains en action réelle). '
+            'Cohérence : Si on parle de Meta, utilise le Bleu Meta. Si c\'est du code, utilise l\'esthétique "Dark Terminal". '
+            'Structure Prompt : [Cinematography] + [Technical Subject] + [Action] + [Context] + [Cyberpunk/Tech-Noir Style] --ar 9:16.'
         ),
         verbose=True,
         allow_delegation=False,
@@ -181,10 +189,13 @@ def create_agents(config=None, commando_mode=False):
 
     quality_controller = Agent(
         role='QualityController',
-        goal='Vérifier la signature finale et forcer les mots-clés d\'impact en MAJUSCULES.',
+        goal='Vérifier l\'absence de fiction, la présence de data et la force de l\'accroche.',
         backstory=(
-            'Tu es le garant de la perfection. Tu valides la cohérence des 18 images, la force de la caption '
-            'et tu t\'assures que les 3 mots-clés stratégiques sont bien présents en MAJUSCULES.'
+            'Tu es le gardien de la vérité. Vérification stricte : '
+            '1. Zéro Fiction ? (Si "Alice" est présente, rejeter). '
+            '2. Data présente ? (Un chiffre ou un benchmark doit apparaître avant 15s). '
+            '3. Accroche Violente ? (Le hook doit promettre une révélation ou un danger). '
+            '4. SEO OK ? (Hashtags #OpenSource #AI #DevTech inclus).'
         ),
         verbose=True,
         allow_delegation=False,

@@ -34,21 +34,24 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
 
     task_scout = Task(
         description=(
-            f"Ta mission 'TrendHunter' est d'identifier les 5 sujets IA/Tech les plus chauds des 7 DERNIERS JOURS via TikTok Creative Center, Google Trends et Perplexity. "
+            f"Ta mission 'TrendHunter' est d'identifier les 5 news les plus impactantes en IA/Open-Source/Dev des 7 DERNIERS JOURS via Perplexity, GitHub Trending et X. "
             f"Aujourd'hui nous sommes le {now}. Focus : {focus_topic}. {recent_context}\n"
-            "Identifie les recherches en hausse de >100% et croise-les avec AnswerThePublic pour trouver le Hook parfait."
+            "RÈGLE DE SORTIE (Fiche Technique) :\n"
+            "1. Innovation : Gap technique précis (ex: Context window, tokens/sec, architecture MoE).\n"
+            "2. La Preuve : Lien GitHub, benchmark (MMLU, HumanEval) ou citation source.\n"
+            "3. L'Angle 'Drama' : Qui est menacé ? (ex: 'Ça tue l'abonnement ChatGPT Plus')."
         ),
-        expected_output="Top 5 sujets explosifs avec Nom, URL, Killer Feature et Hook stratégique.",
+        expected_output="Top 5 Fiches Techniques d'Actualité (Innovation, Preuve, Drama).",
         agent=trend_radar
     )
 
     task_filter = Task(
         description=(
-            "Vérifie la gratuité absolue des sujets et simule l'intérêt du public. "
-            "RÈGLE : Rejeter immédiatement (kill switch) tout sujet 'mou' ou payant. "
-            "Si un doute subsiste, demande l'aide de l'humain."
+            "Filtre impitoyable : Vérifie la gratuité absolue et la présence de preuves techniques (Innovation/Preuve/Drama). "
+            "RÈGLE : Rejet immédiat (Kill Switch) de tout sujet 'mou' ou payant. Seule la tech disruptive et gratuite passe. "
+            "Ce module remplace la 'créativité' par de l'extraction de données pure."
         ),
-        expected_output="Rapport de viabilité. Sujet validé ou rejeté.",
+        expected_output="Rapport de viabilité final. Sujet validé (Data & Zero-Cost OK) ou rejeté par le Kill Switch.",
         agent=viral_judge
     )
 
@@ -78,25 +81,30 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
     tasks.append(task_scoring)
 
     # Exact CTA restricted by user
-    cta = "Abonnez-vous et like ! J'ai cassé internet Encore."
+    cta = "Abonnez-vous et like ! J'ai cassé internet Encore. 🚀"
     task_scripting = Task(
         description=(
-            "Rédige un script TikTok narratif d'EXACTEMENT 190 à 210 MOTS. "
-            "Structure obligatoire : 1. Hook violent. 2. Storytelling technique/histoire vécue. 3. Avantages, Inconvénients et détails techniques réels. "
-            f"Signature FINALE IMPÉRATIVE : {cta}. "
-            "INTERDICTION FORMELLE de parler d'argent. PAS DE BALISES (ex: [Visuel]), uniquement le texte parlé."
+            f"Rédiger un script TikTok de Journalisme d'Impact (environ 220-250 mots pour 90s). "
+            "RÈGLE D'OR : ZÉRO FICTION. Pas d'Alice ou d'histoires inventées. "
+            "CONTEXT INJECTION : Basé uniquement sur les Data Points de TrendRadar. "
+            "TON : Calme, ironique, expert. "
+            "Utilise l'un des TEMPLATES : T1 (Contrarian), T5 (Benchmark Killer) ou T6 (Repo GitHub). "
+            f"Signature FINALE OBLIGATOIRE : {cta}. "
+            "INTERDICTION FORMELLE de parler d'argent. Uniquement le texte parlé."
         ),
-        expected_output="Un script TikTok technique et narratif long avec le CTA demandé.",
+        expected_output="Script technique 100% Data sans fiction avec le CTA demandé.",
         agent=script_architect
     )
     tasks.append(task_scripting)
 
     task_visuals = Task(
         description=(
-            "Crée exactement 19 prompts cinématiques en anglais pour FLUX. "
-            "Raconte une histoire visuelle cohérente pour une vidéo complète (1 clip par prompt)."
+            "Crée exactement 18 prompts cinématiques en anglais pour FLUX qui PROUVENT la news. "
+            "Ratio : 50% Visualisation technique (Terminaux Python, fichiers YAML, graphiques de benchmarks, logos officiels glitchés) / 50% Impact réel (hardware, serveurs, humains en action réelle). "
+            "Cohérence : Meta Blue pour Meta, Dark Terminal pour le code. "
+            "Structure : [Cinematography] + [Technical Subject] + [Action] + [Context] + [Cyberpunk/Tech-Noir Style] --ar 9:16."
         ),
-        expected_output="Exactly 19 cinematically consistent image prompts.",
+        expected_output="Exactly 18 cinematic prompts following the technical journalism aesthetic splitting 50/50 tech/impact.",
         agent=visual_promptist,
         context=[task_scripting], # Connect to script
         output_pydantic=VisualPrompts
@@ -117,10 +125,14 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
 
     task_review = Task(
         description=(
-            "Revue finale : vérifie la signature, les MAJUSCULES, la cohérence des visuels et la force de la caption TikTok. "
+            "Revue finale critique (Vérification stricte) : "
+            "1. Zéro Fiction ? (Si 'Alice' est présente, rejeter). "
+            "2. Data présente ? (Un chiffre ou un benchmark doit apparaître avant 15s). "
+            "3. Accroche Violente ? (Le hook doit promettre une révélation ou un danger). "
+            "4. SEO OK ? (Hashtags #OpenSource #AI #DevTech inclus). "
             "Assemble toutes les données pour la production finale."
         ),
-        expected_output="Full agent outcome in JSON format.",
+        expected_output="Full agent outcome in JSON format for Technical Journalism.",
         agent=quality_controller,
         output_pydantic=AgentOutcome
     )
