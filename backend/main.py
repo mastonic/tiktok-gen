@@ -166,14 +166,6 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
         db.close()
         config_dict = {a.role: a.model for a in agent_configs}
         
-        # 0. Context Injection (Input Humain) - iM-System V9
-        update_run_progress(run_id, 15, "Attente du Context Injection humain")
-        from agents import ask_human_in_loop
-        question = "Donne-moi la news IA Open Source la plus explosive des dernières 24h avec les points clés techniques (Fiche de choc)."
-        fiche_de_choc = ask_human_in_loop("Manager", "Initialisation du cycle Swarm V9", question)
-        print(f"📥 [CONTEXT] Human Fiche de choc: {fiche_de_choc}")
-        save_agent_message(run_id, "Manager", "System", "info", f"Context Injection reçu : {fiche_de_choc[:100]}...")
-        
         # 0. Sync Database API Keys to Environment
         if conf:
             if conf.openai_key: os.environ["OPENAI_API_KEY"] = conf.openai_key.strip()
@@ -202,7 +194,6 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
             flow.state.run_type = run_type
             flow.state.agent_config = config_dict
             flow.state.run_id = run_id
-            flow.state.fiche_de_choc = fiche_de_choc
             
             print(f"🚀 [FLOW] Kicking off ViralFlow (Mode: {mode_str}, Type: {run_type})")
             result_obj = flow.kickoff()

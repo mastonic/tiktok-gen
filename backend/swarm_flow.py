@@ -111,33 +111,32 @@ class ViralFlow(Flow[SwarmState]):
         if self.state.run_id:
             save_agent_message(self.state.run_id, "TrendRadar", "ViralJudge", "info", f"📡 Recherche de nouveautés ({self.state.run_type})...")
         
-        # 🛸 iM-System V9 : Context Injection Check
-        if self.state.fiche_de_choc:
-            print("🛸 [COMMANDO] Context Injection detected. Skipping search tools.")
-            if self.state.run_id:
-                save_agent_message(self.state.run_id, "Manager", "TrendRadar", "warning", "🛸 Input Humain détecté : Utilisation de la Fiche de choc comme SEULE source de vérité.")
-            
-            task_format = Task(
-                description=(
-                    f"Tu as reçu un input humain direct (Fiche de choc) : {self.state.fiche_de_choc}. "
-                    "Ta seule mission est de transformer cet input en une 'Fiche Technique d'Actualité' JSON stricte respectant les critères d'Impact Journalism. "
-                    "INTERDICTION de chercher d'autres infos. Utilise uniquement ce qui est fourni."
-                ),
-                expected_output="Fiche Technique d'Actualité JSON basée sur l'input humain.",
-                agent=self.trend_radar
-            )
-            crew = Crew(agents=[self.trend_radar], tasks=[task_format], verbose=True, max_rpm=30)
-            self.state.viability_report = str(crew.kickoff())
-        else:
-            crew = Crew(agents=[self.trend_radar, self.viral_judge], tasks=[task_scout, task_filter], verbose=True, max_rpm=30)
-            self.state.viability_report = str(crew.kickoff())
+        crew = Crew(agents=[self.trend_radar, self.viral_judge], tasks=[task_scout, task_filter], verbose=True, max_rpm=30)
+        self.state.viability_report = str(crew.kickoff())
         
         if self.state.run_id:
-            save_agent_message(self.state.run_id, "ViralJudge", "System", "info", "✅ Sujet inédit validé.")
+            save_agent_message(self.state.run_id, "ViralJudge", "System", "info", "✅ Sourcing terminé. En attente de validation humaine du Top 5.")
             
         return "SOURCING_DONE"
 
-    @router(phase_sourcing)
+    @listen("SOURCING_DONE")
+    def phase_human_validation(self):
+        if self._check_cancelled(): return "FLOW_STOPPED"
+        print("🛸 [COMMANDO] Waiting for human validation of the Top 5...")
+        from agents import ask_human_in_loop
+        question = (
+            "Voici le Top 5 des news IA Open Source identifiées par le TrendRadar :\n\n"
+            f"{self.state.viability_report}\n\n"
+            "Dis-moi laquelle de ces news tu souhaites traiter, ou donne tes instructions personnalisées (ton choix devient la SEULE source de vérité)."
+        )
+        self.state.fiche_de_choc = ask_human_in_loop("Manager", "Validation humaine du Top 5 News", question)
+        
+        if self.state.run_id:
+            save_agent_message(self.state.run_id, "Manager", "System", "success", f"Choix humain reçu : {self.state.fiche_de_choc[:100]}...")
+            
+        return "VALIDATION_DONE"
+
+    @router("VALIDATION_DONE")
     def strategy_router(self):
         if self.state.mode == "commando":
             return "commando_strategy"
@@ -166,7 +165,8 @@ class ViralFlow(Flow[SwarmState]):
         print("✍️ Producing Script, Tech Utility and Visuals...")
         task_utility = Task(
             description=(
-                "Analyse en profondeur la technologie : architecture, avantages tech, points négatifs et axes d'amélioration. "
+                f"Analyse en profondeur la news technique suivante : {self.state.fiche_de_choc}\n"
+                "Architecture, avantages tech, points négatifs et axes d'amélioration. "
                 "Rassemble des éléments pour une histoire ou une expérience utilisateur marquante avec cet outil. "
                 "INTERDICTION de parler d'argent ou d'abonnement."
             ),
@@ -176,11 +176,11 @@ class ViralFlow(Flow[SwarmState]):
         
         task_script = Task(
             description=(
-                "ORDRE COMMANDO : Transforme la fiche technique en un script TikTok agressif de 90s. "
+                f"ORDRE COMMANDO : Transforme la news suivante en un script TikTok agressif de 90s : {self.state.fiche_de_choc}\n"
                 "RÈGLE DE TEMPORALITÉ : Interdiction de parler de tech pré-2025. Nous sommes en 2026. "
                 "STYLE : Cynique, expert, zéro ton scolaire. Pas de 'Simple, non ?'. "
                 "STRUCTURE : Template 'Le Benchmark Killer' (Hook violent -> Confrontation data -> Chute technique). "
-                "SOURCE : Utilise EXCLUSIVEMENT la fiche fournie."
+                "SOURCE : Ton script doit se baser EXCLUSIVEMENT sur cette news."
             ),
             expected_output="Script technique 100% Data sans fiction (Style Cash Machine).",
             agent=self.script_architect,
