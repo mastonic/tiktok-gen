@@ -1696,7 +1696,9 @@ async def get_latest_blog():
 
 def _slugify(text):
     """Transforme un titre en slug de fichier propre."""
-    slug = text.lower().strip()
+    if not text:
+        return "sans-titre"
+    slug = str(text).lower().strip()
     import re
     slug = re.sub(r"[àáâãäå]", "a", slug)
     slug = re.sub(r"[èéêë]", "e", slug)
@@ -1880,32 +1882,36 @@ async def get_blog_post_raw(slug: str):
     posts_dir = Path(__file__).parent / "blog" / "posts"
     file_path = posts_dir / f"{slug}.md"
 
-    if not file_path.exists():
-        # FALLBACK: Try to find a script with this slug to serve a "virtual" markdown
-        db = SessionLocal()
-        all_scripts = db.query(ScriptInbox).all()
-        target_script = None
-        for s in all_scripts:
-            if _slugify(s.title) == slug:
-                target_script = s
-                break
-        
-        if target_script:
-            print(f"🎬 [VIRTUAL BLOG] Serving virtual MD for slug: {slug}")
-            content = f"""---
+    try:
+        if not file_path.exists():
+            # FALLBACK: Try to find a script with this slug to serve a "virtual" markdown
+            db = SessionLocal()
+            all_scripts = db.query(ScriptInbox).filter(ScriptInbox.title != None).all()
+            target_script = None
+            for s in all_scripts:
+                if _slugify(s.title) == slug:
+                    target_script = s
+                    break
+            
+            if target_script:
+                print(f"🎬 [VIRTUAL BLOG] Serving virtual MD for slug: {slug}")
+                video_url = f"/media/production/db_{target_script.id}/final_output.mp4"
+                video_tag = "[INSERT_VIDEO_PLAYER]" if os.path.exists(os.path.join(os.path.dirname(__file__), "media", "production", f"db_{target_script.id}", "final_output.mp4")) else ""
+                
+                content = f"""---
 title: "{target_script.title}"
 excerpt: "{target_script.title} — Découverte en avant-première de notre dernière production."
 cover_image: "{target_script.cover_image or '/media/production/db_' + str(target_script.id) + '/img_01.jpg'}"
 category: "Avant-Première"
 date: "{target_script.created_at.strftime('%Y-%m-%d') if target_script.created_at else ''}"
-video_url: "/media/production/db_{target_script.id}/final_output.mp4"
+video_url: "{video_url}"
 ---
 
 # {target_script.title}
 
 Bienvenue dans cet article généré automatiquement pour accompagner notre dernière vidéo. 
 
-[INSERT_VIDEO_PLAYER]
+{video_tag}
 
 ## Le Script de l'épisode
 
@@ -1916,40 +1922,43 @@ Bienvenue dans cet article généré automatiquement pour accompagner notre dern
 ---
 *Cet article a été généré par l'iM-System en attendant la revue complète de la BlogSquad.*
 """
-            db.close()
-            from fastapi.responses import PlainTextResponse
-            return PlainTextResponse(content=content, media_type="text/plain; charset=utf-8")
-        
-        db.close()
-        raise HTTPException(status_code=404, detail=f"Article '{slug}' introuvable.")
-
-    content = file_path.read_text(encoding="utf-8").replace("http://localhost:5656", "")
-    
-    # Try to find a matching script to inject video_url if [INSERT_VIDEO_PLAYER] is present
-    db = SessionLocal()
-    # Simple search by title approximation or look in frontmatter title
-    title_match = re.search(r'^title:\s*"?([\s\S]*?)"?\s*$', content, re.M)
-    search_title = title_match.group(1).replace('"', '') if title_match else slug.replace('-', ' ')
-    
-    script = db.query(ScriptInbox).filter(ScriptInbox.title.like(f"%{search_title[:15]}%")).first()
-    if script:
-        # Inject into frontmatter
-        video_url = f"/media/production/db_{script.id}/final_output.mp4"
-        if "video_url:" not in content:
-            content = content.replace("---\n", f"---\nvideo_url: \"{video_url}\"\n", 1)
-        
-        # Also ensure cover_image is there if missing
-        if "cover_image: \"https" in content or "cover_image: None" in content:
-            local_img = f"/media/production/db_{script.id}/img_01.jpg"
-            content = re.sub(r'cover_image: ".*?"', f'cover_image: "{local_img}"', content)
+                db.close()
+                from fastapi.responses import PlainTextResponse
+                return PlainTextResponse(content=content, media_type="text/plain; charset=utf-8")
             
-    db.close()
+            db.close()
+            raise HTTPException(status_code=404, detail=f"Article '{slug}' introuvable.")
 
-    from fastapi.responses import PlainTextResponse
-    return PlainTextResponse(
-        content=content,
-        media_type="text/plain; charset=utf-8"
-    )
+        content = file_path.read_text(encoding="utf-8").replace("http://localhost:5656", "")
+        
+        # Try to find a matching script to inject video_url if [INSERT_VIDEO_PLAYER] is present
+        db = SessionLocal()
+        # Simple search by title approximation or look in frontmatter title
+        title_match = re.search(r'^title:\s*"?([\s\S]*?)"?\s*$', content, re.M)
+        search_title = title_match.group(1).replace('"', '') if title_match else slug.replace('-', ' ')
+        
+        script = db.query(ScriptInbox).filter(ScriptInbox.title.like(f"%{search_title[:15]}%")).first()
+        if script:
+            # Inject into frontmatter
+            video_url = f"/media/production/db_{script.id}/final_output.mp4"
+            if "video_url:" not in content:
+                content = content.replace("---\n", f"---\nvideo_url: \"{video_url}\"\n", 1)
+            
+            # Also ensure cover_image is there if missing
+            if "cover_image: \"https" in content or "cover_image: None" in content:
+                local_img = f"/media/production/db_{script.id}/img_01.jpg"
+                content = re.sub(r'cover_image: ".*?"', f'cover_image: "{local_img}"', content)
+                
+        db.close()
+
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(
+            content=content,
+            media_type="text/plain; charset=utf-8"
+        )
+    except Exception as e:
+        print(f"❌ ERROR serving blog post {slug}: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- TELEGRAM WEBHOOK (Validation Workflow) ---
 
