@@ -1131,55 +1131,87 @@ def generate_flux_images(request: FluxPromptRequest):
     """
     job_dir = f"media/production/{request.job_id}"
     os.makedirs(job_dir, exist_ok=True)
+    clips_dir = f"{job_dir}/clips_video"
     
     from video_gen import generate_flux_image
     
     generated_images = []
     for i, prompt in enumerate(request.prompts):
-        filename = f"{job_dir}/img_{i+1:02d}.jpg"
+        idx_str = f"{i+1:02d}"
+        filename = f"{job_dir}/img_{idx_str}.jpg"
+        clip_path = f"{clips_dir}/clip_{idx_str}.mp4"
         
-        print(f"🎨 Regenerating image {i+1}/{len(request.prompts)} with Fal.ai (Square={request.is_square})...")
+        # NEW: Delete old clip if it exists to force regeneration from new image
+        if os.path.exists(clip_path):
+            try: os.remove(clip_path)
+            except: pass
+            
+        print(f"🎨 Regenerating image {idx_str}/{len(request.prompts)} with Fal.ai...")
         success = generate_flux_image(prompt, filename, is_square=request.is_square)
         
-        if success:
-            generated_images.append(f"/media/production/{request.job_id}/img_{i+1:02d}.jpg")
-        else:
-            print(f"❌ Failed to generate image {i+1}")
-            # Still append path for the frontend to show whatever is there or error state
-            generated_images.append(f"/media/production/{request.job_id}/img_{i+1:02d}.jpg")
+        # Cache busting for frontend
+        ts = int(time.time())
+        img_url = f"/media/production/{request.job_id}/img_{idx_str}.jpg?v={ts}"
+        generated_images.append(img_url)
 
     return {"status": "success", "images": generated_images, "job_id": request.job_id}
 
 video_generation_progress = {}
 
-def process_image_to_video(job_dir_name, images, job_dir, clips_dir, prompt, is_square=False):
+def process_image_to_video(job_dir_name, job_dir, clips_dir, prompt, is_square=False):
+    import subprocess
     success_count = 0
-    video_generation_progress[job_dir_name] = {"total": len(images), "completed": 0, "status": "running"}
-    for img in images:
-        img_path = os.path.join(job_dir, img)
-        clip_name = f"clip_{img.split('_')[1].split('.')[0]}.mp4"
+    total_clips = 18
+    video_generation_progress[job_dir_name] = {"total": total_clips, "completed": 0, "status": "running"}
+    
+    for i in range(1, total_clips + 1):
+        idx_str = f"{i:02d}"
+        clip_name = f"clip_{idx_str}.mp4"
         clip_path = os.path.join(clips_dir, clip_name)
+        img_path = os.path.join(job_dir, f"img_{idx_str}.jpg")
         
-        if os.path.exists(clip_path):
-            print(f"Clip {clip_name} already exists. Skipping.")
+        # Check if high-quality clip already exists
+        if os.path.exists(clip_path) and os.path.getsize(clip_path) > 1000:
             success_count += 1
             video_generation_progress[job_dir_name]["completed"] = success_count
             continue
 
-        url = video_gen.generate_ltx_video(prompt, is_square=is_square)
-        if url:
-            if video_gen.download_video(url, clip_path):
-                success_count += 1
-                print(f"Successfully generated and downloaded {clip_name}")
-            else:
-                print(f"Failed to download {url}")
-        else:
-            print(f"Failed to generate video for {img}")
+        # Try to generate animation clip
+        vid_generated = False
+        if os.path.exists(img_path):
+            url = video_gen.generate_ltx_video(prompt, is_square=is_square)
+            if url and video_gen.download_video(url, clip_path):
+                vid_generated = True
         
+        # FAILOVER logic: If animation fails OR image is missing
+        if not vid_generated:
+            print(f"⚠️ Failover: Creating static clip for {clip_name}")
+            if os.path.exists(img_path):
+                # Image to 5s Video
+                try:
+                    subprocess.run([
+                        "ffmpeg", "-y", "-loop", "1", "-i", img_path,
+                        "-t", "5", "-pix_fmt", "yuv420p",
+                        "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black,setsar=1",
+                        clip_path
+                    ], check=True)
+                    vid_generated = True
+                except: pass
+            
+            if not vid_generated:
+                # Black 5s Video
+                try:
+                    subprocess.run([
+                        "ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=black:s=1080x1920:d=5", 
+                        "-pix_fmt", "yuv420p", clip_path
+                    ], check=True)
+                except: pass
+
+        success_count += 1
         video_generation_progress[job_dir_name]["completed"] = success_count
         
     video_generation_progress[job_dir_name]["status"] = "completed"
-    print(f"Workflow Image-to-Video terminé. {success_count}/{len(images)} clips générés !")
+    print(f"Workflow Image-to-Video terminé. Sync complète sur 18 clips.")
 
 @app.post("/api/workflows/image-to-video")
 async def run_image_to_video(background_tasks: BackgroundTasks, payload: Optional[dict] = None):
@@ -1187,11 +1219,8 @@ async def run_image_to_video(background_tasks: BackgroundTasks, payload: Optiona
     base_dir = "media/production"
     
     if payload and "script_id" in payload:
-        # We need to process job directories. For simplicity, we just use the first dir if missing
-        script_id = payload["script_id"]
-        job_dir_name = script_id # Assumes job_dir is named after script_id. Example: "db_1"
+        job_dir_name = payload["script_id"]
     else:
-        # Fallback to first available directory
         try:
             dirs = [d for d in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, d))]
             job_dir_name = dirs[0] if dirs else None
@@ -1205,22 +1234,13 @@ async def run_image_to_video(background_tasks: BackgroundTasks, payload: Optiona
     clips_dir = os.path.join(job_dir, "clips_video")
     os.makedirs(clips_dir, exist_ok=True)
 
-    # Find images
-    images = [f for f in os.listdir(job_dir) if f.startswith("img_") and f.endswith((".jpg", ".png"))]
-    images.sort()
-
-    if not images:
-        return {"status": "error", "message": f"Aucune image trouvée dans {job_dir}"}
-    
     is_square = payload.get("is_square", False) if payload else False
-    
-    # Identify video prompting
     prompt = "Cinematic video of the prompt, high movement, high quality" # Default
     
-    print(f"Found {len(images)} images in {job_dir}. Sending to Fal.ai in background...")
-    background_tasks.add_task(process_image_to_video, job_dir_name, images, job_dir, clips_dir, prompt, is_square=is_square)
+    print(f"Generating 18 clips in {job_dir}. Background production started...")
+    background_tasks.add_task(process_image_to_video, job_dir_name, job_dir, clips_dir, prompt, is_square=is_square)
     
-    return {"status": "success", "message": f"Génération de {len(images)} clips démarrée en arrière-plan..."}
+    return {"status": "success", "message": "Génération de 18 clips démarrée en arrière-plan (avec failover)..."}
 
 @app.get("/api/workflows/progress/{job_id}")
 async def get_video_progress(job_id: str):
@@ -1299,11 +1319,17 @@ async def run_assemblage_viral(payload: Optional[dict] = None):
             clips.append(f"/{clips_dir}/{f}")
             
     # Include audio if generated
-    audio_url = f"/{voice_path}" if os.path.exists(voice_path) else ""
+    audio_url = f"/{voice_path}?v={int(time.time())}" if os.path.exists(voice_path) else ""
     
+    # NEW: Include Background Music URL if exists
+    bgm_path = os.path.join(job_dir, "background_music.mp3")
+    bgm_url = f"/{bgm_path}?v={int(time.time())}" if os.path.exists(bgm_path) else ""
+
     # Calculate exact TTS duration for perfect subtitle sync
     duration_sec = 30.0 # fallback
     if os.path.exists(voice_path):
+        import wave
+        import contextlib
         try:
             with contextlib.closing(wave.open(voice_path, 'r')) as f:
                 frames = f.getnframes()
@@ -1315,29 +1341,29 @@ async def run_assemblage_viral(payload: Optional[dict] = None):
     total_frames = int(duration_sec * 30) # 30fps base
     
     # Generate dynamic subtitles based on the script
-    # We will split the script into chunks of 3 words for strong TikTok-style captions.
     words = final_script.split()
     subtitles = []
     frames_per_word = max(3, total_frames // max(1, len(words))) # Exact frame matching
 
-    
     current_frame = 0
     chunk_size = 3
     for i in range(0, len(words), chunk_size):
         chunk = " ".join(words[i:i+chunk_size])
-        duration = len(words[i:i+chunk_size]) * frames_per_word
+        chunk_len = len(words[i:i+chunk_size])
+        duration = chunk_len * frames_per_word
         subtitles.append({
-            "text": chunk,
+            "text": chunk.upper(),
             "start": current_frame,
-            "end": current_frame + duration
+            "end": min(total_frames, current_frame + duration)
         })
         current_frame += duration
     
     return {
         "status": "success", 
-        "message": "Workflow Assemblage Viral (Assets TTS chuẩn bị) prêt pour Remotion !", 
+        "message": "Workflow Assemblage Viral prêt pour Remotion !", 
         "clips": clips, 
         "audioUrl": audio_url,
+        "bgmUrl": bgm_url,
         "subtitles": subtitles
     }
 

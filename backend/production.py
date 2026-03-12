@@ -66,7 +66,7 @@ def automate_visual_production(script_id_num: int):
             visual_promptist = agents[4] 
             
             prompt_task = Task(
-                description=f"Le script suivant est pour un format LONG de 90s. Crée exactement {prompt_count} prompts cinématiques en ANGLAIS pour FLUX qui illustrent ce script : {script.final_script[:1000]}",
+                description=f"Le script suivant est pour un format LONG de 90s. Crée exactement {prompt_count} prompts cinématiques en ANGLAIS pour FLUX qui illustrent ce script : {script.final_script[:3000]}",
                 expected_output=f"Exactly {prompt_count} cinematic prompts in a list format.",
                 agent=visual_promptist
             )

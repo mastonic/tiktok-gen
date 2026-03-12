@@ -1,10 +1,11 @@
 import { AbsoluteFill, Audio, Img, Sequence, useCurrentFrame, useVideoConfig } from 'remotion';
-import React, { useMemo } from 'react';
+import React from 'react';
 
 // Example props structure
 export type ShortsProps = {
   clips: string[]; // List of URLs to video clips or images
   audioUrl?: string; // Voiceover URL
+  bgmUrl?: string; // Background music URL
   subtitles?: { text: string; start: number; end: number }[]; // Subtitles with frame timings
 };
 
@@ -41,7 +42,7 @@ const SubtitleText = ({ text }: { text: string }) => {
   );
 };
 
-export const MyComposition: React.FC<ShortsProps> = ({ clips, audioUrl, subtitles }) => {
+export const MyComposition: React.FC<ShortsProps> = ({ clips, audioUrl, bgmUrl, subtitles }) => {
   const { fps } = useVideoConfig();
   const clipDurationInFrames = 5 * fps; // 5 seconds per clip
 
@@ -61,8 +62,9 @@ export const MyComposition: React.FC<ShortsProps> = ({ clips, audioUrl, subtitle
         </Sequence>
       ))}
 
-      {/* 2. Voiceover */}
-      {audioUrl && <Audio src={audioUrl} />}
+      {/* 2. Voiceover & BGM */}
+      {audioUrl && <Audio src={audioUrl} volume={1.5} />}
+      {bgmUrl && <Audio src={bgmUrl} volume={0.2} />}
 
       {/* 3. Subtitles */}
       {subtitles && subtitles.map((sub, idx) => (
