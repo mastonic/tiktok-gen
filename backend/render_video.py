@@ -119,8 +119,8 @@ def generate_video(job_dir: str):
     has_bgm = bgm_in.exists()
     
     # Sequential Zoom every 5s (1.1x) + Color Grade (Cyberpunk Blue/Violet)
-    zoom_expr = "if(between(mod(t,10),0,5),1.1,1)"
-    vfx_filter = f"scale=iw*1.1:-1, crop=iw/1.1:ih/1.1:(iw-iw/1.1)/2:(ih-ih/1.1)/2, eq=saturation=1.4:contrast=1.3, hue=h=-10"
+    # iM-System V9: Zoom progressive 1.1x toutes les 5s
+    vfx_filter = f"zoompan=z='min(zoom+0.001,1.1)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)', eq=saturation=1.4:contrast=1.3, hue=h=-10"
     
     video_filter = f"{vfx_filter}, drawtext=text='@crewai972':x=W-text_w-20:y=20:fontsize=32:fontcolor=white@0.3, ass={str(ass_file)}"
     
@@ -219,13 +219,13 @@ PlayResY: 1920
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Montserrat Extra Bold,150,&H0000FFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,6,0,2,0,0,0,1
+Style: Default,Montserrat Extra Bold,150,&H0014FF39,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,6,0,2,0,0,0,1
 """
     events = "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
     
-    # GROUP WORDS: 1-2 words per subtitle block
+    # GROUP WORDS: 1 word per subtitle block (Cyberpunk V9)
     chunks = []
-    chunk_size = 2
+    chunk_size = 1
     for i in range(0, len(words_data), chunk_size):
         chunks.append(words_data[i:i + chunk_size])
 

@@ -84,28 +84,25 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
     cta = "Abonnez-vous et like ! J'ai cassé internet Encore. 🚀"
     task_scripting = Task(
         description=(
-            f"Rédiger un script TikTok de Journalisme d'Impact de 90s. "
-            "RÈGLE DE VÉRITÉ : INTERDICTION FORMELLE d\'inventer des personnages (Alice, Bob, etc.). "
-            "Sujet : L'outil ou le dev réel identifié par TrendRadar. "
-            "STRUCTURE COMMANDO (Choisis l'un des deux) :\n"
-            "1. T5 (Benchmark Killer) : Hook violent (ex: 'L'Open Source a tué [X]') -> Comparaison chiffres réels -> Preuve -> CTA.\n"
-            "2. T6 (Repo GitHub) : Hook (ex: 'Ce repo change votre dev') -> Analyse feature -> Démo technique -> CTA.\n"
-            "TON : Calme, ironique, expert. "
-            f"Signature FINALE OBLIGATOIRE : {cta}."
+            "ORDRE COMMANDO : Transforme la fiche technique en un script TikTok agressif de 90s. "
+            "RÈGLE DE TEMPORALITÉ : Interdiction de parler de tech pré-2025. Nous sommes en 2026. "
+            "STYLE : Cynique, expert, zéro ton scolaire. Pas de 'Simple, non ?'. "
+            "STRUCTURE : Template 'Le Benchmark Killer' (Hook violent -> Confrontation data -> Chute technique). "
+            "SOURCE : Utilise EXCLUSIVEMENT la fiche fournie."
         ),
-        expected_output="Script technique 100% Data sans fiction utilisant la structure T5 ou T6.",
-        agent=script_architect
+        expected_output="Script TikTok 90s (Style Cash Machine, Zéro Fiction).",
+        agent=script_architect,
     )
     tasks.append(task_scripting)
 
     task_visuals = Task(
         description=(
-            "Crée exactement 18 prompts cinématiques en anglais pour FLUX qui PROUVENT la news technique. "
-            "RÈGLE : 50% Visualisation technique (Terminaux Python, fichiers YAML, graphiques de benchmarks, logos officiels glitchés) / 50% Impact réel. "
-            "COHÉRENCE : Meta Blue pour Meta, Dark Terminal pour le code. "
-            "FORMAT : [Shot Type] + [Technical Subject] + [Action] + [Context] + [Tech-Noir Style] --ar 9:16."
+            "Crée 18 prompts cinématiques via la formule Veo 3.1 : [Cinematography] + [Subject] + [Action] + [Context] + [Style & Ambiance]. "
+            "INTERDICTION : Robots, cyborgs, cerveaux filaires. "
+            "REQUIS : Terminaux, schémas, benchmarks, logos officiels. "
+            "Ambiance : Tech-Noir / Cyberpunk contrasté."
         ),
-        expected_output="Exactly 18 cinematic prompts (50/50 split) following the Visual Evidence rule.",
+        expected_output="Exactly 18 prompts following the Veo 3.1 formula (100% Data/UI).",
         agent=visual_promptist,
         context=[task_scripting], # Connect to script
         output_pydantic=VisualPrompts
@@ -126,14 +123,13 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
 
     task_review = Task(
         description=(
-            "Revue finale impitoyable (Dernier rempart) :\n"
-            "1. Zéro Fiction ? (Rejet immédiat si personnages imaginaires).\n"
-            "2. Data présente ? (Un benchmark ou chiffre doit apparaître AVANT 10s).\n"
-            "3. Cohérence Visuelle ? (Les 18 images suivent la réalité technique du script).\n"
-            "4. SEO OK ? (Hashtags #OpenSource #AI #DevTech inclus).\n"
-            "Assemble toutes les données validées pour la production finale."
+            "Filtre de rejet ultime (Kill Switch) :\n"
+            "1. News Obsolète ? (Rejet si pré-2025).\n"
+            "2. Incohérence Technique ? (Mélange cloud/local insensé).\n"
+            "3. Ton Scolaire ? (Rejet si ton trop descriptif ou faible).\n"
+            "Si rejeté, renvoie : 'ORDRE COMMANDO : Script REJETÉ. Corrige l''anachronisme et adopte un ton plus agressif.'"
         ),
-        expected_output="Package final validé (Zero-Fiction / 10s-Data / Visual-Evidence).",
+        expected_output="Package final validé (Anti-Obsolescence, Rigueur Tech).",
         agent=quality_controller,
         output_pydantic=AgentOutcome
     )

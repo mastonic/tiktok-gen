@@ -315,8 +315,8 @@ def generate_background_music(prompt: str, save_path: str) -> bool:
         "Content-Type": "application/json"
     }
     
-    # Generic cinematic prompt + specific subject
-    full_prompt = f"Cinematic suspense, dark atmospheric background music, 120bpm, HQ: {prompt}"
+    # Cyberpunk V9: Dark Phonk style
+    full_prompt = f"Phonk, aggressive drift bass, high energy, dark atmospheric background music, 120bpm, HQ: {prompt}"
     
     payload = {
         "prompt": full_prompt,

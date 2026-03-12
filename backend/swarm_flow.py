@@ -26,6 +26,7 @@ class SwarmState(BaseModel):
     tiktok_metadata: Optional[TikTokMetadata] = None
     final_outcome: Optional[AgentOutcome] = None
     run_id: Optional[str] = None
+    fiche_de_choc: Optional[str] = None
 
 class ViralFlow(Flow[SwarmState]):
     
@@ -110,8 +111,26 @@ class ViralFlow(Flow[SwarmState]):
         if self.state.run_id:
             save_agent_message(self.state.run_id, "TrendRadar", "ViralJudge", "info", f"📡 Recherche de nouveautés ({self.state.run_type})...")
         
-        crew = Crew(agents=[self.trend_radar, self.viral_judge], tasks=[task_scout, task_filter], verbose=True, max_rpm=30)
-        self.state.viability_report = str(crew.kickoff())
+        # 🛸 iM-System V9 : Context Injection Check
+        if self.state.fiche_de_choc:
+            print("🛸 [COMMANDO] Context Injection detected. Skipping search tools.")
+            if self.state.run_id:
+                save_agent_message(self.state.run_id, "Manager", "TrendRadar", "warning", "🛸 Input Humain détecté : Utilisation de la Fiche de choc comme SEULE source de vérité.")
+            
+            task_format = Task(
+                description=(
+                    f"Tu as reçu un input humain direct (Fiche de choc) : {self.state.fiche_de_choc}. "
+                    "Ta seule mission est de transformer cet input en une 'Fiche Technique d'Actualité' JSON stricte respectant les critères d'Impact Journalism. "
+                    "INTERDICTION de chercher d'autres infos. Utilise uniquement ce qui est fourni."
+                ),
+                expected_output="Fiche Technique d'Actualité JSON basée sur l'input humain.",
+                agent=self.trend_radar
+            )
+            crew = Crew(agents=[self.trend_radar], tasks=[task_format], verbose=True, max_rpm=30)
+            self.state.viability_report = str(crew.kickoff())
+        else:
+            crew = Crew(agents=[self.trend_radar, self.viral_judge], tasks=[task_scout, task_filter], verbose=True, max_rpm=30)
+            self.state.viability_report = str(crew.kickoff())
         
         if self.state.run_id:
             save_agent_message(self.state.run_id, "ViralJudge", "System", "info", "✅ Sujet inédit validé.")
@@ -155,33 +174,30 @@ class ViralFlow(Flow[SwarmState]):
             agent=self.tech_utility_expert
         )
         
-        cta = "Abonnez-vous et like ! J'ai cassé internet Encore. 🚀"
         task_script = Task(
             description=(
-                f"Rédiger un script TikTok de Journalisme d'Impact (90s). "
-                "RÈGLE DE VÉRITÉ : INTERDICTION FORMELLE d'inventer des personnages (pas d'Alice/Bob). "
-                "Sujet : L'outil ou le dev réel identifié par TrendRadar. "
-                "STRUCTURE COMMANDO :\n"
-                "- T5 (Benchmark Killer) : Hook violent -> Chiffres réels -> Preuve -> CTA.\n"
-                "- T6 (Repo GitHub) : Hook -> Analyse feature -> Démo technique -> CTA.\n"
-                f"TON : Calme, ironique, expert. CTA OBLIGATOIRE FINAL : {cta}."
+                "ORDRE COMMANDO : Transforme la fiche technique en un script TikTok agressif de 90s. "
+                "RÈGLE DE TEMPORALITÉ : Interdiction de parler de tech pré-2025. Nous sommes en 2026. "
+                "STYLE : Cynique, expert, zéro ton scolaire. Pas de 'Simple, non ?'. "
+                "STRUCTURE : Template 'Le Benchmark Killer' (Hook violent -> Confrontation data -> Chute technique). "
+                "SOURCE : Utilise EXCLUSIVEMENT la fiche fournie."
             ),
-            expected_output="Script technique 100% Data sans fiction (Structure T5 ou T6).",
+            expected_output="Script technique 100% Data sans fiction (Style Cash Machine).",
             agent=self.script_architect,
             context=[task_utility]
         )
         
         task_visuals = Task(
             description=(
-                "Créer exactement 18 prompts cinématiques en anglais pour FLUX qui PROUVENT la news. "
-                "Ratio : 50% Visualisation technique (Terminaux Python, fichiers YAML, graphiques de benchmarks, logos officiels glitchés) / 50% Impact réel (hardware, serveurs, humains en action réelle). "
-                "Structure : [Cinematography] + [Technical Subject] + [Action] + [Context] + [Cyberpunk/Tech-Noir Style] --ar 9:16. "
-                "Assure une cohérence visuelle parfaite (ex: Meta Blue pour Meta, Dark Terminal pour le code)."
+                "Crée 18 prompts cinématiques via la formule Veo 3.1 : [Cinematography] + [Subject] + [Action] + [Context] + [Style & Ambiance]. "
+                "INTERDICTION : Robots, cyborgs, cerveaux filaires. "
+                "REQUIS : Terminaux, schémas, benchmarks, logos officiels. "
+                "Ambiance : Tech-Noir / Cyberpunk contrasté."
             ),
-            expected_output="Exactly 18 cinematic prompts following the technical journalism aesthetic splitting 50/50 tech/impact.",
+            expected_output="Exactly 18 prompts following the Veo 3.1 formula (100% Data/UI).",
             agent=self.visual_promptist,
-            output_pydantic=VisualPrompts,
-            context=[task_script]
+            context=[task_script],
+            output_pydantic=VisualPrompts
         )
         
         if self.state.run_id:
@@ -260,14 +276,14 @@ Voici le contenu généré par tes collègues. Tu DOIS assembler ce contenu EXAC
 """
         task_qa = Task(
             description=(
-                f"Revue finale impitoyable (Dernier rempart) :\n"
-                "1. Zéro Fiction ? (Absence totale de personnages fictifs).\n"
-                "2. Data présente ? (Benchmark ou chiffre AVANT 10s).\n"
-                "3. Cohérence Visuelle ? (Les 18 images suivent la réalité technique).\n"
-                "4. SEO ? (#OpenSource #AI #DevTech).\n"
+                "Filtre de rejet ultime (Kill Switch) iM-System V9 :\n"
+                "1. News Obsolète ? (Rejet si pré-2025).\n"
+                "2. Incohérence Technique ? (Mélange cloud/local insensé).\n"
+                "3. Ton Scolaire ? (Rejet si ton trop descriptif ou faible).\n"
+                "Si rejeté, renvoie : 'ORDRE COMMANDO : Script REJETÉ. Corrige l''anachronisme et adopte un ton plus agressif.'\n"
                 f"Contenu à assembler : {context_data}"
             ),
-            expected_output="Package final validé (Architecture Anti-Gravity).",
+            expected_output="Package final validé (Anti-Obsolescence, Rigueur Tech).",
             agent=self.quality_controller,
             output_pydantic=AgentOutcome
         )
