@@ -61,7 +61,7 @@ const HumanInTheLoop = () => {
                     <h2 className="text-2xl font-bold uppercase tracking-widest">System Paused</h2>
                 </div>
 
-                <div className="mb-6 space-y-4">
+                <div className="mb-6 space-y-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
                     <div className="bg-black/40 p-4 rounded-lg border border-red-900/50">
                         <div className="text-xs text-red-500/70 uppercase font-mono mb-1">Agent Blocked</div>
                         <div className="font-semibold text-white">{pendingQuestion.agent_name}</div>
@@ -69,12 +69,14 @@ const HumanInTheLoop = () => {
 
                     <div className="bg-black/40 p-4 rounded-lg border border-red-900/50">
                         <div className="text-xs text-red-500/70 uppercase font-mono mb-1">Context</div>
-                        <div className="text-sm text-gray-300 italic">"{pendingQuestion.context}"</div>
+                        <div className="text-sm text-gray-300 italic whitespace-pre-wrap">
+                            {pendingQuestion.context}
+                        </div>
                     </div>
 
                     <div className="bg-red-900/20 p-4 rounded-lg border border-red-500/30">
                         <div className="text-xs text-red-400 uppercase font-bold mb-2">Question from AI</div>
-                        <div className="text-lg text-white font-medium">{pendingQuestion.question}</div>
+                        <div className="text-lg text-white font-medium whitespace-pre-wrap">{pendingQuestion.question}</div>
                     </div>
                 </div>
 

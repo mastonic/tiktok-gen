@@ -3,6 +3,9 @@ import feedparser
 from duckduckgo_search import DDGS
 import trafilatura
 from pytrends.request import TrendReq
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+import requests
+import time
 
 def _feed_parser_logic(feed_url: str) -> str:
     try:
@@ -55,6 +58,12 @@ def hacker_news_tool(query: str = "") -> str:
         return f"HN Error: {e}"
 
 @tool("GithubTrendingTool")
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=2, min=4, max=10),
+    retry=retry_if_exception_type(Exception),
+    reraise=True
+)
 def github_trending_tool(language: str = "") -> str:
     """
     Fetches trending repositories on GitHub. 
@@ -172,6 +181,14 @@ def duckduckgo_search_tool(query: str) -> str:
     """Searches the web using DuckDuckGo."""
     return _duckduckgo_logic(query)
 
+@tool("XSearchTool")
+def x_search_tool(query: str) -> str:
+    """
+    Searches specifically on X (Twitter) for viral tech threads or news.
+    Use this to find 'The Proof' or the 'Drama' link.
+    """
+    return _duckduckgo_logic(f"site:x.com {query}")
+
 @tool("DuckDuckGoImageTool")
 def duckduckgo_image_tool(query: str) -> str:
     """
@@ -230,6 +247,12 @@ import requests
 import os
 
 @tool("PerplexityTool")
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=2, min=2, max=10),
+    retry=retry_if_exception_type(Exception),
+    reraise=False
+)
 def perplexity_tool(query: str) -> str:
     """
     Searches the real-time web using Perplexity Sonar models.

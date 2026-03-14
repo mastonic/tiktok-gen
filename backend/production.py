@@ -50,8 +50,8 @@ def automate_visual_production(script_id_num: int):
     except:
         image_prompts = []
     
-    # Production mode: 15 frames (Cyberpunk 2026 Standard)
-    prompt_count = 15
+    # Production mode: 18 frames (Cyberpunk 2026 Standard)
+    prompt_count = 18
 
     # --- FALLBACK: Generate prompts if they are missing ---
     if not image_prompts or len(image_prompts) < 1:
@@ -101,11 +101,17 @@ def automate_visual_production(script_id_num: int):
     
     send_telegram_message(f"🎨 <b>Production visuelle en cours [{script.title}]</b>\n\nFormat : Long (90s minimum)\nPhase 1: Génération des {prompt_count} visuels (Flux Schnell)\nFormat: 9:16 portrait")
     
-    for i, prompt in enumerate(image_prompts[:prompt_count]):
+    for i, p_obj in enumerate(image_prompts[:prompt_count]):
+        # Handle both dict and object (if pydantic)
+        prompt_text = p_obj.get("flux_prompt") if isinstance(p_obj, dict) else getattr(p_obj, "flux_prompt", str(p_obj))
+        
         img_path = os.path.join(job_dir, f"img_{i+1:02d}.jpg")
         print(f"Generating image {i+1}/{prompt_count}...")
-        if generate_flux_image(prompt, img_path):
+        if generate_flux_image(prompt_text, img_path):
             images_paths[i] = img_path
+            
+        # Résilience : Attendre 1.5s entre les requêtes FLUX pour ne pas saturer l'API
+        time.sleep(1.5)
 
     # ... (Blog cover update logic) ...
 
@@ -130,11 +136,14 @@ def automate_visual_production(script_id_num: int):
             img_url = upload_to_fal(img_local_path)
             
             if img_url:
-                # Animation Logic (Wan for hook, LTX for the rest)
+                # Animation Logic using specific motion_prompt
+                p_obj = image_prompts[i]
+                m_prompt = p_obj.get("motion_prompt") if isinstance(p_obj, dict) else getattr(p_obj, "motion_prompt", "")
+                
                 if i == 0:
-                    vid_url = generate_wan_video(prompt="", image_url=img_url)
+                    vid_url = generate_wan_video(prompt=m_prompt, image_url=img_url)
                 else:
-                    vid_url = generate_ltx_video(prompt="", image_url=img_url)
+                    vid_url = generate_ltx_video(prompt=m_prompt, image_url=img_url)
                     
                 if vid_url and download_video(vid_url, clip_path):
                     vid_generated = True

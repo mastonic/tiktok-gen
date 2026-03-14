@@ -1,8 +1,12 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
+class VisualPrompt(BaseModel):
+    flux_prompt: str = Field(..., description="Descriptive FLUX image prompt (Static).")
+    motion_prompt: str = Field(..., description="Veo/Wan animation prompt (Motion).")
+
 class VisualPrompts(BaseModel):
-    prompts: List[str] = Field(..., description="Exactly 18 cinematically consistent image prompts.")
+    prompts: List[VisualPrompt] = Field(..., description="Exactly 18 pairs of FLUX + Motion prompts.")
     style: str = Field("Raw cinematic shot, 35mm film grain, hyper-realistic", description="Overall visual style.")
 
 class TikTokMetadata(BaseModel):
@@ -19,7 +23,7 @@ class AgentOutcome(BaseModel):
     script: str = Field(..., description="Final 90s+ script.")
     mots_cles: str = Field(..., description="3 impact keywords in UPPERCASE.")
     score_roi: int = Field(..., description="Monetization score out of 100.")
-    image_prompts: List[str] = Field(..., description="The 18 prompts for image generation.")
+    image_prompts: List[VisualPrompt] = Field(..., description="The 18 pairs of prompts for image and video generation.")
     tiktok_caption: Optional[str] = Field(None, description="TikTok specific metadata.")
     statut_validation: bool = Field(True, description="Ready for production.")
     top_5_concepts: List[Concept] = Field([], description="Related concepts for the blog.")

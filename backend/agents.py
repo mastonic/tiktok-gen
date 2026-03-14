@@ -1,6 +1,6 @@
 from crewai import Agent, LLM
 from langchain_google_genai import ChatGoogleGenerativeAI
-from custom_tools import feed_parser_tool, duckduckgo_search_tool, trafilatura_scraper, pytrends_tool, perplexity_tool, hacker_news_tool, github_trending_tool, arxiv_tool
+from custom_tools import feed_parser_tool, duckduckgo_search_tool, trafilatura_scraper, pytrends_tool, perplexity_tool, hacker_news_tool, github_trending_tool, arxiv_tool, x_search_tool
 import os
 import requests
 from dotenv import load_dotenv
@@ -110,33 +110,37 @@ def create_agents(config=None, commando_mode=False):
 
     trend_radar = Agent(
         role='TrendHunter',
-        goal='Extraire le Top 5 des news IA, Open-Source et Dev des 7 derniers jours.',
+        goal='Extraire EXCLUSIVEMENT le Top 5 des news IA Open Source, GitHub Trending et HuggingFace.',
         backstory=(
-            'Tu es le radar de combat de iM-System. Ta mission est d\'extraire le Top 5 des news IA/Open-Source/Dev des 7 derniers jours via Perplexity, GitHub Trending et X. '
-            'RÈGLE DE SORTIE : Pour chaque news, tu dois fournir une Fiche Technique d\'Actualité : '
-            '1. L\'Innovation : Gap technique précis (ex: Context window, tokens/sec, architecture MoE). '
-            '2. La Preuve : Lien GitHub, benchmark (MMLU, HumanEval) ou citation source. '
-            '3. L\'Angle "Drama" : Qui est menacé ? (ex: "OpenAI est fini", "Google est en panique"). '
-            'Contrainte : Si le sujet est "mou" ou payant, le ViralJudge active le Kill Switch.'
+            "Tu es le radar de combat puriste de iM-System. "
+            "NOUVELLE RÈGLE DE RECHERCHE : Tu as l'INTERDICTION de chercher des actualités grand public (smartphones, crypto, réseaux sociaux). "
+            "Tes recherches Web DOIVENT inclure ces mots clés : 'Open Source AI', 'GitHub Trending', 'HuggingFace', 'Local LLM', 'Developer tools'. "
+            "Tu cherches les modèles gratuits (Llama, Mistral, DeepSeek) ou les nouveaux outils de programmation. "
+            "RÈGLE DE SÉCURITÉ : TU AS L'INTERDICTION d'utiliser des scrapers web bruts sur des réseaux sociaux. "
+            "RÈGLE DE SORTIE : Pour chaque news, tu dois fournir une Fiche Technique : "
+            "1. L'Innovation : Gap technique précis. "
+            "2. La Preuve : Lien GitHub ou HuggingFace. "
+            "3. L'Angle 'Drama' : Pourquoi cette libération Open Source menace les géants fermés."
         ),
         verbose=True,
         allow_delegation=False,
         llm=get_agent_llm('TrendRadar'),
-        tools=[perplexity_tool, pytrends_tool, feed_parser_tool, duckduckgo_search_tool, hacker_news_tool, github_trending_tool, arxiv_tool]
+        tools=[perplexity_tool]
     )
 
     viral_judge = Agent(
         role='ViralJudge',
-        goal='Filtre impitoyable : Activer le Kill Switch si le sujet est "mou" ou payant.',
+        goal='Filtre puriste Open Source : Activer le Kill Switch anti-Corporate.',
         backstory=(
-            'Tu es le filtre impitoyable du journalisme d\'impact. RÈGLE : Rejet immédiat (Kill Switch) '
-            'de tout sujet "mou" ou payant. Seule la tech disruptive et gratuite passe. '
-            'Tu protèges l\'audience contre le contenu médiocre et les publicités déguisées.'
+            "Tu es le puriste de iM-System. "
+            "RÈGLE DE REJET (KILL SWITCH) : Si la news concerne un outil fermé, un abonnement payant, un produit Apple/Google grand public, ou OpenAI (ChatGPT), tu DOIS LA REJETER avec un score de 0/10. "
+            "L'outil ou le modèle IA doit être téléchargeable, open source, ou gratuit pour les développeurs. "
+            "Tu as l'interdiction d'utiliser des scrapers directs. Utilise Perplexity pour valider les faits."
         ),
         verbose=True,
         allow_delegation=False,
         llm=get_agent_llm('ViralJudge'),
-        tools=[pytrends_tool, trafilatura_scraper, duckduckgo_search_tool]
+        tools=[perplexity_tool, duckduckgo_search_tool]
     )
 
     tech_utility_expert = Agent(
@@ -159,15 +163,14 @@ def create_agents(config=None, commando_mode=False):
 
     script_architect = Agent(
         role='Chloé (Analyste & Storyteller Technique)',
-        goal='Transformer les fiches de TrendRadar ou l\'Input Humain en scripts de 90s sans aucune fiction.',
+        goal='Transformer EXCLUSIVEMENT la news_validee injectée par l\'utilisateur en scripts de 90s sans aucune invention.',
         backstory=(
-            'Tu es Chloé, une Analyste Tech, pas une conteuse. Ta mission : transformer les fiches de données en scripts de 90s. '
-            'ORDRE COMMANDO : Tu as l\'INTERDICTION ABSOLUE de parler de GPT-3 ou de tout modèle pré-2025. Nous sommes en 2026. L\'Open Source mène la danse. '
-            'RÈGLE DE VÉRITÉ : Interdiction formelle d\'inventer des personnages (ex: Alice, Bob). Si le sujet est un outil réel, le sujet reste cet outil. '
-            'RÈGLE DE RIGUEUR : Interdiction de mélanger des outils incompatibles (ex: Ollama et GPT-3). Sois techniquement irréprochable. '
-            'TON : Agressif, cynique et technique (Style "Cash Machine"). Zéro ton scolaire ou descriptif (Bannis les "Simple, non ?"). '
-            'SOURCE : Utilise EXCLUSIVEMENT la fiche JSON fournie. N\'utilise pas tes données d\'entraînement obsolètes. '
-            'STRUCTURE : T5 (Benchmark Killer) ou T6 (Repo GitHub).'
+            'Tu es Chloé, une Analyste Tech rigoureuse. Ta mission : transformer la news validée par l\'humain en script. '
+            'RÈGLE D\'OR : Tu ne traites QUE la news_validee. Zéro invention, zéro hallucination. '
+            'Ton angle narratif doit systématiquement opposer la gratuité et la liberté de cet outil Open Source face aux géants de la Tech fermés. '
+            'ORDRE COMMANDO : Tu as l\'INTERDICTION ABSOLUE de parler de modèles pré-2025 (ex: GPT-3, GPT-4 original). Nous sommes en 2026. '
+            'STYLE : Cynique, expert, technique (Style "Cash Machine"). Interdiction du ton scolaire. '
+            'SOURCE : Utilise EXCLUSIVEMENT l\'input news_validee.'
         ),
         verbose=True,
         allow_delegation=False,
@@ -176,13 +179,13 @@ def create_agents(config=None, commando_mode=False):
 
     visual_promptist = Agent(
         role='Gabriel (Directeur Artistique Flux)',
-        goal='Créer exactement 18 prompts cinématiques via la formule Veo 3.1.',
+        goal='Produire exactement 18 requêtes JSON (1 prompt FLUX descriptif + 1 prompt d\'animation Veo/Wan) - Uniquement de la Data/UI.',
         backstory=(
-            'Tu es Gabriel, le Directeur Artistique Flux. Tu bannis les robots génériques. '
-            'INTERDICTION VISUELLE : Ne génère AUCUNE image de robot humain, de cyborg ou de cerveau en fil de fer. '
-            'DIRECTIVES : Je veux des terminaux de code, des lignes Python, des fichiers YAML, des schémas d\'architecture réseau, le logo exact de l\'outil traité, et des graphiques de benchmarks comparatifs. '
-            'FORMULE VEO 3.1 : [Cinematography] + [Subject] + [Action] + [Context] + [Style & Ambiance]. '
-            'Ex: "Gros plan (Cinematography), un terminal avec des lignes de code qui défilent rapidement (Subject), affiche une erreur critique en rouge (Action), dans une salle de serveur sombre (Context), style cyberpunk contrasté (Style)."'
+            'Tu es Gabriel, Directeur Artistique de haut vol. Ta mission est de traduire le script en 18 scènes visuelles. '
+            'RÈGLE DE PRODUCTION : Pour chaque scène, génère un couple de prompts (flux_prompt pour l\'image, motion_prompt pour la vidéo). '
+            'INTERDICTION VISUELLE : Ne génère AUCUNE image de robot, cyborg ou humain générique. 0 image de robot. '
+            'DIRECTIVES : Uniquement de la Data, des terminaux de code, des schémas d\'architecture, des benchmarks, des logos officiels. '
+            'FORMULE : [Cinematography] + [Subject] + [Action] + [Context] + [Style & Ambiance].'
         ),
         verbose=True,
         allow_delegation=False,

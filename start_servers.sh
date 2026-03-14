@@ -30,7 +30,7 @@ fi
 
 # Run in background and redirect output to log file
 export PYTHONUNBUFFERED=1
-nohup python3 -m uvicorn main:app --host 0.0.0.0 --port 5656 --reload > backend.log 2>&1 &
+nohup python3 -m uvicorn main:app --host 127.0.0.1 --port 5656 --reload > backend.log 2>&1 &
 BACKEND_PID=$!
 echo "✅ Backend started (PID: $BACKEND_PID) - Logs: backend/backend.log"
 cd ..

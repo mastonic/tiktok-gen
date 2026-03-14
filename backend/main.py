@@ -182,92 +182,114 @@ def run_crew_sync(run_type: str, run_id: Optional[str] = None):
         commando_enabled = conf.commando_mode if conf else False
         mode_str = "commando" if commando_enabled else "standard"
         
-        # 2. Execute via Flow (or fallback if Flow is not supported)
-        update_run_progress(run_id, 25, "Initialisation du Flow Viral")
-        save_agent_message(run_id, "Manager", "System", "info", f"Démarrage Flow en mode {mode_str}.")
+        # 2. Execute via Sequential Crews (Human-in-the-Loop)
+        update_run_progress(run_id, 25, "Sourcing du Top 5 News")
         
-        try:
-            from swarm_flow import ViralFlow, SwarmState
+        # 2.1 Prepare Agents for Sourcing
+        agents_out = create_agents(config=config_dict, commando_mode=commando_enabled)
+        # Sourcing Crew consists of Luca (TrendRadar)
+        trend_radar = agents_out[0]
+        
+        # Define Sourcing Tasks
+        from tasks import create_tasks
+        all_tasks = create_tasks(*agents_out, run_type=run_type, commando_mode=commando_enabled)
+        sourcing_tasks = [all_tasks[0]] # Just task_scout (Top 5)
+        
+        # --- PHASE 1 : SOURCING (Luca) ---
+        print("\n" + "="*50)
+        print("🔍 PHASE 1 : SOURCING DU TOP 5 (Agents)")
+        print("="*50)
+        
+        sourcing_crew = Crew(
+            agents=[trend_radar],
+            tasks=sourcing_tasks,
+            process=Process.sequential,
+            verbose=True,
+            max_rpm=30
+        )
+        
+        top_5_news = str(sourcing_crew.kickoff())
+        
+        # --- PHASE 2 : HUMAN-IN-THE-LOOP (Sélection de la News) ---
+        print("\n" + "⚖️" * 20)
+        print("TOP 5 NEWS IDENTIFIÉES PAR L'IA :")
+        print("-" * 40)
+        print(top_5_news)
+        print("-" * 40)
+        print("⚖️" * 20)
+        
+        update_run_progress(run_id, 40, "Validation requise (Niche Open Source)")
+        
+        db_hitl = SessionLocal()
+        hitl_question = PendingQuestion(
+            agent_name="TrendHunter",
+            context=f"Le radar a identifié ces 5 news stratégiques :\n\n{top_5_news}",
+            question="👉 Opération Commando (Sélection) : Copiez-collez ici la news que vous souhaitez traiter, ou insérez le lien GitHub/lien direct de l'outil Open Source choisi : "
+        )
+        db_hitl.add(hitl_question)
+        db_hitl.commit()
+        db_hitl.refresh(hitl_question)
+        hitl_id = hitl_question.id
+        db_hitl.close()
+        
+        print(f"📌 [HITL] Question #{hitl_id} créée.")
+        print("👉 Opération Commando (Sélection) : Copiez-collez ici la news que vous souhaitez traiter, ou insérez le lien GitHub/lien direct de l'outil Open Source choisi : ")
+        print("En attente de votre réponse sur le Dashboard...")
+        
+        decision_utilisateur = None
+        waited_hitl = 0
+        timeout_hitl = 3600
+        while waited_hitl < timeout_hitl:
+            time.sleep(10)
+            waited_hitl += 10
             
-            flow = ViralFlow()
-            flow.state.mode = mode_str
-            flow.state.run_type = run_type
-            flow.state.agent_config = config_dict
-            flow.state.run_id = run_id
+            db_check = SessionLocal()
+            q_check = db_check.query(PendingQuestion).filter(PendingQuestion.id == hitl_id).first()
+            if q_check and q_check.is_resolved:
+                decision_utilisateur = q_check.answer.strip()
+                db_check.close()
+                break
+            db_check.close()
             
-            print(f"🚀 [FLOW] Kicking off ViralFlow (Mode: {mode_str}, Type: {run_type})")
-            result_obj = flow.kickoff()
-            
-            print(f"📦 [FLOW] kickoff() returned type: {type(result_obj)}")
-            print(f"📦 [FLOW] kickoff() returned value (first 500 chars): {str(result_obj)[:500]}")
-            
-            # Strategy 1: Try to get the AgentOutcome from the flow state directly
-            outcome = getattr(flow.state, 'final_outcome', None)
-            print(f"📦 [FLOW] flow.state.final_outcome type: {type(outcome)}, is None: {outcome is None}")
-            
-            result = None
-            
-            # Try the state's final_outcome (most reliable)
-            if outcome is not None:
-                if hasattr(outcome, "model_dump_json"):
-                    result = outcome.model_dump_json()
-                elif hasattr(outcome, "json"):
-                    result = outcome.json()
-                elif hasattr(outcome, "model_dump"):
-                    result = json.dumps(outcome.model_dump())
-                else:
-                    result = str(outcome)
-            
-            # Fallback: try the flow kickoff result itself
-            if not result or result in ("None", ""):
-                if hasattr(result_obj, "model_dump_json"):
-                    result = result_obj.model_dump_json()
-                elif hasattr(result_obj, "json"):
-                    result = result_obj.json()
-                elif hasattr(result_obj, "model_dump"):
-                    result = json.dumps(result_obj.model_dump())
-                else:
-                    result = str(result_obj)
-            
-            # Last fallback: build JSON from whatever state data we have
-            if not result or result in ("None", "", "{}"):
-                print("⚠️ [FLOW] No structured output. Building from state...")
-                visual_prompts_list = []
-                if flow.state.visual_prompts and hasattr(flow.state.visual_prompts, 'prompts'):
-                    visual_prompts_list = flow.state.visual_prompts.prompts
-                fallback_data = {
-                    "title": "Auto-Generated Script",
-                    "script": flow.state.script_content or flow.state.viability_report or "Script non généré",
-                    "mots_cles": "IA, AUTOMATION, OPEN-SOURCE",
-                    "score_roi": 80,
-                    "image_prompts": visual_prompts_list,
-                    "statut_validation": True,
-                    "top_5_concepts": []
-                }
-                result = json.dumps(fallback_data)
-            
-            print(f"✅ [FLOW] Final result (first 500 chars): {result[:500]}")
-            
-        except Exception as e:
-            print(f"⚠️ [FLOW] Falling back to manual crew: {e}")
-            agents_out = create_agents(config=config_dict, commando_mode=commando_enabled)
-            agents_list = list(agents_out)
-            tasks = create_tasks(*agents_out, run_type=run_type, commando_mode=commando_enabled)
-            
-            crew = Crew(
-                agents=agents_list,
-                tasks=tasks,
-                process=Process.sequential,
-                verbose=True,
-                max_rpm=30
-            )
-            crew_result = crew.kickoff()
-            if hasattr(crew_result, "pydantic") and crew_result.pydantic:
-                result = crew_result.pydantic.model_dump_json() if hasattr(crew_result.pydantic, "model_dump_json") else crew_result.pydantic.json()
-            elif hasattr(crew_result, "json_dict") and crew_result.json_dict:
-                result = json.dumps(crew_result.json_dict)
-            else:
-                result = str(crew_result)
+        if not decision_utilisateur or decision_utilisateur.upper() in ["NON", "STOP", "CANCEL"]:
+            print("🛑 [HITL] Mission annulée.")
+            update_run_progress(run_id, 100, "Mission annulée par l'utilisateur")
+            return "Mission annulée par l'utilisateur."
+        
+        # In this flow, the response IS the news selection
+        selected_news = decision_utilisateur
+        print(f"🚀 [HITL] News sélectionnée reçue : {selected_news[:50]}...")
+        
+        print(f"🚀 [HITL] Validation reçue. Lancement de la production...")
+        
+        # --- PHASE 3 : PRODUCTION VIDÉO (VideoSquad) ---
+        update_run_progress(run_id, 50, "Lancement de la VideoSquad (Opération Commando)")
+        print("\n" + "="*50)
+        print(f"🎬 PHASE 3 : PRODUCTION - GÉNÉRATION SCRIPT & VISUELS")
+        print("="*50)
+        
+        # Video Crew: Les agents restants (Emma ne refait plus le filtre ici si déjà validé, mais on garde task_filter pour la structure)
+        video_agents = list(agents_out[2:])
+        # Important: On saute task_scout(0) et task_pick_best(1). On commence au task_filter(2) ou task_scoring
+        video_tasks = all_tasks[2:]
+        
+        video_crew = Crew(
+            agents=video_agents,
+            tasks=video_tasks,
+            process=Process.sequential,
+            verbose=True,
+            max_rpm=30
+        )
+        
+        # Kickoff with news_validee input
+        crew_result = video_crew.kickoff(inputs={"news_validee": selected_news})
+        
+        if hasattr(crew_result, "pydantic") and crew_result.pydantic:
+            result = crew_result.pydantic.model_dump_json() if hasattr(crew_result.pydantic, "model_dump_json") else crew_result.pydantic.json()
+        elif hasattr(crew_result, "json_dict") and crew_result.json_dict:
+            result = json.dumps(crew_result.json_dict)
+        else:
+            result = str(crew_result)
 
         update_run_progress(run_id, 85, "Optimisation du script final")
         send_telegram_message(f"✅ <b>Script généré</b>\nAnalyse et scoring terminé par le Swarm.")

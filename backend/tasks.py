@@ -45,9 +45,20 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
         agent=trend_radar
     )
 
+    task_pick_best = Task(
+        description=(
+            "Analyse le Top 5 des news fourni par Luca. Ta mission est de CHOISIR LA MÉILLEURE NEWS (Top 1) "
+            "pour une vidéo TikTok de 90s. Analyse le potentiel de rétention, l'intérêt technique et l'angle 'Drama'.\n\n"
+            "RÈGLE : Tu ne dois retourner QU'UNE SEULE NEWS, la plus prometteuse."
+        ),
+        expected_output="La news sélectionnée (Top 1) avec une brève justification de son potentiel viral.",
+        agent=viral_judge,
+        context=[task_scout]
+    )
+
     task_filter = Task(
         description=(
-            "Filtre impitoyable : Vérifie la gratuité absolue et la présence de preuves techniques (Innovation/Preuve/Drama). "
+            "Filtre impitoyable : Vérifie la gratuité absolue et la présence de preuves techniques (Innovation/Preuve/Drama) pour la news suivante : {news_validee}\n\n"
             "RÈGLE : Rejet immédiat (Kill Switch) de tout sujet 'mou' ou payant. Seule la tech disruptive et gratuite passe. "
             "Ce module remplace la 'créativité' par de l'extraction de données pure."
         ),
@@ -55,7 +66,7 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
         agent=viral_judge
     )
 
-    tasks = [task_scout, task_filter]
+    tasks = [task_scout, task_pick_best, task_filter]
 
     # Optional Commando Strategy Task
     if commando_mode:
@@ -84,11 +95,12 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
     cta = "Abonnez-vous et like ! J'ai cassé internet Encore. 🚀"
     task_scripting = Task(
         description=(
-            "ORDRE COMMANDO : Transforme la fiche technique en un script TikTok agressif de 90s. "
-            "RÈGLE DE TEMPORALITÉ : Interdiction de parler de tech pré-2025. Nous sommes en 2026. "
-            "STYLE : Cynique, expert, zéro ton scolaire. Pas de 'Simple, non ?'. "
-            "STRUCTURE : Template 'Le Benchmark Killer' (Hook violent -> Confrontation data -> Chute technique). "
-            "SOURCE : Utilise EXCLUSIVEMENT la fiche fournie."
+            "ORDRE COMMANDO : Transforme la news suivante validée par l'humain en un script TikTok agressif de 90s : {news_validee}\n"
+            "CONTRAINTE : Ne traite QUE cette news. Zéro invention. Si la news est 'Kling AI', ne parle pas de 'Sora'.\n"
+            "RÈGLE DE TEMPORALITÉ : Interdiction de parler de tech pré-2025. Nous sommes en 2026.\n"
+            "STYLE : Cynique, expert, zéro ton scolaire. Pas de 'Simple, non ?'.\n"
+            "STRUCTURE : Template 'Le Benchmark Killer' (Hook violent -> Confrontation data -> Chute technique).\n"
+            "SOURCE : Ton script doit se baser EXCLUSIVEMENT sur cette news."
         ),
         expected_output="Script TikTok 90s (Style Cash Machine, Zéro Fiction).",
         agent=script_architect,
@@ -97,14 +109,16 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
 
     task_visuals = Task(
         description=(
-            "Crée 18 prompts cinématiques via la formule Veo 3.1 : [Cinematography] + [Subject] + [Action] + [Context] + [Style & Ambiance]. "
-            "INTERDICTION : Robots, cyborgs, cerveaux filaires. "
-            "REQUIS : Terminaux, schémas, benchmarks, logos officiels. "
+            "Crée exactement 18 requêtes JSON via la formule Veo 3.1. Chaque requête doit contenir :\n"
+            "1. flux_prompt: Prompt descriptif pour l'image statique (FLUX).\n"
+            "2. motion_prompt: Prompt d'animation pour la vidéo (Veo/Wan/Kling).\n"
+            "INTERDICTION ABSOLUE : Robots, cyborgs, cerveaux filaires, visages humains génériques.\n"
+            "REQUIS : Uniquement de la Data, UI, terminaux, code Python, schémas techniques, benchmarks.\n"
             "Ambiance : Tech-Noir / Cyberpunk contrasté."
         ),
-        expected_output="Exactly 18 prompts following the Veo 3.1 formula (100% Data/UI).",
+        expected_output="18 pairs of (flux_prompt + motion_prompt) strictly following the UI/Data standard.",
         agent=visual_promptist,
-        context=[task_scripting], # Connect to script
+        context=[task_scripting],
         output_pydantic=VisualPrompts
     )
     tasks.append(task_visuals)
