@@ -134,7 +134,14 @@ def process_video(video_id):
             
             # Create Clip
             a_clip = AudioFileClip(audio_seg_path)
-            i_clip = ImageClip(img_path).set_duration(a_clip.duration).set_audio(a_clip)
+            i_clip = ImageClip(img_path)
+            
+            # Handle MoviePy 1.0 vs 2.0 differences
+            if hasattr(i_clip, 'with_duration'):
+                i_clip = i_clip.with_duration(a_clip.duration).with_audio(a_clip)
+            else:
+                i_clip = i_clip.set_duration(a_clip.duration).set_audio(a_clip)
+                
             # Ensure it fits 9:16 (should be already from FLUX)
             clips.append(i_clip)
             
