@@ -37,11 +37,14 @@ def transcribe_audio(audio_path):
 def generate_script(topic_text):
     print("Generating cynical script with GPT-4o...")
     prompt = f"""
-    Create a cynical, high-impact 60-second video script based on this transcript: {topic_text}
+    Create a high-impact 60-second video script based on this transcript: {topic_text}
     The script must be divided into exactly 12 segments of 5 seconds each.
-    Style: Cynical, technical, minimalist but punchy. French language.
+    Style: Cynical, technical, but TRÈS EXPRESSIF and EMOTIONNEL. French language.
     
-    IMPORTANT: The 12th segment (last 5 seconds) MUST be a strong Call to Action (CTA) like "Abonne-toi pour ne pas mourir bête" or "Commente 'IA' pour le lien".
+    IMPORTANT: 
+    - Use expressive punctuation (..., !, ?) to create pauses and emphasis in the voice.
+    - Write as if you are telling a secret or shouting a revolution.
+    - The 12th segment (last 5 seconds) MUST be a strong Call to Action (CTA) like "Abonne-toi pour ne pas mourir bête" or "Commente 'IA' pour le lien".
     
     Respond ONLY with a JSON object containing a key 'segments' which is an array of 12 objects.
     Each object MUST have:
@@ -79,12 +82,12 @@ def generate_image(prompt, index):
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 def generate_audio(text, output_path):
-    print(f"Generating TTS (onyx)...")
+    print(f"Generating High-Quality TTS (nova)...")
     response = client.audio.speech.create(
-        model="tts-1",
-        voice="onyx",
+        model="tts-1-hd",
+        voice="nova",
         input=text,
-        speed=1.15
+        speed=1.05
     )
     response.stream_to_file(output_path)
     return output_path
