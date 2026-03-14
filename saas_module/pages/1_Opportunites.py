@@ -9,6 +9,22 @@ st.set_page_config(page_title="Opportunités YouTube", page_icon="📈")
 
 st.title("📈 Opportunités YouTube")
 
+# Sidebar for controls
+with st.sidebar:
+    st.header("Actions")
+    if st.button("🔍 Lancer le Scanner"):
+        with st.status("Recherche de leads sur YouTube...", expanded=True) as status:
+            try:
+                import sys
+                sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+                from saas_module import scanner
+                scanner.run_scanner()
+                status.update(label="Scan terminé !", state="complete", expanded=False)
+                st.rerun()
+            except Exception as e:
+                st.error(f"Erreur scanner : {e}")
+                status.update(label="Erreur lors du scan", state="error")
+
 def get_leads():
     if not os.path.exists(DB_PATH):
         return []
