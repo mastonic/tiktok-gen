@@ -7,7 +7,10 @@ import requests
 from datetime import datetime
 from openai import OpenAI
 import fal_client
-from moviepy.editor import ImageClip, AudioFileClip, concatenate_videoclips
+try:
+    from moviepy.editor import ImageClip, AudioFileClip, concatenate_videoclips
+except ImportError:
+    from moviepy import ImageClip, AudioFileClip, concatenate_videoclips
 from tenacity import retry, stop_after_attempt, wait_fixed
 from dotenv import load_dotenv
 
