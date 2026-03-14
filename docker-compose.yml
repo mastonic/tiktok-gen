@@ -51,6 +51,29 @@ services:
       - 'traefik.http.services.im-frontend.loadbalancer.server.port=3000'
       - 'traefik.docker.network=n8n_default'
 
+  saas:
+    build:
+      context: ./saas_module
+      dockerfile: Dockerfile
+    container_name: im-system-saas
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./saas_module:/app
+      - ./saas_module/youtube_leads.db:/app/youtube_leads.db
+    env_file:
+      - .env.local
+    networks:
+      - n8n_default
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.im-saas.rule=Host(`saas.${FRONTEND_DOMAIN}`)'
+      - 'traefik.http.routers.im-saas.entrypoints=web,websecure'
+      - 'traefik.http.routers.im-saas.tls=true'
+      - 'traefik.http.routers.im-saas.tls.certresolver=myresolver'
+      - 'traefik.http.services.im-saas.loadbalancer.server.port=8501'
+      - 'traefik.docker.network=n8n_default'
+
 networks:
   n8n_default:
     external: true
