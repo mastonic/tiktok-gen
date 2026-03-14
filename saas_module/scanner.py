@@ -27,36 +27,52 @@ def search_youtube():
     # 48 hours ago
     published_after = (datetime.utcnow() - timedelta(hours=48)).isoformat() + "Z"
     
-    request = youtube.search().list(
-        q=query,
-        part="snippet",
-        type="video",
-        publishedAfter=published_after,
-        maxResults=50,
-        order="viewCount"
-    )
-    response = request.execute()
+    print(f"🔍 Recherche YouTube lancée (query: '{query}')...")
+    try:
+        request = youtube.search().list(
+            q=query,
+            part="snippet",
+            type="video",
+            publishedAfter=published_after,
+            maxResults=50,
+            order="viewCount"
+        )
+        response = request.execute()
+    except Exception as e:
+        print(f"❌ Erreur lors de l'appel API YouTube : {e}")
+        raise e
     
     leads = []
-    for item in response.get("items", []):
+    items = response.get("items", [])
+    print(f"📺 {len(items)} vidéos trouvées au total. Analyse des statistiques...")
+    
+    for item in items:
         video_id = item["id"]["videoId"]
-        # Get detailed video stats for view count
-        stats_request = youtube.videos().list(
-            part="statistics",
-            id=video_id
-        )
-        stats_response = stats_request.execute()
-        
-        if stats_response["items"]:
-            view_count = int(stats_response["items"][0]["statistics"].get("viewCount", 0))
-            if view_count > 300000:
-                leads.append({
-                    "id": video_id,
-                    "title": item["snippet"]["title"],
-                    "url": f"https://www.youtube.com/watch?v={video_id}",
-                    "view_count": view_count,
-                    "published_at": item["snippet"]["publishedAt"]
-                })
+        title = item["snippet"]["title"]
+        try:
+            stats_request = youtube.videos().list(
+                part="statistics",
+                id=video_id
+            )
+            stats_response = stats_request.execute()
+            
+            if stats_response["items"]:
+                view_count = int(stats_response["items"][0]["statistics"].get("viewCount", 0))
+                if view_count > 300000:
+                    print(f"✅ Lead valide : {title} ({view_count} vues)")
+                    leads.append({
+                        "id": video_id,
+                        "title": title,
+                        "url": f"https://www.youtube.com/watch?v={video_id}",
+                        "view_count": view_count,
+                        "published_at": item["snippet"]["publishedAt"]
+                    })
+                else:
+                    # Optional: print(f"⏭️ Ignoré (vues insuffisantes) : {title}")
+                    pass
+        except Exception as e:
+            print(f"⚠️ Impossible de récupérer les stats pour {video_id}: {e}")
+            
     return leads
 
 def init_db():
@@ -103,20 +119,27 @@ def check_auto_mode():
 
 def run_scanner():
     init_db()
-    print(f"[{datetime.now()}] Starting YouTube Scanner...")
-    all_found_leads = search_youtube()
-    if all_found_leads:
-        new_leads = save_leads(all_found_leads)
-        print(f"Found {len(all_found_leads)} leads, {len(new_leads)} are new.")
-        
-        if check_auto_mode() and new_leads:
-            print("Auto-mode is ON. Triggering worker for new leads...")
-            import worker
-            for lead in new_leads:
-                print(f"Auto-processing video: {lead['id']}")
-                worker.process_video(lead["id"])
-    else:
-        print("No matches found in the last 48h with >300k views.")
+    print(f"\n--- 🚀 SCANNER START: {datetime.now()} ---")
+    try:
+        all_found_leads = search_youtube()
+        if all_found_leads:
+            new_leads = save_leads(all_found_leads)
+            print(f"📊 Résumé : {len(all_found_leads)} trouvés, {len(new_leads)} nouveaux enregistrés.")
+            
+            if check_auto_mode() and new_leads:
+                print("⚡ Mode Auto activé. Lancement des workers...")
+                import worker
+                for lead in new_leads:
+                    worker.process_video(lead["id"])
+            return len(new_leads)
+        else:
+            print("📭 Aucun lead correspondant aux critères (>300k vues, <48h) n'a été trouvé.")
+            return 0
+    except Exception as e:
+        print(f"💥 FATAL ERROR in run_scanner: {e}")
+        raise e
+    finally:
+        print(f"--- 🏁 SCANNER END: {datetime.now()} ---\n")
 
 if __name__ == "__main__":
     run_scanner()
