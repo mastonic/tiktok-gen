@@ -184,6 +184,57 @@ def process_video(video_id):
             
             temp_files.extend([img_path, audio_seg_path])
         
+        # 4. Final Outro (13th Clip)
+        print("Adding final Outro (crewai972)...")
+        outro_text = "REJOINS L'AVENTURE : CREWAI972 - S'ABONNER"
+        outro_prompt = "Futuristic cyberpunk terminal, glowing digital signature 'CREWAI972', high tech aesthetic, cinematic lighting, 8k"
+        
+        outro_img_url = generate_image(outro_prompt, "outro")
+        outro_img_path = f"temp_{video_id}_img_outro.jpg"
+        download_file(outro_img_url, outro_img_path)
+        
+        outro_audio_path = f"temp_{video_id}_audio_outro.mp3"
+        generate_audio(outro_text, outro_audio_path)
+        
+        a_outro = AudioFileClip(outro_audio_path)
+        i_outro = ImageClip(outro_img_path)
+        
+        # Outro duration: audio + 2 seconds of freeze for impact
+        outro_duration = a_outro.duration + 2.0
+        
+        if hasattr(i_outro, 'with_duration'):
+            i_outro = i_outro.with_duration(outro_duration)
+        else:
+            i_outro = i_outro.set_duration(outro_duration)
+            
+        try:
+            txt_outro = TextClip(
+                text=outro_text.upper(),
+                font_size=80,
+                color='white',
+                font=font_path,
+                stroke_color='red',
+                stroke_width=3,
+                method='caption',
+                size=(900, None)
+            )
+            if hasattr(txt_outro, 'with_duration'):
+                txt_outro = txt_outro.with_duration(outro_duration).with_position('center')
+            else:
+                txt_outro = txt_outro.set_duration(outro_duration).set_position('center')
+            
+            comp_outro = CompositeVideoClip([i_outro, txt_outro])
+        except:
+            comp_outro = i_outro
+            
+        if hasattr(comp_outro, 'with_audio'):
+            comp_outro = comp_outro.with_audio(a_outro)
+        else:
+            comp_outro = comp_outro.set_audio(a_outro)
+            
+        clips.append(comp_outro)
+        temp_files.extend([outro_img_path, outro_audio_path])
+
         print("Concatenating clips...")
         # 'chain' is more stable when all clips have the same Resolution
         final_video = concatenate_videoclips(clips, method="chain")
