@@ -20,9 +20,16 @@ with col1:
     st.write("Rechercher les dernières tendances AI sur YouTube.")
     if st.button("Lancer un scan maintenant"):
         try:
-            from saas_module import scanner
+            import scanner
             scanner.run_scanner()
             st.success("Scan terminé ! Allez dans 'Opportunités' pour voir les résultats.")
+        except ImportError:
+            try:
+                from saas_module import scanner
+                scanner.run_scanner()
+                st.success("Scan terminé !")
+            except Exception as e:
+                st.error(f"Erreur d'import : {e}")
         except Exception as e:
             st.error(f"Erreur : {e}")
 

@@ -15,9 +15,18 @@ with st.sidebar:
     if st.button("🔍 Lancer le Scanner"):
         with st.status("Recherche de leads sur YouTube...", expanded=True) as status:
             try:
+                # Add parent directory to path to allow clean imports
                 import sys
-                sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-                from saas_module import scanner
+                current_dir = os.path.dirname(__file__)
+                parent_dir = os.path.dirname(current_dir)
+                if parent_dir not in sys.path:
+                    sys.path.append(parent_dir)
+                
+                try:
+                    import scanner
+                except ImportError:
+                    from saas_module import scanner
+                
                 scanner.run_scanner()
                 status.update(label="Scan terminé !", state="complete", expanded=False)
                 st.rerun()
@@ -44,8 +53,16 @@ if not leads_df.empty:
         st.info(f"Lancement du worker pour la vidéo {selected_video_id}...")
         try:
             import sys
-            sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-            from saas_module import worker
+            current_dir = os.path.dirname(__file__)
+            parent_dir = os.path.dirname(current_dir)
+            if parent_dir not in sys.path:
+                sys.path.append(parent_dir)
+            
+            try:
+                import worker
+            except ImportError:
+                from saas_module import worker
+                
             worker.process_video(selected_video_id)
             st.success("Vidéo générée avec succès !")
         except Exception as e:
