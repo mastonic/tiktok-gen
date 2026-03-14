@@ -59,16 +59,20 @@ def generate_script(topic_text):
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 def generate_image(prompt, index):
     print(f"Generating image {index} with FLUX (fal.ai)...")
-    handler = fal_client.submit(
-        "fal-ai/flux/schnell",
-        arguments={
-            "prompt": prompt,
-            "image_size": "portrait_9_16",
-            "num_inference_steps": 4
-        }
-    )
-    result = handler.get()
-    return result["images"][0]["url"]
+    try:
+        handler = fal_client.submit(
+            "fal-ai/flux/schnell",
+            arguments={
+                "prompt": prompt,
+                "image_size": "portrait_9_16",
+                "num_inference_steps": 4
+            }
+        )
+        result = handler.get()
+        return result["images"][0]["url"]
+    except Exception as e:
+        print(f"❌ Fal.ai Error: {e}")
+        raise e
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 def generate_audio(text, output_path):
