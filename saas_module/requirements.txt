@@ -1,0 +1,10 @@
+tenacity
+google-api-python-client
+openai
+fal-client
+moviepy
+python-dotenv
+streamlit
+pandas
+requests
+yt-dlp
