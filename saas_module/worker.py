@@ -139,8 +139,15 @@ def process_video(video_id):
         
         print("Concatenating clips...")
         final_video = concatenate_videoclips(clips, method="compose")
+        
+        # Ensure output directory exists
+        output_dir = os.path.join(current_dir, "outputs")
+        os.makedirs(output_dir, exist_ok=True)
+        
         output_name = f"short_{video_id}.mp4"
-        final_video.write_videofile(output_name, fps=24, codec="libx264")
+        output_path = os.path.join(output_dir, output_name)
+        
+        final_video.write_videofile(output_path, fps=24, codec="libx264")
         
         # Cleanup
         for f in temp_files:
@@ -148,8 +155,8 @@ def process_video(video_id):
             except: pass
             
         update_status(video_id, "TERMINE")
-        print(f"SUCCESS: {output_name}")
-        return output_name
+        print(f"SUCCESS: {output_path}")
+        return output_path
         
     except Exception as e:
         print(f"ERROR: {e}")
