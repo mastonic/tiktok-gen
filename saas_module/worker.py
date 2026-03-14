@@ -147,11 +147,16 @@ def process_video(video_id):
             
             # Subtitles (TikTok style)
             try:
+                # Use absolute path to ensure pillow/moviepy finds it
+                font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+                if not os.path.exists(font_path):
+                    font_path = "DejaVu-Sans-Bold" # Fallback
+                
                 txt_clip = TextClip(
                     text=seg["text"].upper(),
                     font_size=70,
                     color='yellow',
-                    font='Arial-Bold',
+                    font=font_path,
                     stroke_color='black',
                     stroke_width=2,
                     method='caption',
