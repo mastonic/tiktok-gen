@@ -450,7 +450,9 @@ const Studio = () => {
                                             )}
                                         </div>
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
-                                            <p className="text-[10px] text-gray-200 line-clamp-3 leading-relaxed">{prompt}</p>
+                                            <p className="text-[10px] text-gray-200 line-clamp-3 leading-relaxed">
+                                                {typeof prompt === 'object' ? prompt.flux_prompt : prompt}
+                                            </p>
                                         </div>
                                         <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded text-[10px] text-white border border-white/10 font-black">
                                             SCÈNE {i + 1}

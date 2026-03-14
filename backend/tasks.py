@@ -95,14 +95,15 @@ def create_tasks(*args, run_type="matin", commando_mode=False):
     cta = "Abonnez-vous et like ! J'ai cassé internet Encore. 🚀"
     task_scripting = Task(
         description=(
-            "ORDRE COMMANDO : Transforme la news suivante validée par l'humain en un script TikTok agressif de 90s : {news_validee}\n"
-            "CONTRAINTE : Ne traite QUE cette news. Zéro invention. Si la news est 'Kling AI', ne parle pas de 'Sora'.\n"
+            f"ORDRE COMMANDO : Transforme la news suivante validée par l'humain en un script TikTok agressif de 90s : {{news_validee}}\n"
+            "CONTRAINTE : Ne traite QUE cette news. Zéro invention.\n"
             "RÈGLE DE TEMPORALITÉ : Interdiction de parler de tech pré-2025. Nous sommes en 2026.\n"
-            "STYLE : Cynique, expert, zéro ton scolaire. Pas de 'Simple, non ?'.\n"
+            "STYLE : Cynique, expert, zéro ton scolaire.\n"
             "STRUCTURE : Template 'Le Benchmark Killer' (Hook violent -> Confrontation data -> Chute technique).\n"
+            f"RÈGLE DE FIN : Le script DOIT impérativement se terminer par cette phrase exacte : '{cta}'\n"
             "SOURCE : Ton script doit se baser EXCLUSIVEMENT sur cette news."
         ),
-        expected_output="Script TikTok 90s (Style Cash Machine, Zéro Fiction).",
+        expected_output="Script TikTok 90s (Style Cash Machine, Zéro Fiction) se terminant par le CTA obligatoire.",
         agent=script_architect,
     )
     tasks.append(task_scripting)

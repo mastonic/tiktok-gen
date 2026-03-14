@@ -174,15 +174,17 @@ class ViralFlow(Flow[SwarmState]):
             agent=self.tech_utility_expert
         )
         
+        cta = "Abonnez-vous et like ! J'ai cassé internet Encore. 🚀"
         task_script = Task(
             description=(
                 f"ORDRE COMMANDO : Transforme la news suivante en un script TikTok agressif de 90s : {self.state.fiche_de_choc}\n"
                 "RÈGLE DE TEMPORALITÉ : Interdiction de parler de tech pré-2025. Nous sommes en 2026. "
-                "STYLE : Cynique, expert, zéro ton scolaire. Pas de 'Simple, non ?'. "
+                "STYLE : Cynique, expert, zéro ton scolaire. "
                 "STRUCTURE : Template 'Le Benchmark Killer' (Hook violent -> Confrontation data -> Chute technique). "
+                f"RÈGLE DE FIN : Le script DOIT impérativement se terminer par cette phrase exacte : '{cta}'\n"
                 "SOURCE : Ton script doit se baser EXCLUSIVEMENT sur cette news."
             ),
-            expected_output="Script technique 100% Data sans fiction (Style Cash Machine).",
+            expected_output="Script technique 100% Data avec CTA obligatoire.",
             agent=self.script_architect,
             context=[task_utility]
         )

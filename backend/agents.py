@@ -170,6 +170,7 @@ def create_agents(config=None, commando_mode=False):
             'Ton angle narratif doit systématiquement opposer la gratuité et la liberté de cet outil Open Source face aux géants de la Tech fermés. '
             'ORDRE COMMANDO : Tu as l\'INTERDICTION ABSOLUE de parler de modèles pré-2025 (ex: GPT-3, GPT-4 original). Nous sommes en 2026. '
             'STYLE : Cynique, expert, technique (Style "Cash Machine"). Interdiction du ton scolaire. '
+            f"RÈGLE DE FIN : Ton script DOIT se terminer par : '{cta_text}' "
             'SOURCE : Utilise EXCLUSIVEMENT l\'input news_validee.'
         ),
         verbose=True,
