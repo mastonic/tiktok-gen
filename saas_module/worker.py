@@ -8,9 +8,9 @@ from datetime import datetime
 from openai import OpenAI
 import fal_client
 try:
-    from moviepy.editor import ImageClip, AudioFileClip, concatenate_videoclips
+    from moviepy.editor import ImageClip, AudioFileClip, concatenate_videoclips, TextClip, CompositeVideoClip
 except ImportError:
-    from moviepy import ImageClip, AudioFileClip, concatenate_videoclips
+    from moviepy import ImageClip, AudioFileClip, concatenate_videoclips, TextClip, CompositeVideoClip
 from tenacity import retry, stop_after_attempt, wait_fixed
 from dotenv import load_dotenv
 
@@ -43,9 +43,12 @@ def generate_script(topic_text):
     Create a cynical, high-impact 60-second video script based on this transcript: {topic_text}
     The script must be divided into exactly 12 segments of 5 seconds each.
     Style: Cynical, technical, minimalist but punchy. French language.
+    
+    IMPORTANT: The 12th segment (last 5 seconds) MUST be a strong Call to Action (CTA) like "Abonne-toi pour ne pas mourir bête" or "Commente 'IA' pour le lien".
+    
     Respond ONLY with a JSON object containing a key 'segments' which is an array of 12 objects.
     Each object MUST have:
-    - 'text': The narration for those 5 seconds.
+    - 'text': The narration for those 5 seconds (KEEP IT SHORT, max 10-12 words).
     - 'visual_prompt': A detailed prompt for an image generator (FLUX) to illustrate this segment.
     """
     response = client.chat.completions.create(
@@ -132,18 +135,51 @@ def process_video(video_id):
             audio_seg_path = f"temp_{video_id}_audio_{i}.mp3"
             generate_audio(seg["text"], audio_seg_path)
             
-            # Create Clip
+            # Create Base Image Clip
             a_clip = AudioFileClip(audio_seg_path)
             i_clip = ImageClip(img_path)
             
+            duration = a_clip.duration
+            if duration < 0.1: duration = 5 # Fallback
+            
             # Handle MoviePy 1.0 vs 2.0 differences
             if hasattr(i_clip, 'with_duration'):
-                i_clip = i_clip.with_duration(a_clip.duration).with_audio(a_clip)
+                i_clip = i_clip.with_duration(duration)
             else:
-                i_clip = i_clip.set_duration(a_clip.duration).set_audio(a_clip)
+                i_clip = i_clip.set_duration(duration)
+            
+            # Subtitles (TikTok style)
+            # Use 'Inter-Bold' or 'Arial' if available, otherwise default
+            try:
+                txt_clip = TextClip(
+                    seg["text"].upper(),
+                    fontsize=70,
+                    color='yellow',
+                    font='Arial-Bold',
+                    stroke_color='black',
+                    stroke_width=2,
+                    method='caption',
+                    size=(800, None)
+                )
                 
-            # Ensure it fits 9:16 (should be already from FLUX)
-            clips.append(i_clip)
+                if hasattr(txt_clip, 'with_duration'):
+                    txt_clip = txt_clip.with_duration(duration).with_position(('center', 1400))
+                else:
+                    txt_clip = txt_clip.set_duration(duration).set_position(('center', 1400))
+                
+                # Composite
+                comp_clip = CompositeVideoClip([i_clip, txt_clip])
+            except Exception as te:
+                print(f"⚠️ TextClip Error (probably ImageMagick missing): {te}")
+                comp_clip = i_clip # Fallback to no subtitles
+            
+            # Add audio
+            if hasattr(comp_clip, 'with_audio'):
+                comp_clip = comp_clip.with_audio(a_clip)
+            else:
+                comp_clip = comp_clip.set_audio(a_clip)
+                
+            clips.append(comp_clip)
             
             temp_files.extend([img_path, audio_seg_path])
         
