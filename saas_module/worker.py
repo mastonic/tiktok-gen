@@ -7,10 +7,7 @@ import requests
 from datetime import datetime
 from openai import OpenAI
 import fal_client
-try:
-    from moviepy.editor import ImageClip, AudioFileClip, concatenate_videoclips, TextClip, CompositeVideoClip
-except ImportError:
-    from moviepy import ImageClip, AudioFileClip, concatenate_videoclips, TextClip, CompositeVideoClip
+from moviepy import ImageClip, AudioFileClip, concatenate_videoclips, TextClip, CompositeVideoClip
 from tenacity import retry, stop_after_attempt, wait_fixed
 from dotenv import load_dotenv
 
@@ -139,8 +136,8 @@ def process_video(video_id):
             a_clip = AudioFileClip(audio_seg_path)
             i_clip = ImageClip(img_path)
             
-            duration = a_clip.duration
-            if duration < 0.1: duration = 5 # Fallback
+            # Add 0.5s of padding to each segment to prevent "cut off" feeling
+            duration = a_clip.duration + 0.5
             
             # Handle MoviePy 1.0 vs 2.0 differences
             if hasattr(i_clip, 'with_duration'):
@@ -149,11 +146,10 @@ def process_video(video_id):
                 i_clip = i_clip.set_duration(duration)
             
             # Subtitles (TikTok style)
-            # Use 'Inter-Bold' or 'Arial' if available, otherwise default
             try:
                 txt_clip = TextClip(
-                    seg["text"].upper(),
-                    fontsize=70,
+                    text=seg["text"].upper(),
+                    font_size=70,
                     color='yellow',
                     font='Arial-Bold',
                     stroke_color='black',
@@ -170,12 +166,12 @@ def process_video(video_id):
                 # Composite
                 comp_clip = CompositeVideoClip([i_clip, txt_clip])
             except Exception as te:
-                print(f"⚠️ TextClip Error (probably ImageMagick missing): {te}")
-                comp_clip = i_clip # Fallback to no subtitles
+                print(f"⚠️ TextClip Error: {te}")
+                comp_clip = i_clip
             
             # Add audio
             if hasattr(comp_clip, 'with_audio'):
-                comp_clip = comp_clip.with_audio(a_clip)
+                comp_clip = comp_clip.with_audio(a_clip) # Audio remains its original length
             else:
                 comp_clip = comp_clip.set_audio(a_clip)
                 
@@ -184,7 +180,8 @@ def process_video(video_id):
             temp_files.extend([img_path, audio_seg_path])
         
         print("Concatenating clips...")
-        final_video = concatenate_videoclips(clips, method="compose")
+        # 'chain' is more stable when all clips have the same Resolution
+        final_video = concatenate_videoclips(clips, method="chain")
         
         # Ensure output directory exists
         output_dir = os.path.join(current_dir, "outputs")
