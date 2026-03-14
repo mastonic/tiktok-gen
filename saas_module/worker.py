@@ -64,7 +64,10 @@ def generate_image(prompt, index):
             "fal-ai/flux/schnell",
             arguments={
                 "prompt": prompt,
-                "image_size": "portrait_9_16",
+                "image_size": {
+                    "width": 1024,
+                    "height": 1792
+                },
                 "num_inference_steps": 4
             }
         )
