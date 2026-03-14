@@ -3,6 +3,7 @@ import json
 import sqlite3
 from datetime import datetime, timedelta
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 from tenacity import retry, stop_after_attempt, wait_fixed
 from dotenv import load_dotenv
 
@@ -38,6 +39,15 @@ def search_youtube():
             order="viewCount"
         )
         response = request.execute()
+    except HttpError as e:
+        if e.resp.status == 403:
+            print("❌ ERREUR 403 : Accès interdit à l'API YouTube.")
+            print("👉 Vérifie que :")
+            print("   1. L'API 'YouTube Data API v3' est ACTIVÉE dans ta console Google Cloud.")
+            print("   2. Ta clé API n'a pas de RESTRICTIONS qui bloquent YouTube.")
+        else:
+            print(f"❌ Erreur HTTP YouTube : {e}")
+        raise e
     except Exception as e:
         print(f"❌ Erreur lors de l'appel API YouTube : {e}")
         raise e
@@ -63,6 +73,7 @@ def search_youtube():
                     leads.append({
                         "id": video_id,
                         "title": title,
+                        "thumbnail": item["snippet"]["thumbnails"]["high"]["url"],
                         "url": f"https://www.youtube.com/watch?v={video_id}",
                         "view_count": view_count,
                         "published_at": item["snippet"]["publishedAt"]
@@ -82,6 +93,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS leads (
             id TEXT PRIMARY KEY,
             title TEXT,
+            thumbnail TEXT,
             url TEXT,
             view_count INTEGER,
             published_at TEXT,
@@ -99,9 +111,9 @@ def save_leads(leads):
         cursor.execute("SELECT id FROM leads WHERE id = ?", (lead["id"],))
         if not cursor.fetchone():
             cursor.execute('''
-                INSERT INTO leads (id, title, url, view_count, published_at, status)
-                VALUES (?, ?, ?, ?, ?, 'EN ATTENTE')
-            ''', (lead["id"], lead["title"], lead["url"], lead["view_count"], lead["published_at"]))
+                INSERT INTO leads (id, title, thumbnail, url, view_count, published_at, status)
+                VALUES (?, ?, ?, ?, ?, ?, 'EN ATTENTE')
+            ''', (lead["id"], lead["title"], lead["thumbnail"], lead["url"], lead["view_count"], lead["published_at"]))
             new_leads.append(lead)
     conn.commit()
     conn.close()

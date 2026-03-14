@@ -1,5 +1,14 @@
-import streamlit as st
+import sys
 import os
+
+# Add relevant directories to sys.path for robust imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+for d in [current_dir, parent_dir]:
+    if d not in sys.path:
+        sys.path.insert(0, d)
+
+import streamlit as st
 
 st.set_page_config(
     page_title="iM-System SaaS Dashboard",
@@ -23,13 +32,6 @@ with col1:
             import scanner
             scanner.run_scanner()
             st.success("Scan terminé ! Allez dans 'Opportunités' pour voir les résultats.")
-        except ImportError:
-            try:
-                from saas_module import scanner
-                scanner.run_scanner()
-                st.success("Scan terminé !")
-            except Exception as e:
-                st.error(f"Erreur d'import : {e}")
         except Exception as e:
             st.error(f"Erreur : {e}")
 

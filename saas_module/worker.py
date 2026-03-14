@@ -1,3 +1,4 @@
+import sys
 import os
 import json
 import sqlite3
@@ -10,8 +11,14 @@ from moviepy.editor import ImageClip, AudioFileClip, concatenate_videoclips
 from tenacity import retry, stop_after_attempt, wait_fixed
 from dotenv import load_dotenv
 
+# Add relevant directories to sys.path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+if current_dir not in sys.path: sys.path.insert(0, current_dir)
+if parent_dir not in sys.path: sys.path.insert(0, parent_dir)
+
 # Load env
-load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env.local"))
+load_dotenv(os.path.join(current_dir, "..", ".env.local"))
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 DB_PATH = os.path.join(os.path.dirname(__file__), "youtube_leads.db")

@@ -1,9 +1,20 @@
-import streamlit as st
-import sqlite3
+import sys
 import os
+import sqlite3
 import pandas as pd
+import streamlit as st
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "youtube_leads.db")
+# Add relevant directories to sys.path for robust imports
+# This file is in saas_module/pages/
+pages_dir = os.path.dirname(os.path.abspath(__file__))
+saas_module_dir = os.path.dirname(pages_dir)
+project_root = os.path.dirname(saas_module_dir)
+
+for d in [saas_module_dir, project_root]:
+    if d not in sys.path:
+        sys.path.insert(0, d)
+
+DB_PATH = os.path.join(saas_module_dir, "youtube_leads.db")
 
 st.set_page_config(page_title="Opportunités YouTube", page_icon="📈")
 
@@ -15,18 +26,7 @@ with st.sidebar:
     if st.button("🔍 Lancer le Scanner"):
         with st.status("Recherche de leads sur YouTube...", expanded=True) as status:
             try:
-                # Add parent directory to path to allow clean imports
-                import sys
-                current_dir = os.path.dirname(__file__)
-                parent_dir = os.path.dirname(current_dir)
-                if parent_dir not in sys.path:
-                    sys.path.append(parent_dir)
-                
-                try:
-                    import scanner
-                except ImportError:
-                    from saas_module import scanner
-                
+                import scanner
                 scanner.run_scanner()
                 status.update(label="Scan terminé !", state="complete", expanded=False)
                 st.rerun()
@@ -36,33 +36,49 @@ with st.sidebar:
 
 def get_leads():
     if not os.path.exists(DB_PATH):
-        return []
+        return pd.DataFrame()
     conn = sqlite3.connect(DB_PATH)
-    df = pd.read_sql_query("SELECT * FROM leads ORDER BY published_at DESC", conn)
+    try:
+        df = pd.read_sql_query("SELECT * FROM leads ORDER BY published_at DESC", conn)
+    except:
+        df = pd.DataFrame()
     conn.close()
     return df
 
 leads_df = get_leads()
 
 if not leads_df.empty:
-    st.dataframe(leads_df, use_container_width=True)
+    # Use a cleaner display
+    st.write(f"### {len(leads_df)} opportunités détectées")
     
-    selected_video_id = st.selectbox("Sélectionnez une vidéo pour générer un Short", leads_df["id"].tolist())
+    # Create a nice list with thumbnails
+    for idx, row in leads_df.iterrows():
+        with st.container(border=True):
+            col_img, col_txt = st.columns([1, 2])
+            with col_img:
+                if row.get("thumbnail"):
+                    st.image(row["thumbnail"])
+                else:
+                    st.write("Pas de miniature")
+            with col_txt:
+                st.markdown(f"**{row['title']}**")
+                st.write(f"👁️ {row['view_count']:,} vues")
+                st.write(f"📅 {row['published_at']}")
+                st.write(f"🏷️ Status: `{row['status']}`")
+                st.markdown(f"[Regarder sur YouTube]({row['url']})")
+
+    st.divider()
+    st.subheader("🎬 Génération de Short")
     
-    if st.button("Générer la vidéo"):
+    # Selector shows Title but uses ID
+    video_options = {f"{row['title']} ({row['id']})": row['id'] for _, row in leads_df.iterrows()}
+    selected_label = st.selectbox("Sélectionnez une vidéo pour générer un Short", options=list(video_options.keys()))
+    selected_video_id = video_options[selected_label]
+    
+    if st.button("🚀 Générer la vidéo"):
         st.info(f"Lancement du worker pour la vidéo {selected_video_id}...")
         try:
-            import sys
-            current_dir = os.path.dirname(__file__)
-            parent_dir = os.path.dirname(current_dir)
-            if parent_dir not in sys.path:
-                sys.path.append(parent_dir)
-            
-            try:
-                import worker
-            except ImportError:
-                from saas_module import worker
-                
+            import worker
             worker.process_video(selected_video_id)
             st.success("Vidéo générée avec succès !")
         except Exception as e:
