@@ -10,6 +10,8 @@ import fal_client
 from moviepy import ImageClip, AudioFileClip, concatenate_videoclips, TextClip, CompositeVideoClip
 from tenacity import retry, stop_after_attempt, wait_fixed
 from dotenv import load_dotenv
+from kokoro import KPipeline
+import soundfile as sf
 
 # Add relevant directories to sys.path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -22,6 +24,10 @@ load_dotenv(os.path.join(current_dir, "..", ".env.local"))
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 DB_PATH = os.path.join(os.path.dirname(__file__), "youtube_leads.db")
+
+# Initialize Kokoro Pipeline (French models)
+# Note: lang_code='f' for French
+pipeline = KPipeline(lang_code='f') 
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 def transcribe_audio(audio_path):
@@ -42,9 +48,10 @@ def generate_script(topic_text):
     Style: Cynical, technical, but TRÈS EXPRESSIF and EMOTIONNEL. French language.
     
     IMPORTANT: 
-    - Use expressive punctuation (..., !, ?) to create pauses and emphasis in the voice.
+    - Use expressive punctuation (..., !, ?) to create pauses and emphasis.
     - Write as if you are telling a secret or shouting a revolution.
-    - The 12th segment (last 5 seconds) MUST be a strong Call to Action (CTA) like "Abonne-toi pour ne pas mourir bête" or "Commente 'IA' pour le lien".
+    - MODULARITY: Insert semantic tags like [soupir], [rire sarcastique], [chuchotement], [inspiration] to add human-like depth.
+    - The 12th segment (last 5 seconds) MUST be a strong Call to Action (CTA) like "Abonne-toi pour ne pas mourir bête" ou "CREWAI972 - S'ABONNER".
     
     Respond ONLY with a JSON object containing a key 'segments' which is an array of 12 objects.
     Each object MUST have:
@@ -80,17 +87,28 @@ def generate_image(prompt, index):
         print(f"❌ Fal.ai Error: {e}")
         raise e
 
-@retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 def generate_audio(text, output_path):
-    print(f"Generating High-Quality TTS (nova)...")
-    response = client.audio.speech.create(
-        model="tts-1-hd",
-        voice="nova",
-        input=text,
-        speed=1.05
-    )
-    response.stream_to_file(output_path)
-    return output_path
+    print(f"Generating Local High-Quality Audio (Kokoro)...")
+    try:
+        # Choose a voice: am_adam (male) or af_bella (female)
+        # We'll use af_bella for the cynical/elegant vibe, or am_adam for technical
+        generator = pipeline(
+            text, voice='af_bella', # voice can be am_adam or af_bella
+            speed=1.15, split_pattern=r'\n+'
+        )
+        
+        full_audio = []
+        for gs, ps, audio in generator:
+            full_audio.append(audio)
+        
+        import numpy as np
+        if full_audio:
+            combined_audio = np.concatenate(full_audio)
+            sf.write(output_path, combined_audio, 24000) # Kokoro uses 24kHz
+        return output_path
+    except Exception as e:
+        print(f"❌ Kokoro Error: {e}")
+        raise e
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 def download_file(url, path):
@@ -132,7 +150,7 @@ def process_video(video_id):
             img_path = f"temp_{video_id}_img_{i}.jpg"
             download_file(img_url, img_path)
             
-            audio_seg_path = f"temp_{video_id}_audio_{i}.mp3"
+            audio_seg_path = f"temp_{video_id}_audio_{i}.wav"
             generate_audio(seg["text"], audio_seg_path)
             
             # Create Base Image Clip
@@ -196,7 +214,7 @@ def process_video(video_id):
         outro_img_path = f"temp_{video_id}_img_outro.jpg"
         download_file(outro_img_url, outro_img_path)
         
-        outro_audio_path = f"temp_{video_id}_audio_outro.mp3"
+        outro_audio_path = f"temp_{video_id}_audio_outro.wav"
         generate_audio(outro_text, outro_audio_path)
         
         a_outro = AudioFileClip(outro_audio_path)

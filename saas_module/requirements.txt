@@ -8,3 +8,5 @@ streamlit
 pandas
 requests
 yt-dlp
+kokoro>=0.3.4
+soundfile
